@@ -1,0 +1,9 @@
+{
+  "version": "0.2.0",
+  "configurations": [{
+    "name": "OML Classroom (student)", "type": "debugpy", "request": "launch",
+    "program": "${workspaceFolder}/deploy/manage.py", "args": ["serve", "--port", "22417"],
+    "cwd": "${workspaceFolder}", "console": "integratedTerminal",
+    "env": {"OML_ENV_FILE": "${workspaceFolder}/security/student.env", "PYTHONUTF8": "1"}
+  }]
+}

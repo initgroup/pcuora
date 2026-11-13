@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OML 실습 시작하기</title><style>
+body{margin:0;background:#fafbf7;color:#243b33;font:20px/1.9 "Malgun Gothic",sans-serif}main{max-width:1000px;margin:auto;padding:35px 24px}h1{font-size:1.8em}h2{font-size:1.3em;margin-top:2em}pre{background:#203e33;color:#eef5e7;padding:20px;overflow:auto;font:18px/1.8 Consolas,monospace}code{overflow-wrap:anywhere}a{color:#245b49}li{margin:10px 0}.note{padding:20px;background:#edf3e6;border-left:4px solid #729557}small{font-size:.85em}</style></head><body><main>
+<h1>OML 실습 시작하기</h1>
+<p class="note"><strong>샘플의 원리를 읽고 직접 코딩하는 것을 권장합니다.</strong> 파일을 열어 입력·처리·출력의 연결을 확인하고 한 부분씩 수정·실행하세요. AI는 보조적으로 사용할 수 있지만 직접 실행하고 자신의 말로 설명해야 합니다.</p>
+<h2>1. 환경 준비</h2>
+<p>Windows x64, Python 3.12, VS Code가 기준입니다. ZIP을 본인PC작업폴더\COM22417\본인학번\에 풀고 VS Code에서 그 폴더를 여세요.</p>
+<p>Python 설치파일은 reference/installers/에 있습니다. Python·Pylance·Python Debugger·Oracle SQL Developer 확장을 확인하세요.</p>
+<pre>python --version
+Get-Command python -All
+py -0p
+powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1</pre>
+<p>Ctrl+Shift+P → Python: Select Interpreter에서 .venv\Scripts\python.exe를 선택합니다. 기존 터미널을 종료하고 새 OML (.venv) 터미널을 만들면 프로젝트 가상환경이 활성화됩니다.</p>
+<h2>2. 자기 계정으로 연결</h2>
+<p>setup이 생성한 security/student.env에서 DB_USER를 배정된 STUDENT01~STUDENT20 중 자기 계정으로 바꾸고 DB_PASSWORD를 입력하세요. 제공 예제의 비밀번호는 비어 있습니다. 기본 Windows Thick 연결은 동봉 Client와 Wallet을 사용합니다.</p>
+<pre>powershell -ExecutionPolicy Bypass -File .\scripts\db-init.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\start.ps1</pre>
+<details><summary>Oracle Client 로드 오류(DPI-1047)가 발생한 경우</summary><p>먼저 setup 실행 여부·Client 경로·Python과 Client의 x64 일치를 확인하세요. 기본 Thick 연결에는 호환되는 VC++ x64 Runtime이 필요합니다. 이미 설치되어 정상 연결되면 추가 설치하지 않습니다. Runtime이 없거나 버전이 부족한 경우에만 <a href="https://aka.ms/vc14/vc_redist.x64.exe">Microsoft 공식 설치파일</a>로 설치·업데이트하세요. Visual Studio 전체 설치는 필요하지 않습니다. Thin 연결에는 이 Client용 설치가 필요하지 않습니다.</p></details>
+<p><a href="http://127.0.0.1:22417">웹 교재 열기</a> → 환경설정·데이터 준비·분류 원리 → 실습실 순서로 진행하세요. 웹의 모든 상세 안내는 페이지에서 읽습니다.</p>
+<p>코드를 수정할 때는 <a href="http://127.0.0.1:22417/sources">소스 구조와 수정 위치</a>에서 테이블·프로시저·SQL·입력 화면의 파일 경로와 반영 순서를 확인하세요.</p>
+<h2>3. 중지·재시작·백업</h2>
+<pre>powershell -ExecutionPolicy Bypass -File .\scripts\stop.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\restart.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\backup.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\compress.ps1</pre>
+<p>다른 PC로 옮길 때 .venv는 복사하지 말고 새 위치에서 setup을 다시 실행하세요. 개인 .env·Wallet·로그는 소스 백업이나 과제 제출에 넣지 않습니다.</p>
+<h2>4. 개인 과제</h2>
+<p><a href="http://127.0.0.1:22417/lesson/assignment">과제·평가·제출 안내</a>를 읽고 본인의 문제·라벨·특성을 설계해 직접 구현하세요. 본인 수행·이해도가 가장 중요한 평가 항목입니다.</p>
+<p>submission 폴더를 만들고 report.pdf, report.html, report.txt 중 하나로 보고서를 직접 작성합니다. 학번·이름·문제·데이터 명세·실행 방법·평가·최소 3건의 수행 기록·AI 사용/미사용 내용을 포함하세요. 텍스트/HTML 보고서에는 <strong>학번: 본인학번</strong>을 적습니다. 실행 증거는 submission/evidence/에 둡니다.</p>
+<pre>powershell -ExecutionPolicy Bypass -File .\scripts\submit.ps1 -StudentId 20260001</pre>
+<p>본인 학번을 사용하세요. 결과 ZIP을 직접 확인하고 수업에서 공지한 제출처에 올립니다. <strong>마감: 2026년 12월 18일(금) 18:00 KST</strong>. 스크립트는 포장만 하며 전송하지 않습니다.</p>
+<p class="note">학생용 소스에는 Markdown 문서나 AI 작업 지침 파일을 제공하지 않습니다. 상세 학습·실습·평가 안내는 웹 교재에서 확인하세요.</p>
+</main></body></html>

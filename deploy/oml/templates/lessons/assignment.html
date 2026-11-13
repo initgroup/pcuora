@@ -1,0 +1,65 @@
+<section id="brief">
+<h2>미션: 내가 설명하고 재현할 수 있는 분류모델</h2>
+<p>공통 마당서점 샘플을 이해한 뒤, <strong>자신이 정한 문제를 Oracle 분류모델로 해결</strong>합니다. 질문·정답 라벨·특성·평가·웹 입력 흐름을 연결하고, 자기 STUDENT 계정에서 직접 실행하세요. 모델 이름·학번·화면 색만 바꾸는 것은 새 프로젝트가 아닙니다.</p>
+<div class="callout"><strong>가장 중요한 평가 질문: 직접 해 보고, 이해했는가?</strong><p>완성된 화면이나 높은 정확도만으로 본인 수행을 인정하지 않습니다. 자신의 데이터와 소스를 설명하고, 새 입력이나 작은 변경을 현장에서 처리하며, 오류와 결과의 이유를 설명할 수 있어야 합니다. <strong>원리를 이해하며 직접 코딩하는 것을 권장합니다.</strong> 생성형 AI는 보조적으로 활용할 수 있습니다.</p></div>
+<div class="callout warning"><strong>제출 마감: 2026년 12월 18일(금) 오후 6시 · 한국시간(KST)</strong><p>제출처는 수업 공지에서 별도로 안내합니다. 이 웹페이지에는 과제 업로드 기능이 없으며, 읽음 표시나 체크리스트 선택은 제출 완료가 아닙니다. 지정된 제출처의 업로드 완료 여부를 직접 확인하세요.</p></div>
+<ul><li>개인 과제입니다. 공통 샘플에서 <strong>무엇을 바꾸었고 왜 바꾸었는지</strong> 남깁니다.</li><li>Python 웹 → PL/SQL 프로시저 → DBMS_DATA_MINING 학습·예측 흐름을 사용합니다.</li><li>한 개의 분류모델을 충분히 설명하는 것이 목표입니다. 상관분석·연관규칙 추가는 필수가 아닙니다.</li><li>최대 1,000행 수준의 작은 비식별·공개 또는 합성 자료로 시작합니다. 실제 개인정보나 민감정보를 수집하지 않습니다.</li><li>기존 마당서점 테이블을 변경하지 않고, 본인 STUDENT 스키마의 OML_ 객체를 사용합니다.</li></ul>
+</section>
+<section id="ideas">
+<h2>과제 아이디어: 골라도 되고, 직접 제안해도 됩니다.</h2>
+<p>아래는 <strong>문제 설명과 설계 질문</strong>입니다. 완성 소스·SQL·프로시저·학습 데이터·라벨 생성 코드는 제공하지 않습니다. 같은 주제를 선택해도 각자 예측 시점, 데이터 구성, 라벨 기준, 특성과 검증을 설계해야 합니다. 예시 선택 여부와 주제의 화려함으로 가산점을 주지 않습니다.</p>
+<div class="assignment-ideas">{% for idea in assignment_ideas %}<article class="panel assignment-idea"><div class="card-top">{{ '%02d'|format(loop.index) }} · {{ idea.domain }} <span class="badge">{{ idea.level }}</span></div><h3>{{ idea.title }}</h3><p>{{ idea.mission }}</p><dl><dt>한 행의 단위</dt><dd>{{ idea.unit }}</dd><dt>정답 후보</dt><dd>{{ idea.target }}</dd><dt>관측할 정보 후보</dt><dd>{{ idea.inputs }}</dd><dt>꼭 점검할 것</dt><dd>{{ idea.caution }}</dd><dt>내가 결정할 것</dt><dd>{{ idea.own }}</dd></dl></article>{% endfor %}</div>
+<p>다중분류를 선택하면 이진분류 전용 CSV 검증·입력 화면·확률 표시·혼동행렬과 지표 계산도 맞춰 바꿔야 합니다. 샘플의 REBUY 규약을 그대로 두고 화면 이름만 바꾸면 다른 문제를 구현한 것이 아닙니다.</p>
+</section>
+<div class="callout"><strong>어떤 파일부터 고칠지 찾으세요.</strong><p><a href="/sources#change-map">변경 목표별 수정 위치</a>에서 테이블·프로시저·CSV 검증·입력 화면의 연결을 확인하고, <a href="/sources#apply">DB 반영 절차</a>를 따라 본인 코드에 적용합니다. 추가 과제의 완성 소스는 제공하지 않습니다.</p></div>
+<section id="process">
+<h2>진행 순서와 남겨야 할 증거</h2>
+<ol class="lesson-steps"><li><strong>문제를 한 문장으로 정하기</strong>누가, 언제, 무엇을 알기 위해 쓰는 모델인지 설명합니다. 라벨을 판정할 시점과 입력을 알 수 있는 시점을 구분하세요.</li><li><strong>데이터 명세와 전처리 설계하기</strong>행 단위·컬럼·단위·출처·정답 기준·결측·중복·분할 규칙을 적습니다. 합성 데이터라면 생성 방식과 한계를 밝힙니다.</li><li><strong>작은 데이터로 실제 흐름 완성하기</strong>초기 SQL → 업로드/적재 → 학습 → 모델 조회 → 새 입력 → 확률 순위까지 자기 계정에서 실행합니다. 구현한 파일과 프로시저 위치를 기록합니다.</li><li><strong>실패를 포함한 과정 기록 남기기</strong>최소 3건의 날짜별 작업 기록을 남깁니다. ‘가설/문제 → 직접 한 변경 → 관측 결과 → 다음 판단’을 적고 실행 증거를 연결하세요. 성공 화면만 모으지 않습니다.</li><li><strong>평가와 한계 설명하기</strong>TRAIN 내부 검증으로 설계를 고르고 TEST는 최종 확인에 사용합니다. TEST를 여러 번 보며 조정했다면 그 사실과 한계를 밝힙니다. 기본 샘플은 TRAIN/TEST만 있으므로 추가 실험의 검증 분리는 본인이 설계합니다.</li><li><strong>처음 실행하는 사람의 입장에서 재현하기</strong>새 폴더에서 설치 안내와 초기화 절차를 점검합니다. 비밀번호·Wallet을 제거한 제출 ZIP을 다시 풀어 구성과 파일을 확인하세요.</li></ol>
+<div class="callout"><strong>정확도가 낮아도 설명이 정확하면 배울 수 있습니다.</strong><p>다수 클래스를 항상 고르는 기준과 비교하고, 대표 오분류의 이유를 분석하세요. 입력으로 라벨을 단순 계산한 합성 데이터에서 높은 정확도가 나왔다면 ‘실제 현상을 잘 예측한다’고 주장하지 않습니다. 누수 없는 평가와 정직한 해석을 평가합니다.</p></div>
+</section>
+<section id="rubric">
+<h2>과제 평가 기준 · 100점</h2>
+<p>핵심은 제출물과 본인의 설명이 일치하는지입니다. 아래 항목을 실행 시연·구두 질문·소스·과정 기록으로 함께 확인합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>평가 항목</th><th>배점</th><th>확인할 내용</th></tr></thead><tbody>{% for item in assignment_rubric %}<tr><td><strong>{{ item.name }}</strong></td><td>{{ item.points }}</td><td>{{ item.evidence }}</td></tr>{% endfor %}<tr><th>합계</th><th>100</th><td>높은 정확도·많은 기능·AI 미사용 자체에 별도 가산점을 주지 않습니다.</td></tr></tbody></table></div>
+<details><summary>어떤 수준의 설명과 증거가 필요한가요?</summary><ul><li><strong>충분:</strong>실제 실행 결과와 기록이 있고, 설계 이유·변경 영향·한계를 본인의 말로 설명합니다.</li><li><strong>부분:</strong>동작은 확인되지만 설계 근거나 일부 연결을 설명하지 못합니다. 확인된 범위만 인정합니다.</li><li><strong>미확인:</strong>캡처만 있고 재현하지 못하거나, 소스와 보고서가 맞지 않거나, 설명이 결과와 모순됩니다.</li></ul><p>한 번의 실수만으로 복제로 판정하지 않습니다. 재현·설명·기록을 함께 보고 본인 수행 여부를 확인합니다.</p></details>
+</section>
+<section id="demonstration">
+<h2>본인 수행 확인: 현장에서 이런 질문을 합니다.</h2>
+<p>암기한 코드의 모든 줄을 낭독하는 시험이 아닙니다. <strong>실행하고, 연결하고, 이유를 설명</strong>하는 점검입니다. 시연 일정과 학생별 시간은 수업에서 별도 안내합니다.</p>
+<div class="table-wrap"><table><thead><tr><th>확인 미션</th><th>학생이 보여줄 것</th></tr></thead><tbody>
+<tr><td>학습 데이터 한 행 설명</td><td>각 입력의 단위·관측 시점, 정답이 정해진 근거, TRAIN/TEST로 분리한 이유</td></tr>
+<tr><td>학습 버튼의 실행 경로 추적</td><td>웹 요청 → Python 함수 → PL/SQL 프로시저 → Oracle 모델로 이어지는 자기 파일의 위치</td></tr>
+<tr><td>새 입력을 바꾸어 예측</td><td>변경 전 예상과 실제 순위·확률 비교. 1위 확률이 확정적 정답이 아닌 이유</td></tr>
+<tr><td>작은 오류나 조건 변경 진단</td><td>라벨 누락·잘못된 값·환경 설정 문제 중 제시된 상황을 찾아 확인하는 과정</td></tr>
+<tr><td>혼동행렬에서 한 칸 설명</td><td>누가 어떤 오분류에 해당하는지, 그 오류가 실제 업무에서 어떤 의미인지</td></tr>
+<tr><td>AI가 만든 부분 설명</td><td>채택·수정·폐기한 제안과 직접 확인한 증거. 도움 없이 설명할 수 있는 핵심 내용</td></tr>
+</tbody></table></div>
+</section>
+<section id="integrity">
+<h2>AI 활용과 협업·복제의 기준</h2>
+<div class="callout"><strong>직접 코딩을 권장하며, AI는 보조 도구로 활용합니다.</strong><p>소스를 직접 읽고 작성·수정·실행하며 원리를 익히세요. 개념 질문, 오류 원인 확인, 코드 검토 등에는 AI의 도움을 받을 수 있습니다. AI 사용 자체는 감점 사유가 아닙니다. 결과를 읽고 직접 실행·수정·검증한 책임은 제출자에게 있으며, 핵심 내용을 설명하지 못하면 이해도 점수를 인정받기 어렵습니다.</p></div>
+<p>보고서의 <strong>AI 활용 기록</strong> 절에 사용 도구·도움받은 범위·대표 요청 요약·채택/수정/폐기 이유·검증 내용을 적습니다. 사용하지 않았다면 ‘미사용’으로 적습니다. 비밀번호나 Wallet이 들어간 원본 대화 전체를 제출하지 마세요.</p>
+<div class="callout warning"><strong>이름만 바꾼 복제 제출은 최하위 평가 대상입니다.</strong><p>다른 학생의 소스·데이터·보고서를 복제하여 이름이나 학번만 바꾸고 자신의 작업처럼 제출하면, <strong>복제 제출용으로 제공한 학생과 이용한 학생 모두 감점 대상</strong>입니다. 단순 파일명·색상·변수명 변경도 본인 수행의 근거가 되지 않습니다. 해당 과제는 최하위 평가 대상으로 다룹니다.</p></div>
+<p>제공 사실·실제 작업 이력·구두 설명을 확인한 뒤 적용합니다. 무단으로 도용당한 경우와 복제 제출을 위해 제공한 경우를 구분합니다. 공통 배포 샘플·웹의 공통 작성 항목, 허용된 개념 토론만으로 복제로 판단하지 않습니다. 정확한 감점 범위와 이의 확인 절차는 담당 교수의 평가 공지를 따릅니다.</p>
+<ul><li><strong>가능:</strong>공통 샘플 활용, 개념 토론, 출처를 밝힌 공개 자료·AI 도움, 각자 설계·실행·설명.</li><li><strong>불가:</strong>타인의 완성 과제를 받아 자기 것으로 제출, 완성 과제를 복제 제출하도록 제공, 실행하지 않은 결과·기록의 조작.</li><li><strong>창의성:</strong>남들과 다른 주제명만이 아니라, 자신이 선택한 문제·특성·평가·활용 방식에 이유가 있는지 평가합니다.</li></ul>
+</section>
+<section id="deliverables">
+<h2>제출 파일과 작성 내용</h2>
+<p>최종 파일명은 <strong>COM22417_2026H2_본인학번.zip</strong>입니다. 이름만 바꾼 배포 ZIP을 제출하지 말고, 본인의 소스와 작성한 보고서를 묶습니다. PPT는 필수가 아닙니다. 웹의 작성 항목을 보고 PDF·HTML·일반 텍스트 중 하나로 보고서를 직접 작성하세요. 학생용 소스에 Markdown 문서나 AI 작업 지침 파일은 제공하지 않습니다.</p>
+<pre><code>COM22417_2026H2_본인학번.zip
+└─ COM22417_2026H2_본인학번/
+   ├─ source/       Python 웹 · SQL · 샘플 CSV · 실행 스크립트 · 잠금 목록
+   └─ report/       report.pdf 또는 report.html 또는 report.txt
+                   evidence/ 아래 실행 캡처·평가 JSON 등</code></pre>
+<ol class="lesson-steps"><li><strong>문제와 실행 보고</strong>학번·이름·문제·사용 상황·예측 시점·라벨·샘플과의 차이·소스 위치·실행 방법·평가 지표·오분류·한계.</li><li><strong>데이터·테이블 명세</strong>테이블과 컬럼의 의미·형식·단위·입력/정답 구분·결측 처리·관측 시점·출처·분할 기준. 테이블 정의와 PL/SQL 역할도 연결합니다.</li><li><strong>직접 수행한 과정</strong>최소 3건의 직접 작업 기록. 날짜, 문제/가설, 변경 파일, 실행 결과, 판단, 증거 경로.</li><li><strong>AI 활용 기록</strong>AI 도움과 본인의 작업을 구분하고 검증 근거를 적습니다. 참고 자료와 도움 준 사람도 밝힙니다.</li><li><strong>evidence/</strong>본인 계정 표시, 데이터 분포, 학습 완료, 모델 상세, 새 입력 확률 순위, 평가 결과를 확인할 자료. 계정명은 보여도 비밀번호·Wallet·개인정보는 가립니다.</li></ol>
+<p>프로젝트에 <code>submission</code> 폴더를 만들고 <code>report.pdf</code>, <code>report.html</code>, <code>report.txt</code> 중 <strong>하나</strong>로 위 내용을 작성합니다. 텍스트·HTML은 UTF-8로 저장하고 <strong>학번: 본인학번</strong>을 적으세요. PDF의 학번·이름은 직접 확인합니다. 실행 증거는 <code>submission/evidence/</code>에 넣고 보고서에서 의미를 설명하세요.</p>
+<pre><code># 실제 본인 학번으로 바꿔 실행
+powershell -ExecutionPolicy Bypass -File .\scripts\submit.ps1 -StudentId 20260001</code></pre>
+<p>결과는 <code>downloads/COM22417_2026H2_20260001.zip</code>입니다. 스크립트는 보고서 유무·허용 형식·텍스트/HTML의 학번·금지 파일·등록된 로컬 비밀값 포함 여부를 검사하며, <strong>제출처로 전송하지는 않습니다.</strong> ZIP을 새 폴더에 풀어 구성과 내용, 학번을 확인한 뒤 공지된 제출처에 직접 올리세요.</p>
+<div class="callout warning"><strong>수업 배포 ZIP과 과제 제출 ZIP은 다릅니다.</strong><p>강사의 학생 배포 ZIP에는 Wallet이 포함됩니다. 학생의 과제 제출 ZIP에는 Wallet, teacher.env·tearher.env 등 이름과 무관한 모든 개인 .env, DB 비밀번호, .venv, 로그, 설치파일을 넣지 않습니다. 연결 예제는 STUDENT01과 빈 비밀번호만 남기고 재현 시 본인에게 배정된 계정으로 설정합니다.</p></div>
+</section>
+<section id="checklist">
+<h2>제출 전 마지막 확인</h2>
+<div class="checklist"><label><input type="checkbox">내 문제·라벨·특성·예측 시점을 내 말로 설명할 수 있다.</label><label><input type="checkbox">실제 내 STUDENT 계정으로 학습하고 새로운 입력을 예측했다.</label><label><input type="checkbox">웹에서 PL/SQL 호출과 Oracle 모델 실행까지 자기 소스 위치를 찾을 수 있다.</label><label><input type="checkbox">TEST 누수와 동일 대상 중복을 점검하고, 지표·오분류·한계를 설명했다.</label><label><input type="checkbox">최소 3건의 과정 기록과 AI 사용/미사용 기록이 있다.</label><label><input type="checkbox">타인의 과제를 복제하지 않았고, 복제 제출하도록 제공하지 않았다.</label><label><input type="checkbox">직접 쓴 보고서·실행 증거·초기화 SQL·잠금 목록·실행 방법을 포함했다.</label><label><input type="checkbox">최종 ZIP에 비밀번호·개인 .env·Wallet·가상환경·로그가 없는지 직접 확인했다.</label><label><input type="checkbox">12월 18일(금) 18:00 이전에 지정 제출처의 업로드 완료를 확인했다.</label></div>
+<p>이 체크리스트는 자기 점검용이며 점수나 제출 기록을 서버로 전송하지 않습니다.</p>
+</section>

@@ -1,0 +1,9 @@
+book_id,title,category,price
+1,SQL 첫걸음,DATABASE,18000
+2,파이썬 실습노트,PROGRAMMING,22000
+3,데이터를 읽는 법,DATA,20000
+4,통계의 기초,STATISTICS,19000
+5,작은 서점의 이야기,NOVEL,14000
+6,매일 쓰는 문장,ESSAY,15000
+7,데이터베이스 설계,DATABASE,25000
+8,알고리즘 산책,PROGRAMMING,23000
