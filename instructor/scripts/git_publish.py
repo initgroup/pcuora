@@ -10,6 +10,7 @@ import sys
 from urllib.parse import urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
 from source_files import ROOT, inventory, manifest
+from distribution_guard import validate_files, validate_student_roster
 
 MARKER = 'OML_SOURCE_MANIFEST.json'
 PROJECT = 'pcuora-oml-classroom'
@@ -51,8 +52,23 @@ def retired_content_matches(raw, expected):
     return expected in {hashlib.sha256(value).hexdigest() for value in candidates}
 
 
-def publish(root, repository, branch, message, push=False, author_name='', author_email=''):
+def publication_files(root):
+    """운영 Git에는 전체 명단 대신 본인 한 행의 로그인 매핑을 포함합니다."""
+    root = Path(root).resolve()
     files = inventory(root)
+    path = root / 'security/students.json'
+    if path.is_file():
+        if not path.resolve().is_relative_to(root) or path.is_symlink() or path.parent.is_symlink() or path.parent.is_junction():
+            raise ValueError('Linked roster is not allowed.')
+        raw = path.read_bytes()
+        validate_student_roster(raw)
+        validate_files({'security/students.json': raw}, root)
+        files['security/students.json'] = raw
+    return files
+
+
+def publish(root, repository, branch, message, push=False, author_name='', author_email=''):
+    files = publication_files(root)
     git(root, 'check-ref-format', '--branch', branch)
     runtime = root / 'runtime'
     runtime.mkdir(exist_ok=True)
@@ -112,8 +128,14 @@ def publish(root, repository, branch, message, push=False, author_name='', autho
     marker.write_text(json.dumps({'project': PROJECT, 'files': json.loads(manifest(files))}, indent=2) + '\n', encoding='utf-8')
     # Only the reviewed inventory and removals from its previous manifest are staged.
     paths = sorted(set(files) | previous | {MARKER})
+    # .gitignore는 실제 전체 명단을 보호하며, 검증한 본인 명단 한 파일만 명시적으로 추가합니다.
+    paths = [name for name in paths if name != 'security/students.json']
     for offset in range(0, len(paths), 50):
         git(checkout, 'add', '-A', '--', *paths[offset:offset+50])
+    if 'security/students.json' in files:
+        git(checkout, 'add', '-f', '--', 'security/students.json')
+    elif 'security/students.json' in previous:
+        git(checkout, 'add', '-A', '--', 'security/students.json')
     print(git(checkout, 'diff', '--cached', '--stat').stdout.strip() or 'No source changes.')
     changed = git(checkout, 'diff', '--cached', '--quiet', check=False).returncode
     if changed not in (0, 1):
@@ -148,7 +170,7 @@ def main():
     if url.scheme != 'https' or url.username or url.password or url.query or url.fragment:
         parser.error('Use an HTTPS repository URL without embedded credentials.')
     if not (args.prepare or args.push):
-        files = inventory()
+        files = publication_files(ROOT)
         print('PREVIEW ONLY: ' + args.repository + ' [' + args.branch + ']')
         for name in files:
             print('  ' + name)

@@ -42,9 +42,12 @@ class InstructorGitTests(unittest.TestCase):
         self.assertTrue(publish.retired_content_matches(b'old\n',hashlib.sha256(b'old\r\n').hexdigest()))
         self.assertFalse(publish.retired_content_matches(b'changed\n',hashlib.sha256(b'old\n').hexdigest()))
 
-    def run_publication(self, failure=None):
+    def run_publication(self, failure=None, roster=None):
         with temporary_repository() as directory:
             base=Path(directory);source=base/'source';source.mkdir();remote=base/'remote.git';seed=base/'seed'
+            if roster is not None:
+                (source/'security').mkdir()
+                (source/'security/students.json').write_text(json.dumps(roster),encoding='utf-8')
             with patch.dict(os.environ,{'GIT_CONFIG_GLOBAL':os.devnull,'GIT_CONFIG_NOSYSTEM':'1','GIT_TERMINAL_PROMPT':'0','GIT_AUTHOR_NAME':'Release Test','GIT_AUTHOR_EMAIL':'release@example.invalid','GIT_COMMITTER_NAME':'Release Test','GIT_COMMITTER_EMAIL':'release@example.invalid'}):
                 publish.git(base,'init','--bare','--initial-branch=main',str(remote))
                 publish.git(base,'clone',str(remote),str(seed))
@@ -59,7 +62,7 @@ class InstructorGitTests(unittest.TestCase):
                 publish.git(seed,'add','-A');publish.git(seed,'commit','-m','Existing managed release')
                 publish.git(seed,'push','origin','HEAD:main')
                 initial=publish.git(remote,'rev-parse','main').stdout.strip()
-                with patch.object(publish,'inventory',return_value={'app.py':b'new app\n'}),redirect_stdout(io.StringIO()):
+                with patch.object(publish,'inventory',return_value={'app.py':b'new app\n','.gitignore':b'security/*\n'}),redirect_stdout(io.StringIO()):
                     if failure:
                         with self.assertRaises(ValueError):publish.publish(source,str(remote),'main','Final release',push=True)
                         self.assertEqual(publish.git(remote,'rev-parse','main').stdout.strip(),initial)
@@ -67,6 +70,10 @@ class InstructorGitTests(unittest.TestCase):
                         checkout=publish.publish(source,str(remote),'main','Final release',push=False)
                         self.assertEqual(publish.git(remote,'rev-parse','main').stdout.strip(),initial)
                         self.assertFalse((checkout/'deploy/oml/old.py').exists())
+                        if roster is not None:
+                            self.assertEqual(json.loads((checkout/'security/students.json').read_text(encoding='utf-8')),roster)
+                            self.assertIn('security/students.json',publish.git(checkout,'ls-files').stdout.splitlines())
+
                         self.assertEqual((checkout/'app.py').read_bytes(),b'new app\n')
                         self.assertEqual(publish.git(checkout,'rev-parse','HEAD^').stdout.strip(),initial)
                         publish.git(checkout,'push','origin','HEAD:main')
@@ -74,6 +81,20 @@ class InstructorGitTests(unittest.TestCase):
 
     def test_retired_cleanup_preserves_history_and_prepare_does_not_push(self):
         self.run_publication()
+
+    def test_instructor_publication_includes_own_roster(self):
+        self.run_publication(roster=[{'student_id':'V01041','name':'Instructor Test','db_user':'STUDENT01'}])
+
+    def test_multiple_or_password_roster_stops_before_git(self):
+        for roster in ([{'student_id':'1','name':'A','db_user':'STUDENT01'}]*2,
+                       [{'student_id':'1','name':'A','db_user':'STUDENT01','password':'invalid'}]):
+            with self.subTest(rows=len(roster)), temporary_repository() as directory:
+                root=Path(directory);(root/'security').mkdir()
+                (root/'security/students.json').write_text(json.dumps(roster),encoding='utf-8')
+                with patch.object(publish,'inventory',return_value={}), patch.object(publish,'git') as git:
+                    with self.assertRaises(ValueError):
+                        publish.publish(root,'https://example.invalid/own.git','main','No upload',push=True)
+                    git.assert_not_called()
 
     def test_modified_unmanaged_and_unsafe_remote_files_stop_publication(self):
         for failure in ('modified','unmanaged','unsafe'):

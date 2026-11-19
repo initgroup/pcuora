@@ -322,3 +322,5 @@
 - Render의 HOSTED_DATABASE는 플랫폼 환경변수에서만 생성한다. 메인에서 학번·이름을 JSON으로 확인해 db_user를 결정하고 DB_PASSWORD는 서버 값만 쓴다. 클라이언트의 DB 계정·암호는 사용하지 않고 누락 시 서버 설정 오류로 실패한다. 비밀번호 입력·브라우저 저장·student.env 쓰기를 하지 않는다. 업무 API·세션 지문도 같은 서버 연결 설정을 사용한다. 로컬 실행은 기존 DB 비밀번호 입력·검증·개인 환경 저장을 유지한다.
 
 - 통합 안내의 personal-settings·student-env-fields·student-roster·settings-handoff에서 압축 해제 후 수정할 두 파일과 항목별 입력·저장·Git 포함 여부·Render 입력 위치를 설명한다. 로컬 비밀번호 입력/성공 후 저장과 Render의 환경변수 비밀번호 사용을 구분한다. JSON 예시는 설치 절 한 곳에서 관리하고 Render 절은 해당 앵커로 연결한다.
+
+- 강사용 git-publish-main.ps1도 운영 Git에 본인 한 행의 security/students.json을 포함한다. instructor/scripts/git_publish.py의 publication_files가 경로·한 행·허용 필드·비밀번호 미포함을 검사하고 해당 파일만 명시적으로 add한다. 일반 소스 백업·공통 학생 ZIP의 명단 범위는 변경하지 않으며 전체 명단·환경파일·Wallet은 Git에 포함하지 않는다. 검증은 reference/tests/test_instructor_git.py의 실제 로컬 Git 저장소를 사용한다.
