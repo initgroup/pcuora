@@ -267,7 +267,7 @@
 - 공개 소스/Git/백업/ZIP 목록은 scripts/source_files.py 공유. Wallet·실제 명단·개인환경·설치파일·wheel·runtime·로그·가상환경·.local 제외. Wallet은 학생 ZIP에만 명시적으로 포함한다.
 - 학생 ZIP 공통 명단은 가상 예시만, -StudentId는 해당1명. student.env는 공개 예제와 동일, DB_USER/DB_PASSWORD/WALLET_PASSWORD 빈 값. 개인환경 복사 금지. 모든 Markdown·운영문서·교재·설치자료 제외. 비밀값 검출 시 배포 중단.
 - 배포는 compress.ps1, COM22417_학번_20261120.zip을 검증 후 원자적 교체. 최상위 포장폴더 없음. 학생 통합 안내의 유일한 원본은 downloads/COM22417_과제설명및평가.html이며 ZIP 루트에 같은 이름·바이트로 포함한다. 기본 압축은 안내 원본을 덮어쓰지 않는다. 별도 개발환경설정 HTML을 생성·동봉하지 않고 reference/student/environment-setup.html은 과거 참고로만 남겨 배포·감사 대상에서 제외한다. 설치파일은 오프라인용 별도 reference/installers.
-- 강사 Git 대상 https://github.com/initgroup/pcuora.git. 학생 Git은 본인HTTPS 필수, 강사주소 원문은 학생자료에 넣지 않고 접속 전 차단. 기본미리보기·선택Prepare·명시적Push·강제push금지. Render는 instructor/scripts/render-build.sh/render-start.sh와 별도 웹인증, 강사 시연 단일계정.
+- 강사 Git 대상 https://github.com/initgroup/pcuora.git. 학생 Git은 본인HTTPS 필수, 강사주소 원문은 학생자료에 넣지 않고 접속 전 차단. 기본미리보기·선택Prepare·명시적Push·강제push금지. Render는 instructor/scripts/render-build.sh/render-start.sh로 실행하며 메인 화면 로그인만 사용하는 강사 시연 단일계정.
 - 강사교재는 instructor/lecture 원고·build_lecture.py 생성·verify_lecture.py 대조. 실제 소스/줄/해시·독립 예제·설명·확인 질문을 포함. 강사 로그인 메뉴와 보호된 HTTP 경로만 제공. 학생ZIP/Git/제출 제외.
 - .local/operations-commands.txt는 이 PC 전용이며 Git/백업/학생ZIP/제출에서 제외. /.local/ 무시 규칙 유지.
 - VC++ Runtime은 Thick 로드 오류의 경로/x64/버전 확인 후 필요할 때만 공식 설치 안내. 정상 연결 또는 Thin에 재설치 안내 금지.
@@ -312,3 +312,5 @@
 - 강사 Git 배포는 격리 checkout에서 기존 manifest 관리 파일을 갱신한다. 폐기 파일은 경로·링크·기존 SHA256을 확인한 뒤에만 삭제하며 Git의 CRLF/LF 변환만 허용한다. 관리 밖 파일·실제 내용 변경·경로 탈출은 중단한다. 원격 main 이력을 보존하고 강제 push하지 않는다. 검증은 reference/tests/test_instructor_git.py의 로컬 임시 저장소를 사용한다.
 
 - 강사용 scripts/git-publish-main.ps1은 기존 instructor/scripts/deploy-github.ps1에 main 배포를 위임하는 진입점이다. 기본 실행은 Push, -Preview는 원격 작업 없는 미리보기, -Prepare는 로컬 준비이며 동시에 지정하지 않는다. 자신의 위치로 루트를 계산하고 PUBLIC에만 등록하여 학생 ZIP·학생 Git·제출에 넣지 않는다. 허용 목록·비밀값 검사·이력 보존을 우회하는 별도 Git 구현을 추가하지 않는다.
+
+- Render 운영은 메인 화면의 학번·이름·DB 비밀번호 로그인만 사용한다. instructor/hosting.py는 SECRET_KEY 길이·Secure 쿠키·허용 호스트만 설정하며 OML_ACCESS_USER/OML_ACCESS_PASSWORD 및 Basic 인증을 요구하지 않는다. 메인 앱의 세션·CSRF·로그인 전 업무 API 차단·강사 교재 권한 검사는 유지한다. 검증은 reference/tests/test_hosted_auth.py를 사용하고 실제 DB 변경이나 로컬 서버 재시작을 하지 않는다.

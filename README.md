@@ -195,7 +195,7 @@ downloads/COM22417_학번_20261120.zip을 갱신하며, 기존 downloads/COM2241
 공통 ZIP의 명단은 가상 예시만, 개별 ZIP은 본인 한 명만 포함합니다. student.env는 공개 예제에서 만들며 DB_USER·DB_PASSWORD·WALLET_PASSWORD는 비어 있습니다. 원본 Wallet은 포함합니다. Markdown·운영문서·개인 설정·실제 전체 명단·강사 교재·설치파일·wheel·runtime·가상환경·로그·.local은 제외합니다. 다른 폴더로 옮긴 후에는 .venv를 새로 설치합니다.
 설치자료는 reference/installers에 두고 오프라인 PC에만 별도 제공합니다. 온라인 설치가 기본이며 확장은 VS Code에서 누락분만 설치합니다. VC++ Runtime은 Thin에는 필요 없고 Thick 로드 오류 시 경로·x64·버전부터 확인합니다.
 
-학생 Git 명령은 scripts/deploy-github.ps1이며 본인 HTTPS 저장소 주소를 필수로 받습니다. 기본 미리보기, 선택 -Prepare, 명시적 -Push이며 강제 push하지 않습니다. 강사 Git·Render 운영은 instructor/입니다. 강사 Git 대상은 https://github.com/initgroup/pcuora.git 입니다. Render는 별도 웹 인증을 둔 강사 시연용 단일 계정이며 학생별 서비스가 아닙니다. 실제 비밀번호는 문서에 쓰지 않습니다.
+학생 Git 명령은 scripts/deploy-github.ps1이며 본인 HTTPS 저장소 주소를 필수로 받습니다. 기본 미리보기, 선택 -Prepare, 명시적 -Push이며 강제 push하지 않습니다. 강사 Git·Render 운영은 instructor/입니다. 강사 Git 대상은 https://github.com/initgroup/pcuora.git 입니다. Render는 메인 화면 로그인만 사용하는 강사 시연용 단일 계정이며 학생별 서비스가 아닙니다. 실제 비밀번호는 문서에 쓰지 않습니다.
 
 
 강사용 main 배포는 프로젝트 루트에서 다음 명령으로 실행합니다. 기본 실행은 기존 강사 배포기의 허용 목록·비밀값 검사·이력 보존을 거쳐 업로드합니다. 학생용 ZIP/Git에는 이 진입점을 포함하지 않습니다.
