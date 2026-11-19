@@ -558,8 +558,11 @@ class ClassifierTests(unittest.TestCase):
                 self.assertIn('WALLET_PASSWORD="본인의_Wallet_다운로드_암호"'.encode('utf-8'),zipped.read(prefix+GUIDE_NAME))
                 guide_text=zipped.read(prefix+GUIDE_NAME).decode('utf-8')
                 self.assertNotRegex(guide_text,r'(?i)ppt|powerpoint|보고서|submit\.ps1|submission/')
-                self.assertIn('제출 — Render 사이트 주소를 LMS 과제에 등록',guide_text)
-                self.assertIn('https://your-service.onrender.com',guide_text)
+                self.assertIn('id="final-submission"',guide_text)
+                self.assertIn('https://github.com/본인의깃허브ID/본인의레포지터리이름.git',guide_text)
+                self.assertIn('https://본인의서비스명.onrender.com',guide_text)
+                self.assertIn('DB_USER=본인의_DB_계정',guide_text)
+                self.assertIn('DB_PASSWORD=본인의_DB_비밀번호',guide_text)
             with self.assertRaises(FileExistsError): build(root,student_id='20260001')
             updated=root/'templates/index.html'
             updated.write_bytes(updated.read_bytes()+b'\n<!-- latest source -->\n')

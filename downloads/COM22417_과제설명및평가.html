@@ -109,9 +109,27 @@ summary { padding:.7rem .9rem; cursor:pointer; color:var(--ink); font-size:.9rem
 .card p { font-size:.9rem; color:var(--muted); margin-top:.3rem; }
 .card ul { padding-left:1.1rem; font-size:.9rem; margin:.5rem 0 0; }
 .deadline { color:var(--teal); font-size:1.3rem; }
+.final-submission { margin-top:3rem; border:3px solid var(--navy); border-radius:1rem; background:white; overflow:hidden; box-shadow:0 .5rem 1.5rem #192f4212; }
+.final-submit-head { padding:1.4rem 1.5rem; background:var(--navy); color:white; border-bottom:5px solid #69cbb1; }
+.final-submit-head h2 { font-size:2rem; line-height:1.35; margin:.3rem 0; }
+.final-submit-head p { color:#cfe7e7; }
+.final-submit-kicker { font-size:.85rem; font-weight:700; letter-spacing:.06em; }
+.final-submit-list { counter-reset:submission; list-style:none; margin:0; padding:1.5rem; display:grid; gap:1rem; }
+.final-submit-list li { counter-increment:submission; display:grid; grid-template-columns:2rem minmax(0,1fr); gap:.85rem; padding:1rem; border:1px solid var(--line); border-radius:.6rem; background:#f5f8fb; }
+.final-submit-list li::before { content:counter(submission); display:grid; place-items:center; align-self:start; width:2rem; height:2rem; border-radius:50%; background:var(--navy); color:white; font-weight:700; }
+.final-submit-list li>div { min-width:0; }
+.final-submit-list h3 { font-size:1.15rem; margin-bottom:.4rem; }
+.final-submit-list p { font-size:.95rem; }
+.final-submit-list code { display:block; background:#eaf0f5; padding:.55rem .7rem; border-radius:.35rem; color:#354d69; }
+.final-submit-list pre { margin:.5rem 0; padding:0; border:0; white-space:pre-wrap; overflow-wrap:anywhere; }
+.final-submit-action { padding:1.2rem 1.5rem; background:#e3f5ed; border-top:2px solid #69cbb1; color:#164f43; font-size:1.2rem; font-weight:700; }
 footer { margin-top:2rem; padding-top:1rem; border-top:1px solid var(--line); color:var(--muted); font-size:.8rem; display:flex; justify-content:space-between; gap:1rem; }
 @media(max-width:760px) { #student-env-fields table,#student-env-fields tbody,#student-env-fields tr,#student-env-fields th,#student-env-fields td { display:block; width:auto; } #student-env-fields thead { display:none; } #student-env-fields th { border-bottom:0; background:#eaf0f5; } main { padding:1rem .8rem 2rem; } .hero { padding:1.2rem; align-items:flex-start; flex-direction:column; gap:1rem; } .hero-side { border-left:0; border-top:1px solid #ffffff30; padding:1rem 0 0; width:100%; } h1 { font-size:1.65rem; } .step { grid-template-columns:1fr; gap:.6rem; padding:1rem; } .scores { gap:.45rem; } .score { padding:.7rem; display:block; } .score small { display:none; } .score b { display:block; font-size:1.4rem; } .command-grid,.two-col { grid-template-columns:1fr; } .reading { margin-left:auto; } th,td { padding:.65rem; } .source-table { min-width:570px; } }
 @media(max-width:760px) {
+  .final-submit-head,.final-submit-action { padding:1rem; }
+  .final-submit-list { padding:.8rem; gap:.7rem; }
+  .final-submit-list li { padding:.8rem; gap:.6rem; grid-template-columns:1.75rem minmax(0,1fr); }
+  .final-submit-list li::before { width:1.75rem; height:1.75rem; }
   #submit table,#submit tbody,#submit tr,#submit th,#submit td { display:block; width:auto; }
   #submit thead { display:none; }
   #submit tbody th { background:#eaf0f5; border-bottom:0; }
@@ -129,7 +147,7 @@ footer { margin-top:2rem; padding-top:1rem; border-top:1px solid var(--line); co
 </head>
 <body><main>
 <p class="breadcrumb">배재대학교 &gt; 소프트웨어학 &gt; 빅데이터머신러닝 &gt; 2026년 2학기</p>
-<header class="hero"><div><p class="eyebrow">COM22417 · STUDENT GUIDE</p><h1>과제 설명 및 평가</h1><p>환경을 준비하고, 세 과제를 수행하고, Render 사이트에서 결과를 확인하세요.<br>OML = Oracle Machine Learning</p></div><div class="hero-side"><span>제출 마감 · KST</span><strong>2026.12.18 금요일 18:00</strong><span>Render 사이트 주소 → LMS 과제</span></div></header>
+<header class="hero"><div><p class="eyebrow">COM22417 · STUDENT GUIDE</p><h1>과제 설명 및 평가</h1><p>환경을 준비하고, 세 과제를 수행하고, Render 사이트에서 결과를 확인하세요.<br>OML = Oracle Machine Learning</p></div><div class="hero-side"><span>제출 마감 · KST</span><strong>2026.12.18 금요일 18:00</strong><span>본인 정보·Git·Render·DB 계정 → LMS 과제</span></div></header>
 <nav class="quick-nav" aria-label="안내서 메뉴"><div class="links"><a href="#setup">01 개발환경 설정</a><a href="#run">02 과제 수행방법</a><a href="#assessment">03 과제 평가 기준</a><a href="#deployment">04 Git·Render 배포</a></div><div class="reading"><button id="font-minus" aria-label="글자 작게">가−</button><output id="font-size">16</output><button id="font-plus" aria-label="글자 크게">가+</button></div></nav>
 <div class="scores" aria-label="과제 배점"><a href="#basic-task" class="score"><div><strong>기본과제</strong><small>화면에서 실행하며 이해</small></div><b>50<span>점</span></b></a><a href="#mission-task" class="score"><div><strong>미션과제</strong><small>예시 SQL 적용·수정</small></div><b>30<span>점</span></b></a><a href="#creative-task" class="score"><div><strong>창의과제</strong><small>데이터·SQL 직접 설계</small></div><b>20<span>점</span></b></a></div>
 <section id="setup">
@@ -194,7 +212,7 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <details id="db-password-recovery"><summary>DB 비밀번호를 잊었을 때 · DBA 조회와 재설정</summary><div class="detail-body">
 <p>Oracle은 DB 인증에 비밀번호의 단방향 해시를 사용하므로 <strong>DBA 권한으로 기존 비밀번호 원문을 조회·복호화하는 기능은 제공하지 않습니다.</strong> DBA_USERS의 PASSWORD_VERSIONS는 해시 종류를 나타내며 비밀번호 원문이 아닙니다.</p>
 <ol><li>본인의 발급 기록이나 본인이 관리하는 Render Environment의 <code>DB_PASSWORD</code>, 개인 로컬 <code>security/student.env</code>에 저장한 값을 확인합니다. 저장된 값이 DB에서 변경한 최신 암호와 일치하는지는 실제 접속으로 확인해야 합니다.</li><li>확인할 수 없으면 담당 관리자에게 새 암호 발급을 요청합니다. Autonomous Database의 ADMIN은 <code>ALTER USER</code>로 사용자 암호를 재설정할 수 있습니다. 이는 기존 암호를 알아내는 기능이 아닙니다.</li><li>암호가 재설정되면 본인 Render의 <code>DB_PASSWORD</code>도 새 값으로 맞추고 환경변수를 배포에 적용한 뒤 연결 테스트·로그인을 다시 확인합니다. 로컬에서 쓰는 개인 설정도 함께 확인합니다. Wallet 암호는 DB 사용자 암호와 별개입니다.</li></ol>
-<p class="note">DBA 권한이 있어도 DB에 저장된 인증 정보와 별도로 보관한 암호 기록은 구분해야 합니다. 암호 원문을 안내서·Git·LMS에 올리지 않습니다. <a href="https://docs.oracle.com/en/database/oracle/oracle-database/26/dbseg/database-authentication-users1.html" target="_blank" rel="noopener">Oracle 비밀번호 인증 원리</a> · <a href="https://docs.oracle.com/en/cloud/paas/autonomous-database/serverless/adbsb/manage-users-create.html" target="_blank" rel="noopener">Autonomous Database 사용자 암호 변경</a></p>
+<p class="note">DBA 권한이 있어도 DB에 저장된 인증 정보와 별도로 보관한 암호 기록은 구분해야 합니다. 평가용 DB 계정·암호는 LMS 과제 제출란으로 담당자에게 제공하며 안내서·Git·공개 게시글에는 올리지 않습니다. <a href="https://docs.oracle.com/en/database/oracle/oracle-database/26/dbseg/database-authentication-users1.html" target="_blank" rel="noopener">Oracle 비밀번호 인증 원리</a> · <a href="https://docs.oracle.com/en/cloud/paas/autonomous-database/serverless/adbsb/manage-users-create.html" target="_blank" rel="noopener">Autonomous Database 사용자 암호 변경</a></p>
 </div></details>
 <details><summary>실제 DB 접속 실패 · 오류 코드별 확인</summary><div class="detail-body"><p><strong>로그인의 DB 연결 테스트부터 확인하세요.</strong> 접속은 되는데 미션·창의 객체가 없으면 아래 <a href="#mission-task">미션 수행 순서</a>를 진행합니다.</p><div class="table-shell"><table><thead><tr><th>오류</th><th>확인할 것</th></tr></thead><tbody>
 <tr><th>ORA-01017</th><td>students.json의 db_user, 발급 DB 비밀번호·대소문자. 잊었다면 <a href="#db-password-recovery">비밀번호 확인·재설정 안내</a>를 확인합니다.</td></tr>
@@ -291,30 +309,28 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <li>수행·이해 40: 직접 실행 10 / 정답·TRAIN·TEST 구분과 평가 정보가 학습에 섞이지 않는 이유 10 / 웹→프로시저→Oracle 흐름 10 / 입력 변경·오류 해결·결과 해석 10.</li>
 <li>데이터 5: 사례·출처·정답 근거 2 / 빈 값·중복·이상치 처리 2 / 학습·평가 분리 1.</li>
 <li>검증 3: 기준 모델과 비교 1 / 정밀도·재현율·오분류 확인 1 / 한계·개선 1.</li>
-<li>재현·제출 2: Render 사이트 접속·로그인·DB 연결과 과제 결과 확인, LMS에 올바른 사이트 주소 제출, 공개 화면·소스의 개인 비밀번호·키 제외.</li></ul>
+<li>재현·제출 2: Render 사이트 접속·로그인·DB 연결과 과제 결과 확인, LMS에 네 가지 필수 정보 제출, 공개 화면·소스의 개인 비밀번호·키 제외.</li></ul>
 <p>이해도 40점은 전체 실행·설명을 확인하되 기본과제에 한 번만 포함합니다. 정확도·화면 장식·기능 수·AI 미사용만으로 별도 가산하지 않습니다.</p>
 <p>기본 데이터는 UCI의 2011년 주식 시세에 연습용 결함을 추가한 자료입니다. BUY/SELL을 분류하며 투자 수익을 보장하지 않습니다. 미션은 TRAIN 1,200 / TEST 300 / 예측 30행의 합성 데이터입니다. TRAIN 오류행의 학습 제외 기준과 사유는 PREPARED의 FIT_YN·EXCLUDE_REASON으로 확인·설명하고 TEST 전체는 보존합니다.</p></div></details>
 <div id="submit">
-<div class="section-title"><h2>제출 — Render 사이트 주소를 LMS 과제에 등록</h2><p>평가는 제출한 사이트에 접속해 진행합니다</p></div>
-<div class="flow" aria-label="과제 제출 순서"><b>본인 Git 소스 반영</b>→<b>Render 배포</b>→<b>로그인·DB·과제 결과 확인</b>→<b>LMS에 사이트 주소 제출</b></div>
+<div class="section-title"><h2>제출 — 본인 정보·Git·Render·DB 계정을 LMS에 등록</h2><p>평가는 제출한 사이트에 접속해 진행합니다</p></div>
+<div class="flow" aria-label="과제 제출 순서"><b>본인 Git 소스 반영</b>→<b>Render 배포</b>→<b>로그인·DB·과제 결과 확인</b>→<b>LMS에 네 가지 정보 제출</b></div>
 <div class="table-shell"><table><thead><tr><th>제출 항목</th><th>방법·확인할 내용</th></tr></thead><tbody>
-<tr><th>제출물</th><td>본인이 Render에 배포한 사이트의 <strong>HTTPS 메인 주소</strong>. 예: <code>https://your-service.onrender.com</code>의 your-service를 본인 서비스명으로 바꿉니다.</td></tr>
-<tr><th>제출처</th><td><strong>LMS의 해당 과제 제출란</strong>에 Render 사이트 주소를 붙여 넣고 제출 완료를 확인합니다.</td></tr>
+<tr><th>제출물</th><td><strong>학번/이름 · Git 주소 · Render 주소 · student.env의 DB_USER와 DB_PASSWORD</strong>. <a href="#final-submission">맨 마지막 제출방법의 네 항목</a>을 본인 정보로 작성합니다.</td></tr>
+<tr><th>제출처</th><td><strong>LMS의 해당 과제 제출란</strong>에 네 가지 정보를 작성하고 제출 완료를 확인합니다.</td></tr>
 <tr><th>평가 대상</th><td>제출한 사이트의 메인 접속 정보·DB 연결과 기본·미션·창의과제의 실제 현황, 전처리·모델 비교·TEST 평가·예측 결과를 확인합니다.</td></tr>
 <tr><th>제출 마감</th><td><strong class="deadline">2026.12.18(금) 18:00 KST</strong></td></tr>
 </tbody></table></div>
-<ol id="lms-submission-steps"><li><a href="#deployment">04. Git·Render 배포</a> 순서에 따라 본인 소스를 Git에 반영하고 Render의 배포 완료를 확인합니다.</li><li>Render 사이트 주소를 새 창에서 열어 <strong>학번·이름·DB 비밀번호 → DB 연결 테스트 → 로그인</strong>을 확인합니다. 본인 계정과 기본·미션·창의과제의 최종 현황 및 각 단계의 결과를 점검합니다.</li><li>LMS의 해당 과제 제출란에 <strong>실제 접속 가능한 Render 사이트의 HTTPS 메인 주소</strong>를 등록합니다.</li><li>LMS에서 제출 완료를 확인하고 등록한 링크를 다시 열어 본인 사이트로 연결되는지 확인합니다. 평가 시 접속할 수 있도록 사이트와 DB 연결을 유지하세요.</li></ol>
-<div class="two-col"><article class="card"><h3>배포 사이트에서 확인할 내용</h3><ul><li>본인 로그인 정보·발급 계정·실제 DB 연결 성공</li><li>기본·미션·창의과제의 최종 현황과 남은 작업</li><li>RAW/CLEAN 전처리와 같은 TEST의 모델 비교·평가</li><li>현재 모델·예측 입력으로 실행한 결과</li><li>수정한 SQL·설계 이유·활용·오류 해결·AI 도움 범위·검증·한계를 설명할 수 있는지 확인</li></ul></article><article class="card"><h3>LMS 제출란 입력 예시</h3><div class="settings" id="lms-submission-example"><strong>본인 정보와 실제 Render 주소로 변경</strong><pre><code>학번: 20260001
-이름: 본인 이름
-Render 사이트 주소: https://your-service.onrender.com</code></pre></div><p>예시 주소를 본인 주소로 바꾸세요. LMS에서 등록한 링크를 다시 열어 확인합니다.</p></article></div>
-<p class="note" id="submission-checks">제출할 주소는 Render에서 운영 중인 사이트의 메인 주소입니다. localhost·127.0.0.1·로컬 파일·GitHub 저장소·Render 관리 화면·/healthz 주소를 제출하지 마세요. LMS 제출 내용이나 공개 화면·소스에 DB 비밀번호·SECRET_KEY·Wallet 내용을 넣지 않습니다.</p>
+<ol id="lms-submission-steps"><li><a href="#deployment">04. Git·Render 배포</a> 순서에 따라 본인 소스를 Git에 반영하고 Render의 배포 완료를 확인합니다.</li><li>Render 사이트 주소를 새 창에서 열어 <strong>학번·이름·DB 비밀번호 → DB 연결 테스트 → 로그인</strong>을 확인합니다. 본인 계정과 기본·미션·창의과제의 최종 현황 및 각 단계의 결과를 점검합니다.</li><li>LMS의 해당 과제 제출란에 <strong>학번/이름, Git 주소, Render 주소, DB_USER와 DB_PASSWORD</strong>를 작성합니다. <a href="#final-submission">최종 제출방법</a>을 확인하세요.</li><li>LMS에서 제출 완료를 확인하고 등록한 링크를 다시 열어 본인 사이트로 연결되는지 확인합니다. 평가 시 접속할 수 있도록 사이트와 DB 연결을 유지하세요.</li></ol>
+<div class="two-col"><article class="card"><h3>배포 사이트에서 확인할 내용</h3><ul><li>본인 로그인 정보·발급 계정·실제 DB 연결 성공</li><li>기본·미션·창의과제의 최종 현황과 남은 작업</li><li>RAW/CLEAN 전처리와 같은 TEST의 모델 비교·평가</li><li>현재 모델·예측 입력으로 실행한 결과</li><li>수정한 SQL·설계 이유·활용·오류 해결·AI 도움 범위·검증·한계를 설명할 수 있는지 확인</li></ul></article><article class="card"><h3>LMS 제출 항목 확인</h3><p><a href="#final-submission"><strong>안내서 맨 마지막의 제출방법으로 이동 →</strong></a></p><p>네 항목을 모두 본인 정보로 작성합니다. Git과 Render 주소를 다시 열고 제출한 DB 계정·암호로 실제 로그인되는지 확인하세요.</p></article></div>
+<p class="note" id="submission-checks">Render 주소에는 운영 중인 사이트의 HTTPS 메인 주소를, Git 주소에는 본인 저장소의 .git 주소를 작성합니다. localhost·127.0.0.1·로컬 파일·Render 관리 화면·/healthz 주소를 사이트 주소로 제출하지 마세요. 평가용 DB_USER·DB_PASSWORD는 LMS 과제 제출란에 제공하고, Git·공개 화면에는 올리지 않습니다.</p>
 </div>
 
 </section>
 <section id="deployment">
 <div class="section-title"><h2>04. Git·Render 배포</h2><p>평가 사이트 배포 · 본인 저장소 · 본인 DB 계정</p></div>
 <div class="flow" aria-label="배포 순서"><b>Git 업로드</b>→<b>Render 연결</b>→<b>환경변수·Secret Files</b>→<b>배포·DB 확인</b></div>
-<p class="note">서비스별 본인 DB 계정·프로세스 하나를 사용합니다. 배포 완료 후 <a href="#submit">Render 사이트 주소를 LMS 과제에 제출</a>해야 합니다.</p>
+<p class="note">서비스별 본인 DB 계정·프로세스 하나를 사용합니다. 배포 완료 후 <a href="#final-submission">맨 마지막 제출방법의 네 가지 정보를 LMS 과제에 제출</a>해야 합니다.</p>
 <details id="github"><summary>1. 본인 GitHub에 소스 배포하기</summary><div class="detail-body">
 
 <ol><li>GitHub에서 본인 <strong>빈 저장소</strong>를 만듭니다. README 자동 추가를 끄고 Code → HTTPS 주소를 복사하세요.</li><li><code>git --version</code>을 확인하고 없으면 Git for Windows를 설치합니다.</li><li>아래 주소를 본인 값으로 바꿔 미리보기합니다. 아직 접속·업로드하지 않습니다.</li></ol>
@@ -384,10 +400,21 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <li>표시된 HTTPS 주소의 <code>/healthz</code>를 열어 <code>{"status":"ok"}</code>를 확인합니다. 이는 웹 프로세스 응답이며 DB 연결 성공을 뜻하지 않습니다.</li>
 <li>Render 메인에서 <strong>학번·이름·DB 비밀번호 → 연결 테스트 → 로그인</strong>합니다. 서버 DB_PASSWORD와 일치하고 DB 접속에 성공해야 로그인됩니다. 입력값 저장은 학번·이름만 저장하며 비밀번호는 브라우저 저장소·student.env에 쓰지 않습니다.</li>
 <li>수정 후 본인 Git에 다시 -Push합니다. Render의 On Commit 배포와 최신 커밋을 확인한 뒤 새로고침합니다. 재배포·재시작 후에는 다시 로그인합니다.</li></ol>
-<div class="hint"><strong>LMS 제출 전 최종 확인</strong> · Git 최신 커밋 → Render 배포 완료 → /healthz → 메인 로그인·DB 연결 성공 → 세 과제의 실제 결과 순서로 확인한 뒤 <a href="#submit">사이트의 메인 주소를 LMS에 등록</a>하세요. 환경변수의 비밀번호·SECRET_KEY·Wallet 내용은 공개하지 않습니다.</div>
+<div class="hint"><strong>LMS 제출 전 최종 확인</strong> · Git 최신 커밋 → Render 배포 완료 → /healthz → 메인 로그인·DB 연결 성공 → 세 과제의 실제 결과 순서로 확인한 뒤 <a href="#final-submission">네 가지 제출 정보를 LMS에 등록</a>하세요. 평가용 DB 계정·암호는 LMS 과제 제출란으로 제공하며 Git·공개 화면에는 올리지 않습니다.</div>
 
 <p class="note"><a href="https://render.com/docs/deploys" target="_blank" rel="noopener">자동·수동 배포 안내</a> · <a href="https://render.com/docs/health-checks" target="_blank" rel="noopener">상태 확인 안내</a></p>
 </div></details>
+</section>
+<section id="final-submission" class="final-submission" aria-labelledby="final-submission-title">
+<header class="final-submit-head"><p class="final-submit-kicker">LMS 과제 제출 · 필수 4항목</p><h2 id="final-submission-title">제출방법</h2><p>아래 네 가지를 모두 본인 정보로 작성하세요.</p></header>
+<ol class="final-submit-list" id="lms-final-items">
+<li><div><h3>학번/이름</h3><p>본인의 학번과 이름을 작성합니다.</p></div></li>
+<li><div><h3>Git 주소</h3><code>https://github.com/본인의깃허브ID/본인의레포지터리이름.git</code></div></li>
+<li><div><h3>Render 주소</h3><code>https://본인의서비스명.onrender.com</code></div></li>
+<li><div><h3>student.env 계정</h3><p><strong>DB_USER와 DB_PASSWORD를 제공합니다.</strong></p><pre><code>DB_USER=본인의_DB_계정
+DB_PASSWORD=본인의_DB_비밀번호</code></pre><p>빈 값이나 예시 대신 본인 발급 DB 계정과 실제 접속되는 암호를 작성하세요. Render의 DB_PASSWORD도 같은 암호여야 합니다.</p></div></li>
+</ol>
+<p class="final-submit-action">위 4가지를 작성해서 LMS 과제에 제출하시면 됩니다.</p>
 </section>
 <footer><span>COM22417 · Python × Oracle Machine Learning</span><span>최종 소스 기준 · 환경 설정 / 수행 / 평가 / 배포</span></footer>
 </main>

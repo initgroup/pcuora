@@ -41,7 +41,11 @@ let ws;
      if(width===1440||width===320)await shot('render-db-guide-'+width+'-'+font);
    }
    assert.doesNotMatch(fs.readFileSync(guide,'utf8'),/ppt|powerpoint|보고서|submit\.ps1|submission\//i);
-   assert.ok(await ev('document.querySelector("#lms-submission-example pre").textContent.includes("https://your-service.onrender.com")'));
+   assert.equal(await ev('document.querySelector("main>section:last-of-type").id'),'final-submission');
+   assert.equal(await ev('document.querySelectorAll("#lms-final-items>li").length'),4);
+   assert.ok(await ev('document.querySelector("#lms-final-items>li:nth-child(2)").textContent.includes("https://github.com/본인의깃허브ID/본인의레포지터리이름.git")'));
+   assert.ok(await ev('document.querySelector("#lms-final-items>li:nth-child(3)").textContent.includes("https://본인의서비스명.onrender.com")'));
+   assert.ok(await ev('document.querySelector("#lms-final-items>li:nth-child(4) pre").textContent.includes("DB_USER=")&&document.querySelector("#lms-final-items>li:nth-child(4) pre").textContent.includes("DB_PASSWORD=")'));
    assert.ok(await ev('document.querySelector("#submit h2").textContent.includes("LMS")'));
    assert.equal(await ev('document.querySelectorAll("#lms-submission-steps>li").length'),4);
    assert.ok(await ev('document.getElementById("submission-checks").textContent.includes("메인 주소")'));
@@ -56,8 +60,16 @@ let ws;
      if(width<760)assert.ok(await ev('document.querySelector("#submit tbody th").getBoundingClientRect().width>innerWidth*.7'));
      if(width===1440||width===320)await shot('submission-guide-'+width+'-'+font);
    }
+   for(const width of [1440,768,390,320])for(const font of [16,22]){
+     await size(width);await ev('document.documentElement.style.setProperty("--size","'+font+'px")');
+     await ev('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+     await ev('document.getElementById("final-submission").scrollIntoView()');
+     const layout=await ev('({section:"final-submission",requested:'+width+',font:'+font+',width:innerWidth,scroll:document.documentElement.scrollWidth,titleTop:document.getElementById("final-submission-title").getBoundingClientRect().top,navBottom:document.querySelector(".quick-nav").getBoundingClientRect().bottom})');
+     assert.ok(layout.scroll<=width+1&&layout.titleTop>=layout.navBottom-1,JSON.stringify(layout));layouts.push(layout);
+     if(width===1440||width===320){await shot('final-submission-'+width+'-'+font);await ev('document.querySelector("#lms-final-items>li:last-child").scrollIntoView({block:"end"})');await shot('final-submission-account-'+width+'-'+font)}
+   }
    assert.deepEqual(errors,[]);
-   const report={ok:true,standalone_guide:true,layouts,wallet_password_placeholder:true,wallet_password_value_absent:true,render_url_submission_to_lms:true,presentation_and_file_submission_removed:true,real_database_access:false,screenshots:out};
+   const report={ok:true,standalone_guide:true,layouts,wallet_password_placeholder:true,wallet_password_value_absent:true,render_url_submission_to_lms:true,final_four_submission_items:true,presentation_and_file_submission_removed:true,real_database_access:false,screenshots:out};
    fs.writeFileSync(path.join(root,'runtime/assignment-guide-render-verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));return;
  }
  await call('Page.navigate',{url:base+'/'});await until('typeof csrf!=="undefined"&&csrf&&document.body.dataset.auth==="locked"');
