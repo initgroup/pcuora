@@ -25,10 +25,19 @@ let ws;
  await call('Page.navigate',{url:base+'/'});await until('typeof csrf!=="undefined"&&csrf&&document.body.dataset.auth==="locked"');
  if(process.argv.includes('--hosted-login')){
    await click('#gate-login');await until('!document.getElementById("main-login").hidden');
-   assert.ok(await ev('document.getElementById("login-password").type==="hidden"&&!document.getElementById("login-password").required'));
+   assert.ok(await ev('document.getElementById("login-password").type==="password"&&document.getElementById("login-password").required'));
    await ev('document.getElementById("login-id").value="QA2026";document.getElementById("login-name").value="홍길동";document.getElementById("login-name").dispatchEvent(new Event("change"));document.getElementById("remember-identity").checked=true');
    await until('document.getElementById("login-db-user").value==="STUDENT_QA"');
-   assert.deepEqual(await ev('loginPayload("QA2026","홍길동","ignored")'),{student_id:"QA2026",name:"홍길동"});
+   assert.deepEqual(await ev('loginPayload("QA2026","홍길동","entered")'),{student_id:"QA2026",name:"홍길동",db_password:"entered"});
+   await ev('localStorage.setItem(rememberedKey,JSON.stringify({student_id:"QA2026",name:"홍길동",db_password:"OldSavedPassword"}));rememberedIdentity()');
+   assert.ok(await ev('!Object.hasOwn(JSON.parse(localStorage.getItem(rememberedKey)),"db_password")'));
+   await ev('document.getElementById("login-password").value="WrongPassword"');
+   await click('#test-connection');await until('!document.getElementById("test-connection").disabled');
+   assert.ok(await ev('document.getElementById("connection-check").textContent.includes("일치하지")'));
+   await click('#login-submit');await until('!document.getElementById("login-submit").disabled');
+   assert.ok(await ev('document.body.dataset.auth==="locked"&&document.getElementById("identity-error").textContent.includes("일치하지")'));
+   assert.equal((await(await fetch(base+'/qa/state')).json()).checks,0);
+   await ev('document.getElementById("login-password").value="FixturePassword"');
    await click('#test-connection');await until('!document.getElementById("test-connection").disabled');
    assert.ok(await ev('document.getElementById("connection-check").textContent.includes("LAB_DB")'));
    await shot('hosted-login-1440');
@@ -37,9 +46,10 @@ let ws;
    assert.equal(await ev('document.getElementById("main-db-owner").textContent'),'STUDENT_QA');
    await click('#logout');await until('document.body.dataset.auth==="locked"&&!signingOut');
    await click('#gate-login');await until('!document.getElementById("main-login").hidden');
+   assert.equal(await ev('document.getElementById("login-password").value'),'');
    for(const width of [390,320]){await size(width);assert.ok(await ev('document.documentElement.scrollWidth<=innerWidth'));await shot('hosted-login-'+width)}
    assert.deepEqual(errors,[]);
-   const report={ok:true,json_db_user:true,environment_password:true,no_browser_password_field:true,remember_only_id_and_name:true,widths:[1440,390,320],no_real_database:true,screenshots:out};
+   const report={ok:true,json_db_user:true,environment_password:true,required_password_field:true,password_mismatch_blocks_db:true,remember_only_id_and_name:true,widths:[1440,390,320],no_real_database:true,screenshots:out};
    fs.writeFileSync(path.join(root,'runtime/hosted-login-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));return;
  }
  if(process.argv.includes('--guide-menu-only')){

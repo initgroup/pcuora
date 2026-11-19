@@ -38,7 +38,7 @@ class HostedAuthTests(unittest.TestCase):
                     self.assertNotIn('www-authenticate', response.headers)
                 self.assertEqual(client.post('/api/initialize', json={}).status_code, 403)
                 connect.assert_not_called()
-                login = fixture.login(client, people[0])
+                login = fixture.login(client, people[0], ENVIRONMENT['DB_PASSWORD'])
                 self.assertEqual(login.status_code, 200, login.text)
                 cookie = login.headers['set-cookie'].lower()
                 for flag in ('secure', 'httponly', 'samesite=strict'):
@@ -57,7 +57,7 @@ class HostedAuthTests(unittest.TestCase):
         with fixture.login_project() as (_, env, people), patch('app.connection'):
             with TestClient(create_hosted_app(ENVIRONMENT),
                             base_url='https://classroom.example.invalid') as client:
-                self.assertEqual(fixture.login(client, people[1]).status_code, 200)
+                self.assertEqual(fixture.login(client, people[1], ENVIRONMENT['DB_PASSWORD']).status_code, 200)
                 self.assertEqual(client.get('/instructor/python-web-lecture.html').status_code, 403)
 
     def test_hosted_login_maps_json_user_and_uses_only_environment_password(self):
@@ -67,12 +67,14 @@ class HostedAuthTests(unittest.TestCase):
             with TestClient(create_hosted_app({**ENVIRONMENT,'DB_USER':'IGNORED_DEFAULT'}),
                             base_url='https://classroom.example.invalid') as client:
                 page=client.get('/?login=1').text
-                self.assertIn('id="login-password" type="hidden"',page)
+                self.assertIn('id="login-password" type="password" required',page)
+                self.assertIn('data-remember-password="false"',page)
+                self.assertNotIn(ENVIRONMENT['DB_PASSWORD'],page)
                 token=client.get('/api/session').json()['csrf']
                 headers={'X-CSRF-Token':token}
                 who={'student_id':people[0]['student_id'],'name':people[0]['name']}
                 self.assertEqual(client.post('/api/identity/lookup',json=who,headers=headers).json()['identity']['db_user'],people[0]['db_user'])
-                result=client.post('/api/identity',json={**who,'db_user':'OTHER','db_password':'AttackerValue'},headers=headers)
+                result=client.post('/api/identity',json={**who,'db_user':'OTHER','db_password':ENVIRONMENT['DB_PASSWORD']},headers=headers)
                 self.assertEqual(result.status_code,200,result.text)
                 cfg=connect.call_args.args[0]
                 self.assertEqual(cfg['DB_USER'],people[0]['db_user'])
@@ -80,6 +82,55 @@ class HostedAuthTests(unittest.TestCase):
                 self.assertNotIn(ENVIRONMENT['DB_PASSWORD'],result.text)
                 self.assertEqual(client.get('/api/session').json()['identity']['db_user'],people[0]['db_user'])
                 self.assertEqual(env.read_bytes(),original)
+                save.assert_not_called()
+
+    def test_hosted_password_is_required_and_checked_before_any_db_access(self):
+        fixture=fixtures.ClassifierTests()
+        with fixture.login_project() as (_, env, people), patch('app.connection') as connect, patch('app.save_credentials') as save:
+            original=env.read_bytes()
+            with TestClient(create_hosted_app(ENVIRONMENT),
+                            base_url='https://classroom.example.invalid') as client:
+                token=client.get('/api/session').json()['csrf']
+                headers={'X-CSRF-Token':token}
+                who={'student_id':people[0]['student_id'],'name':people[0]['name']}
+                for endpoint in ('/api/identity','/api/identity/test'):
+                    for password in (None,'',123,[],{},'wrong','비밀번호',
+                                     ENVIRONMENT['DB_PASSWORD'].lower(),
+                                     ' '+ENVIRONMENT['DB_PASSWORD'],ENVIRONMENT['DB_PASSWORD']+' '):
+                        with self.subTest(endpoint=endpoint,password_type=type(password).__name__):
+                            payload=dict(who)
+                            if password is not None:payload['db_password']=password
+                            result=client.post(endpoint,json=payload,headers=headers)
+                            self.assertEqual(result.status_code,400,result.text)
+                            self.assertNotIn(ENVIRONMENT['DB_PASSWORD'],result.text)
+                            self.assertIsNone(client.get('/api/session').json()['identity'])
+                    self.assertEqual(client.post(endpoint,json={**who,'db_password':ENVIRONMENT['DB_PASSWORD']}).status_code,403)
+                connect.assert_not_called()
+                save.assert_not_called()
+                self.assertEqual(env.read_bytes(),original)
+
+    def test_hosted_connection_test_and_login_both_require_matching_password(self):
+        fixture=fixtures.ClassifierTests()
+        with fixture.login_project() as (_, env, people), patch('app.connection') as connect, patch('app.save_credentials') as save, patch('app.connection_profile.inspect_connection',return_value={}):
+            with TestClient(create_hosted_app(ENVIRONMENT),
+                            base_url='https://classroom.example.invalid') as client:
+                token=client.get('/api/session').json()['csrf']
+                payload={**people[0],'db_password':ENVIRONMENT['DB_PASSWORD']}
+                result=client.post('/api/identity/test',json=payload,headers={'X-CSRF-Token':token})
+                self.assertEqual(result.status_code,200,result.text)
+                self.assertIsNone(client.get('/api/session').json()['identity'])
+                self.assertEqual(connect.call_args.args[0]['DB_PASSWORD'],ENVIRONMENT['DB_PASSWORD'])
+                connect.return_value.__enter__.return_value.ping.side_effect=RuntimeError('ORA-01017')
+                self.assertEqual(fixture.login(client,people[0],ENVIRONMENT['DB_PASSWORD']).status_code,503)
+                self.assertIsNone(client.get('/api/session').json()['identity'])
+                connect.return_value.__enter__.return_value.ping.side_effect=None
+                login=fixture.login(client,people[0],ENVIRONMENT['DB_PASSWORD'])
+                self.assertEqual(login.status_code,200,login.text)
+                connect.reset_mock()
+                failure=fixture.login(client,people[1],'wrong')
+                self.assertEqual(failure.status_code,400)
+                self.assertEqual(client.get('/api/session').json()['identity']['student_id'],people[0]['student_id'])
+                connect.assert_not_called()
                 save.assert_not_called()
 
     def test_missing_environment_password_cannot_fall_back_to_browser_password(self):

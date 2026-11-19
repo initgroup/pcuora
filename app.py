@@ -479,6 +479,12 @@ def create_app(config=None):
         if not isinstance(password, str) or not password:
             raise ValueError('Render 환경변수 DB_PASSWORD를 설정하세요.' if hosted_database is not None
                              else '발급받은 DB 비밀번호를 입력하세요.')
+        if hosted_database is not None:
+            supplied = data.get('db_password')
+            if not isinstance(supplied, str) or not supplied:
+                raise ValueError('발급받은 DB 비밀번호를 입력하세요.')
+            if not hmac.compare_digest(supplied.encode('utf-8'), password.encode('utf-8')):
+                raise ValueError('DB 비밀번호가 일치하지 않습니다.')
         cfg.update(DB_USER=person['db_user'], DB_PASSWORD=password)
         return person, cfg
 

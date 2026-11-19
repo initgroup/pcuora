@@ -322,7 +322,7 @@ Oracle 명령은 단일 프로시저 안의 create_raw_model/create_clean_model,
 
 강사 Git 배포는 격리 checkout에서 기존 manifest 관리 파일을 갱신한다. 폐기 파일은 경로·링크·기존 SHA256을 확인한 뒤에만 삭제하며 Git의 CRLF/LF 변환만 허용한다. 관리 밖 파일·실제 내용 변경·경로 탈출은 중단한다. 원격 main 이력을 보존하고 강제 push하지 않는다. 검증은 reference/tests/test_instructor_git.py의 로컬 임시 저장소를 사용한다.
 
-학생 Render 설정은 통합 안내의 ‘04 Git·Render 배포’를 따릅니다. Source는 본인 Git Provider 저장소, Branch는 main, Root Directory는 비움, Build는 bash scripts/render-build.sh, Start는 bash scripts/render-start.sh, Health Check Path는 /healthz입니다. /healthz는 DB 연결을 조회하지 않으므로 메인 연결 테스트도 수행합니다. 환경변수·Wallet은 Render에서 등록하고 본인 한 명의 security/students.json은 본인 Git에 포함합니다. Render는 학번·이름으로 db_user를 찾아 환경변수 DB_PASSWORD로 인증하며 비밀번호 입력·로컬 파일 저장은 하지 않습니다.
+학생 Render 설정은 통합 안내의 ‘04 Git·Render 배포’를 따릅니다. Source는 본인 Git Provider 저장소, Branch는 main, Root Directory는 비움, Build는 bash scripts/render-build.sh, Start는 bash scripts/render-start.sh, Health Check Path는 /healthz입니다. /healthz는 DB 연결을 조회하지 않으므로 메인 연결 테스트도 수행합니다. 환경변수·Wallet은 Render에서 등록하고 본인 한 명의 security/students.json은 본인 Git에 포함합니다. Render에서도 학번·이름·DB 비밀번호를 입력합니다. 학번·이름으로 db_user를 찾고 입력 비밀번호를 서버 환경변수 DB_PASSWORD와 정확히 비교한 뒤, 일치할 때만 서버 설정으로 실제 DB 접속을 확인합니다. 비밀번호 누락·불일치는 로그인과 연결 테스트 모두 DB 접속 전에 거부합니다. Render의 입력값 저장은 학번·이름만 저장하며 비밀번호를 브라우저 저장소·student.env에 쓰지 않습니다.
 
 강사 운영·검증 파일 허용 목록은 reference/distribution/public-files.json으로 분리하며 학생 실행 허용 목록은 scripts/source_files.py에 둡니다. 참조 목록은 학생 ZIP/Git에 포함하지 않습니다. 학생 Git에는 ZIP 루트의 통합 안내 HTML을 포함하여 Render에서도 안내 메뉴를 제공합니다.
 

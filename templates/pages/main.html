@@ -7,13 +7,13 @@
       <p class="main-login-course">소프트웨어학 · 빅데이터머신러닝<br><span>COM22417 · Python × Oracle ML</span></p>
     </aside>
     <div class="main-login-form">
-      <header class="main-login-heading"><p class="eyebrow">YOUR WORKSPACE</p><h2 id="identity-title">로그인</h2><p>{% if environment_db_password %}학번·이름을 입력하세요. DB 비밀번호는 서버 환경설정을 사용합니다.{% else %}학번·이름과 발급받은 DB 비밀번호를 입력하세요.{% endif %}</p></header>
+      <header class="main-login-heading"><p class="eyebrow">YOUR WORKSPACE</p><h2 id="identity-title">로그인</h2><p>학번·이름과 발급받은 DB 비밀번호를 입력하세요.{% if environment_db_password %} 서버 비밀번호와 일치해야 합니다.{% endif %}</p></header>
       <form id="identity-form">
         <div class="login-fields">
           <label for="login-id">학번<input id="login-id" required autocomplete="username" autocapitalize="none" spellcheck="false"></label>
           <label for="login-name">이름<input id="login-name" required autocomplete="name"></label>
           <label for="login-db-user">발급 DB 계정<input id="login-db-user" readonly placeholder="학번·이름 확인 후 표시" aria-live="polite"></label>
-          {% if environment_db_password %}<input id="login-password" type="hidden" value="">{% else %}<label for="login-password">DB 비밀번호<input id="login-password" type="password" required autocomplete="current-password"></label>{% endif %}
+          <label for="login-password">DB 비밀번호<input id="login-password" type="password" required autocomplete="current-password"{% if environment_db_password %} data-remember-password="false"{% endif %}></label>
         </div>
         <div class="main-login-remember"><label class="remember-input"><input id="remember-identity" type="checkbox"><span>입력값 저장</span></label><p class="remember-note">{% if environment_db_password %}선택하면 학번·이름만 이 브라우저에 저장합니다.{% else %}선택하면 학번·이름·DB 비밀번호를 이 브라우저에 저장합니다.{% endif %}</p></div>
         <p id="identity-error" class="inline-error" role="alert" hidden></p>

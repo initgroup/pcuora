@@ -167,9 +167,7 @@ async function api(path,body){
 }
 
 function loginPayload(studentId,name,password){
-  const data={student_id:studentId.trim(),name:name.trim()};
-  if($('login-password')?.type!=='hidden')data.db_password=password;
-  return data;
+  return {student_id:studentId.trim(),name:name.trim(),db_password:password};
 }
 async function confirmIdentity(studentId,name,password){
   // 오래 열린 화면이나 서버 재시작 뒤에도 현재 세션의 확인 토큰을 먼저 받습니다.
@@ -177,9 +175,24 @@ async function confirmIdentity(studentId,name,password){
   return api('/api/identity',loginPayload(studentId,name,password));
 }
 const rememberedKey='com22417-login-v1';
-function rememberedIdentity(){try{return JSON.parse(localStorage.getItem(rememberedKey)||'null');}catch{return null;}}
+function rememberLoginPassword(){return $('login-password')?.dataset.rememberPassword!=='false';}
+function rememberedIdentity(){
+  try{
+    const saved=JSON.parse(localStorage.getItem(rememberedKey)||'null');
+    if(saved&&!rememberLoginPassword()&&Object.hasOwn(saved,'db_password')){
+      delete saved.db_password;localStorage.setItem(rememberedKey,JSON.stringify(saved));
+    }
+    return saved;
+  }catch{return null;}
+}
 function saveRememberedIdentity(studentId,name,password,remember){
-  try{if(remember)localStorage.setItem(rememberedKey,JSON.stringify(loginPayload(studentId,name,password)));else localStorage.removeItem(rememberedKey);}
+  try{
+    if(remember){
+      const saved=loginPayload(studentId,name,password);
+      if(!rememberLoginPassword())delete saved.db_password;
+      localStorage.setItem(rememberedKey,JSON.stringify(saved));
+    }else localStorage.removeItem(rememberedKey);
+  }
   catch{notice('로그인했습니다. 브라우저에서 입력값 저장을 허용하지 않아 다음 접속에는 다시 입력해야 합니다.');}
 }
 let lookupVersion=0,signingIn=false;
@@ -531,7 +544,7 @@ function openIdentity(){
   const saved=rememberedIdentity();text('identity-title',person?'계정 전환':'로그인');text('identity-error',identityConfigured?'':'명단 등록 후 사용할 수 있습니다. security/students.json을 확인하세요.');$('identity-error').hidden=identityConfigured;$('connection-check').hidden=true;
   $('login-id').value=person?.student_id||saved?.student_id||'';$('login-name').value=person?.name||saved?.name||'';
   const same=saved&&saved.student_id===$('login-id').value&&saved.name===$('login-name').value;
-  $('login-password').value=same&&$('login-password').type!=='hidden'?saved.db_password||'':'';$('remember-identity').checked=Boolean(same);
+  $('login-password').value=same&&rememberLoginPassword()?saved.db_password||'':'';$('remember-identity').checked=Boolean(same);
   $('login-db-user').value='';renderPerson();lookupIdentity();
   $('login-id').focus({preventScroll:true});window.scrollTo(0,0);
 }

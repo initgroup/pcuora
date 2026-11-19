@@ -168,7 +168,7 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <tr><th>security/student.env</th><td>제외</td><td>자동 전달되지 않습니다. DB_PASSWORD·DB_DSN·Wallet 암호를 Environment에 직접 입력합니다.</td></tr>
 <tr><th>security/students.json</th><td>본인 한 행 포함</td><td>Git의 파일로 학번·이름 확인 → db_user 자동 설정</td></tr>
 <tr><th>Wallet_PCUORA.zip</th><td>제외</td><td>tnsnames.ora·ewallet.pem만 Secret Files에 등록</td></tr>
-</tbody></table></div><p>로컬은 DB 비밀번호를 입력하고, Render는 Environment의 DB_PASSWORD를 사용합니다. <a href="#github">본인 Git 배포</a> 후 <a href="#render-settings">Render 등록</a>으로 진행하세요.</p></div></details>
+</tbody></table></div><p>로컬·Render 모두 DB 비밀번호를 입력합니다. <a href="#github">본인 Git 배포</a> 후 <a href="#render-settings">Render 등록</a>으로 진행하세요.</p></div></details>
 <details><summary>설치·터미널이 잘 안 될 때</summary><div class="detail-body"><div class="table-shell"><table><thead><tr><th>상황</th><th>할 일</th></tr></thead><tbody>
 <tr><th>(.venv)가 안 보임</th><td>아래 활성화 명령 실행 → 본인 폴더의 .venv 경로와 <code>venv: True</code> 확인.</td></tr>
 <tr><th>설치 상태 확인</th><td><code>.\scripts\check-environment.ps1</code> 실행. Python 3.12~3.14 / 64비트 / venv: True / No broken requirements found. 확인.</td></tr>
@@ -322,30 +322,27 @@ scripts/render-build.sh · scripts/render-start.sh</code></pre></div>
 <p><strong>Environment → Add Environment Variable</strong>에서 추가하거나 <strong>Add from .env</strong>에 아래 예시를 붙입니다. 중괄호 부분은 본인 값으로 바꾸고 실제 비밀번호·키는 Render에만 입력하세요.</p>
 <div class="command"><div class="command-head"><span>Render Environment · 값 변경 후 입력</span></div><pre><code>DB_DSN=pcuora_high
 DB_PASSWORD={본인_DB_비밀번호}
-DB_USER={본인_DB_접속ID}
-OML_SITE_MODE=lab
 PYTHON_VERSION=3.12.10
 PYTHONUNBUFFERED=1
 SECRET_KEY={새로_생성한_64자리_난수}
 WALLET_DIR=/etc/secrets
 WALLET_PASSWORD={Wallet_다운로드_당시_비밀번호}
 ORACLE_CLIENT_LIB=</code></pre></div>
-<p class="note">DB_USER는 선택 기본값이며 실제 계정은 JSON에서 찾습니다. DB_PASSWORD는 서버 접속 암호, DB_DSN은 Wallet 별칭입니다. PYTHON_VERSION은 버전, PYTHONUNBUFFERED는 즉시 로그 설정입니다. SECRET_KEY는 32자 이상 새 난수, WALLET_PASSWORD는 Wallet 다운로드 당시 암호입니다. ORACLE_CLIENT_LIB는 비워 Thin으로 연결합니다. OML_SITE_MODE는 현재 미사용입니다.</p>
+<p class="note">DB 계정은 JSON에서 찾습니다. DB_PASSWORD는 로그인 비교·DB 접속 암호, DB_DSN은 Wallet 별칭입니다. SECRET_KEY는 32자 이상 난수입니다. WALLET_PASSWORD는 Wallet 다운로드 암호이며 ORACLE_CLIENT_LIB는 비웁니다.</p>
 <div class="command"><div class="command-head"><span>로컬 PowerShell · SECRET_KEY 생성</span></div><pre><code>.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"</code></pre></div>
-<p class="note">PORT와 RENDER_EXTERNAL_HOSTNAME은 Render가 제공합니다. OML_ACCESS_USER·OML_ACCESS_PASSWORD는 사용하지 않습니다. Git 명단이 있으면 기존 OML_ROSTER_FILE보다 우선합니다. 추가 도메인은 OML_ALLOWED_HOSTS에 호스트명으로 등록합니다.</p>
+<p class="note">PORT·RENDER_EXTERNAL_HOSTNAME은 Render가 제공합니다. 명단은 Git 파일이 OML_ROSTER_FILE보다 우선합니다. 추가 도메인은 OML_ALLOWED_HOSTS에 호스트명으로 등록합니다.</p>
 <p><strong>Environment → Secret Files → Add Secret File</strong>에서 다음 이름과 내용을 등록합니다. Wallet ZIP을 로컬에서 풀어 파일 원문을 붙이세요.</p>
 <div class="table-shell"><table><thead><tr><th>Filename</th><th>내용</th></tr></thead><tbody>
 <tr><th>tnsnames.ora</th><td>제공된 Wallet의 원문</td></tr>
 <tr><th>ewallet.pem</th><td>제공된 Wallet의 원문</td></tr>
 </tbody></table></div>
 <p>명단은 <a href="#student-roster">앞에서 수정한 security/students.json</a>을 Git으로 전달합니다. Secret Files에 다시 등록하지 않습니다.</p>
-<p>학번·이름 일치 시 Git 명단의 db_user와 Render의 DB_PASSWORD로 접속합니다. student.env의 값은 Render로 복사되지 않습니다.</p>
 <p><strong>Save, rebuild, and deploy</strong>로 저장합니다. Save only는 다음 배포 때 적용됩니다. <a href="https://render.com/docs/configure-environment-variables" target="_blank" rel="noopener">환경변수·Secret Files 안내</a> · <a href="https://render.com/docs/python-version" target="_blank" rel="noopener">Python 버전 안내</a></p>
 </div></details>
 <details id="render-check" open><summary>4. 배포 확인과 다음 수정 반영</summary><div class="detail-body">
 <ol><li><strong>Deploys / Events</strong>에서 Git 최신 커밋과 배포 커밋을 비교하고 Live 상태를 확인합니다. 자동 배포가 꺼져 있으면 <strong>Manual Deploy → Deploy latest commit</strong>을 실행합니다.</li>
 <li>표시된 HTTPS 주소의 <code>/healthz</code>를 열어 <code>{"status":"ok"}</code>를 확인합니다. 이는 웹 프로세스 응답이며 DB 연결 성공을 뜻하지 않습니다.</li>
-<li>Render 메인에서 <strong>학번·이름 → 연결 테스트 → 로그인</strong>합니다. DB 비밀번호는 서버 환경변수 값을 사용하며 입력란은 없습니다. 별도 브라우저 인증 팝업은 없습니다. 접속 정보의 웹 주소·DB 계정을 확인하세요.</li>
+<li>Render 메인에서 <strong>학번·이름·DB 비밀번호 → 연결 테스트 → 로그인</strong>합니다. 서버 DB_PASSWORD와 일치하고 DB 접속에 성공해야 로그인됩니다. 입력값 저장은 학번·이름만 저장하며 비밀번호는 브라우저 저장소·student.env에 쓰지 않습니다.</li>
 <li>수정 후 본인 Git에 다시 -Push합니다. Render의 On Commit 배포와 최신 커밋을 확인한 뒤 새로고침합니다. 재배포·재시작 후에는 다시 로그인합니다.</li></ol>
 <div class="hint"><strong>PPT 증적</strong> · Git 커밋 → Render Live → /healthz → 메인 접속 정보·DB 연결 성공을 캡처하세요. 환경변수의 비밀번호·SECRET_KEY·Wallet 내용은 캡처하지 않습니다.</div>
 
