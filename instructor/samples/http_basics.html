@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>강사용 HTTP 왕복 예제</title>
+<style>
+body{margin:0;background:#f3f6fc;color:#172d48;font:18px/1.8 system-ui,"Malgun Gothic",sans-serif}
+main{max-width:680px;margin:8vh auto;padding:28px;background:white;border:1px solid #dce4f0;border-radius:12px}
+label,input,button{display:block;font:inherit}input{width:100%;box-sizing:border-box;padding:10px;border:1px solid #a9b9d4;border-radius:6px}
+button{margin-top:16px;padding:10px 20px;background:#3155eb;color:white;border:0;border-radius:6px;cursor:pointer}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#10213d;color:#d7f4ff;padding:20px;min-height:100px}
+@media(max-width:700px){main{margin:16px;padding:20px}}
+</style>
+<main>
+  <p>강사용 · HTTP 원리 관찰 · Oracle 사용 안 함</p>
+  <h1>입력이 Python을 거쳐 돌아옵니다.</h1>
+  <p>F12 → Network에서 <code>/api/echo</code>의 Request Payload와 Response를 비교하세요.</p>
+  <form id="echo-form">
+    <label for="message">메시지</label>
+    <input id="message" value="웹과 DB 연결" maxlength="100" required>
+    <button id="send">서버로 전송</button>
+  </form>
+  <p id="status" role="status">실행 대기</p>
+  <pre id="result" tabindex="0" aria-label="실제 서버 응답"></pre>
+</main>
+<script>
+document.getElementById('echo-form').addEventListener('submit', async event => {
+  event.preventDefault();
+  const button = document.getElementById('send');
+  const status = document.getElementById('status');
+  const output = document.getElementById('result');
+  button.disabled = true;
+  status.textContent = '서버 응답 대기';
+  output.textContent = '';
+  try {
+    const response = await fetch('/api/echo', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: document.getElementById('message').value})
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + JSON.stringify(data));
+    output.textContent = JSON.stringify(data, null, 2);
+    status.textContent = 'HTTP ' + response.status + ' · 실제 응답 수신';
+  } catch (error) {
+    status.textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+});
+</script>
+</html>

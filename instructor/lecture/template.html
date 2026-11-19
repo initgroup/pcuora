@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="ko">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>강사용 교재 · SQL로 배우는 OML 실습</title><style>@@CSS@@</style></head>
+<body>
+<aside class="rail">
+<h1>SQL로 배우는 OML</h1><p>강사용 교재 · 학생 배포 제외</p>
+<nav class="toc" aria-label="교재 목차">
+<a href="#purpose">1. 수업 핵심</a><a href="#tables">2. 테이블 준비</a><a href="#csv">3. 원본 적재·조회</a><a href="#model">4. 전처리·학습·예측</a><a href="#custom">5. 미션·창의 실습</a><a href="#trace">6. 수정·오류 확인</a><a href="#lesson">7. 수업 진행·제출</a>
+<span class="toc-label">필요할 때 보는 웹 연결 설명</span><a href="#procedure">프로시저 입력·출력</a><a href="#python">Python 기초</a><a href="#http">HTTP 연결</a><a href="#auth">로그인·최신 모델</a>
+</nav></aside>
+<main id="book">
+<header><p class="eyebrow">교수자용 빠른 수업 안내</p><h1>원본을 준비하고, 모델을 만들고, 결과를 비교합니다</h1><p>같은 화면으로 기본은 버튼 실행, 미션은 SQL 가이드 실행·수정, 창의는 직접 SQL 설계를 배우고 결과를 확인합니다.</p><button id="print-book" type="button">인쇄</button><span id="copy-status" role="status"></span></header>
+
+<section class="chapter" id="purpose">
+<h2>1. 오늘 가르칠 핵심</h2>
+<p class="flow"><strong>원본 DATA</strong> → INSERT SELECT → <strong>준비값 PREPARED</strong> → FIT_YN=Y로 학습 → <strong>같은 TEST로 비교</strong> → 새 데이터 예측</p>
+<ul><li><strong>원본은 그대로 둡니다.</strong> 전처리한 값은 PREPARED에 따로 저장합니다.</li><li><strong>RAW와 CLEAN은 별도 모델입니다.</strong> CLEAN은 RAW 모델에 정제를 덧붙이는 작업이 아닙니다.</li><li><strong>결과가 좋아졌는지 직접 확인합니다.</strong> 정제나 데이터 증가가 정확도 향상을 보장하지는 않습니다.</li></ul>
+<div class="table-wrap"><table><thead><tr><th>과제</th><th>자료</th><th>객체·데이터·모델 준비</th><th>완성 후 웹 활용</th></tr></thead><tbody><tr><th>기본</th><td>고정 기본 미션 1개·데이터/스키마 조회·CSV 다운로드</td><td>화면 클릭으로 생성·적재·전처리·학습</td><td rowspan="3">연결·상태 확인, 원본·준비값·모델 조회, TEST 평가·예측 실행</td></tr><tr><th>미션</th><td>예시 10개 선택·CSV·스키마·SQL 가이드</td><td>개발자가 SQL로 직접 실행·수정</td></tr><tr><th>창의</th><td>본인 데이터·입출력 규약, 안내 SQL 없음</td><td>CSV는 화면 적재, 생성·전처리·학습 SQL은 직접 작성·실행</td></tr></tbody></table></div>
+<details class="question"><summary>확인 질문 · 실제 모델은 어디서 만드는가?</summary><p>Oracle 프로시저의 DBMS_DATA_MINING.CREATE_MODEL2가 만듭니다. 기본은 웹 버튼으로 호출하고 미션·창의는 학생이 SQL Developer에서 직접 호출합니다.</p></details>
+</section>
+
+<section class="chapter" id="tables">
+<h2>2. 테이블 세 개와 프로시저 하나를 준비합니다</h2>
+<p class="note"><strong>소유자는 학번이 아니라 발급 DB 계정입니다.</strong> 아래 STUDENT00은 예시이며 학생 본인의 계정으로 바꿉니다. 화면과 제공 SQL은 실제 로그인 계정의 소유자를 테이블·프로시저·모델명에 붙입니다. 계정 확인 가드로 다른 계정에서의 생성·삭제를 중단하며 직접 작성할 때도 같은 확인을 적용합니다. CURRENT_SCHEMA 변경만으로 접속 계정을 대신하지 않습니다.</p>
+<div class="table-wrap" id="object-names-guide"><table><thead><tr><th>역할</th><th>기본</th><th>미션</th><th>창의</th></tr></thead><tbody>
+<tr><th>원본</th><td>STUDENT00.OML_BASIC_DATA</td><td>STUDENT00.OML_MISSION_DATA</td><td>STUDENT00.OML_CREATIVE_DATA</td></tr>
+<tr><th>전처리 저장</th><td>STUDENT00.OML_BASIC_PREPARED</td><td>STUDENT00.OML_MISSION_PREPARED</td><td>STUDENT00.OML_CREATIVE_PREPARED</td></tr>
+<tr><th>새 예측 원본</th><td>STUDENT00.OML_BASIC_PREDICT</td><td>STUDENT00.OML_MISSION_PREDICT</td><td>STUDENT00.OML_CREATIVE_PREDICT</td></tr>
+<tr><th>실행 프로시저</th><td>STUDENT00.OML_BASIC_RUN</td><td>STUDENT00.OML_MISSION_RUN</td><td>STUDENT00.OML_CREATIVE_RUN</td></tr>
+</tbody></table></div>
+<p><strong>실습:</strong> 기본과제는 <b>테이블·프로시저 준비</b> 후 바로 실행합니다. 미션은 <a href="#custom">선택 미션 SQL 가이드를 적용·수정</a>하고 창의는 SQL을 직접 작성합니다.</p>
+<p><strong>확인:</strong> 현황에서 네 객체의 준비 상태를 봅니다. 객체가 없으면 표시된 이름으로 생성합니다. <strong>객체 미생성은 DB 접속 실패가 아닙니다.</strong></p>
+<details><summary>실제 테이블 코드 보기</summary><p>원본은 오류 문자도 보존하도록 VARCHAR2에 저장합니다. 전처리 후 숫자는 sql/prepared_table.sql의 NUMBER 컬럼에 저장합니다.</p>@@table@@@@prediction-table@@</details>
+<details class="question"><summary>확인 질문 · CREATE TABLE 파일을 고치면 기존 컬럼도 바뀌는가?</summary><p>아닙니다. 기존 컬럼 변경은 ALTER로 적용합니다. 삭제·재생성은 저장된 행을 지울 수 있습니다.</p></details>
+</section>
+
+<section class="chapter" id="csv">
+<h2>3. 원본을 적재하고 조회합니다</h2>
+<ol><li>기본의 고정 미션에서 데이터 조회·스키마 조회·CSV 다운로드를 확인합니다. 다른 미션으로 선택할 수 없습니다.</li><li>세 과제 모두 대상 테이블을 준비한 뒤 화면의 <b>CSV 교체 적재</b>를 실행합니다.</li><li>웹에 연결하여 TRAIN·TEST·사용 여부를 조회합니다. 기본은 <b>?</b>, 미션은 선택 SQL 가이드로 해당 흐름을 봅니다.</li></ol>
+<p><strong>확인:</strong> 기본 원본은 TRAIN 330행, TEST 360행, 미사용 30행입니다. TEST와 정답은 비교 기준이므로 바꾸지 않습니다. 직접 수정은 같은 계정의 SQL Developer에서 하고 COMMIT합니다.</p>
+<details class="question"><summary>확인 질문 · CSV 적재 중 중복 키 오류가 나면 이전 행은?</summary><p>DELETE와 INSERT를 함께 ROLLBACK하여 이전 행을 보존합니다. 테이블 자체는 유지합니다.</p></details>
+<details id="query"><summary>조회 SQL과 웹 연결 코드</summary><p>Y·TRAIN을 선택하면 :use_yn·:split에 값이 전달됩니다. 입력값은 SQL에 이어 붙이지 않고 바인드합니다.</p>@@query-sql@@@@query@@@@query-api@@</details>
+<details><summary>CSV 검사·적재 코드와 독립 예제</summary><p>헤더·행 수·CASE_ID를 먼저 검사합니다. 모두 성공하면 COMMIT합니다. <code>python instructor/samples/payload_walkthrough.py</code>에서 빈 셀·오류 문자열 보존을 확인합니다.</p>@@csv-example@@@@csv@@@@load@@@@insert@@</details>
+</section>
+
+<section class="chapter" id="model">
+<h2>4. 전처리 → 학습 → 비교 → 예측을 실습합니다</h2>
+<div class="table-wrap"><table><thead><tr><th>할 일</th><th>DB에서 하는 일</th><th>확인할 것</th></tr></thead><tbody>
+<tr><th>① 전처리 실행·저장</th><td>DATA → INSERT SELECT → PREPARED</td><td>RAW/CLEAN·준비값·FIT_YN</td></tr>
+<tr><th>② 최초 학습</th><td>선택 방식의 TRAIN·FIT_YN=Y를 CREATE_MODEL2로 학습</td><td>모델명·생성 상태</td></tr>
+<tr><th>③ TEST 비교</th><td>같은 Y/TEST를 평가</td><td>정확도·오분류</td></tr>
+<tr><th>④ 예측</th><td>예측 원본을 같은 규칙으로 준비한 뒤 PREDICTION 실행</td><td>모델명·예측값·확률·이전 결과와 차이</td></tr>
+</tbody></table></div>
+<h3>RAW와 CLEAN은 무엇이 다른가?</h3>
+<p>둘 다 빈 칸과 숫자로 바꿀 수 없는 값은 NULL로 저장합니다. <strong>CLEAN은 범위 밖 숫자도 NULL로 저장</strong>합니다. 변환은 PREPARE의 INSERT SELECT에서 하고, 모델은 PREPARED를 단순 조회합니다.</p>
+<p><strong>실습:</strong> RAW 전처리·최초 학습 → CLEAN 전처리·최초 학습 → 같은 TEST 비교. 기본은 화면에서 실행합니다. 미션·창의는 직접 SQL로 전처리·모델 생성을 실행한 뒤 웹의 연결·상태를 확인하고 TEST를 비교합니다. 한 번에 선택 모델 하나만 만듭니다.</p>
+<h3>데이터를 바꾸면 무엇을 다시 실행하는가?</h3>
+<div class="table-wrap"><table><thead><tr><th>바꾼 내용</th><th>다음 실행</th></tr></thead><tbody>
+<tr><th>원본 값·정제 SQL</th><td>DB 수정·적용 → 전처리 저장 → 전체 다시 학습</td></tr>
+<tr><th>PREPARED 값·FIT_YN</th><td>DB 수정·COMMIT → 전체 다시 학습</td></tr>
+<tr><th>새 TRAIN 추가</th><td>INSERT → VALIDATE → COMMIT → 전처리 저장 → 전체 다시 학습</td></tr>
+</tbody></table></div>
+<p><strong>전처리 재실행</strong>은 선택 방식의 준비값과 수동 수정값을 원본 기준으로 교체합니다. <strong>재학습</strong>은 전처리를 다시 하지 않고 저장된 준비값을 사용합니다.</p>
+<p><b>전체 다시 학습</b>은 기존 모델 DROP → 전체 학습 제공 행으로 CREATE입니다. 데이터가 2배·3배가 되어도 같습니다. <b>선택 모델 삭제</b>는 그 모델만 지웁니다. 모델 생성·삭제는 DDL 자동 커밋을 포함합니다.</p>
+<details class="question"><summary>확인 질문 · FIT_YN을 N으로 바꾼 뒤 전처리부터 다시 실행해도 되는가?</summary><p>수동 변경값을 쓰려면 COMMIT 후 재학습합니다. 전처리부터 다시 실행하면 FIT_YN도 원본 기준으로 다시 만들어집니다.</p></details>
+<details><summary>실제 프로시저 전체 코드</summary><p>INSERT SELECT → CREATE_MODEL2 → PREDICTION을 찾아 연결해 보세요. 웹과 SQL 도구 모두 sql/session.sql의 NLS_NUMERIC_CHARACTERS='.,'를 적용합니다.</p>@@procedure@@</details>
+<details><summary>예측 컬럼과 실행 성공의 의미</summary><p>특성의 이름·타입·의미·단위를 학습과 맞춥니다. 순서는 달라도 됩니다. 기본 특성은 숫자 네 개(RETURN_PCT·RANGE_PCT·VOLUME_CHANGE_PCT·CLOSE_PRICE)와 STOCK입니다. CASE_ID는 행 식별자, SIGNAL은 정답이며 특성이 아닙니다.</p><p>PREDICTION(모델 USING d.*)의 d는 전처리된 예측값입니다. 함수에서는 CASE_ID·SIGNAL을 생략할 수 있지만 웹 테이블의 운영 컬럼은 유지합니다. 예측 CSV의 SIGNAL은 비우거나 생략할 수 있습니다. 누락·오타가 있어도 실행될 수 있으므로 <strong>실행 성공과 예측 품질을 따로 확인</strong>합니다.</p><p>reference/tests/verify_prediction_contract.py의 당시 CLEAN 모델 20조건 검사에서는 숫자 속성을 모두 빼자 30행 중 22행의 예측이 달라졌습니다. 당시 STOCK은 등록 속성에서 제외되어 있었습니다. 이 결과를 다른 모델에 일반화하지 않습니다. 변환하지 않은 unknown은 ORA-01722, 맞지 않는 DATE·RAW 타입은 ORA-00932가 날 수 있습니다.</p></details>
+<details id="model-dictionary-guide"><summary>모델 딕셔너리에서 확인할 것</summary><ul><li>USER_MINING_MODELS: 모델명·알고리즘·생성 시각.</li><li>USER_MINING_MODEL_ATTRIBUTES: 등록 특성과 타깃.</li><li>USER_MINING_MODEL_SETTINGS: 지정값·기본값. PREP_AUTO와 전처리 SQL은 별개입니다.</li><li>USER_MINING_MODEL_VIEWS: 실제 상세 뷰 이름. 제공된 조회 SQL을 복사합니다.</li><li>USER_MINING_MODEL_XFORMS: 모델에 등록한 변환. PREPARE의 CASE·TO_NUMBER는 여기에 저장되지 않아 0행일 수 있습니다.</li><li>USER_OBJECTS: 모델 ID·VALID. 웹의 최신 여부·확정과는 다릅니다.</li></ul><p>USER_는 본인 소유, ALL_는 접근 가능한 객체, DBA_는 별도 권한이 필요한 전체 정보입니다. TEST 정확도는 별도로 평가합니다. 정상 0행과 조회 오류를 구분합니다. 수정 위치는 sql/queries/dictionary_*.sql과 backend/model_dictionary.py입니다.</p></details>
+</section>
+
+<section class="chapter" id="custom">
+<h2>5. 실행 → 가이드 수정 → 직접 설계로 확장합니다</h2>
+<h3>기본 · 준비 후 실행하며 원리를 설명</h3>
+<p>고정 기본 미션의 데이터·스키마를 먼저 확인합니다. 환경과 객체를 준비하면 SQL 직접 수정 없이 화면 클릭으로 CSV 적재·전처리·학습·TEST 비교·예측을 실행할 수 있습니다. 학생이 원본·준비값·모델의 관계와 같은 TEST를 사용하는 이유를 설명하게 합니다.</p>
+<h3>미션 · 선택 데이터의 SQL 가이드를 실행·수정</h3>
+<ol><li>10종 중 하나를 선택하고 CSV의 식별키·설명변수·타깃·원래 값을 확인합니다.</li><li>스키마 조회의 <strong>① DATA → ② PREPARED → ③ PREDICT</strong> 순서로 테이블 생성 SQL을 확인합니다.</li><li><strong>선택 미션 SQL 가이드</strong>의 RUN 등록 SQL과 각 단계의 전처리·모델·TEST·예측 SQL을 사용합니다. 기본 주식 예제를 담은 별도 생성 준비 팝업은 제공하지 않습니다.</li><li>SQL을 복사해 실행하거나 01_tables.sql·02_procedure.sql로 내려받아 <code>sql/custom/mission/</code>에 직접 저장·수정합니다. 웹은 로컬 파일을 자동으로 덮어쓰지 않습니다.</li><li>발급 DB 계정에서 계정 확인 → 테이블 → RUN 순서로 F5 적용 → 화면 CSV 적재 → 직접 PREPARE → 모델 생성 → 웹 연결·상태 확인 → 조회·TEST 비교·예측을 실행합니다. CSV 적재는 화면에서 실행하며 테이블 생성·전처리·학습·삭제는 직접 SQL로 수행합니다.</li></ol>
+<p>가이드 SQL은 선택한 미션의 컬럼·분류 이름을 반영합니다. 전처리·TRAIN 오류행의 학습 제외 기준과 사유(FIT_YN·EXCLUDE_REASON)를 점검·보완하고 변경 이유를 설명하게 합니다. 고정 TEST와 정답은 보존합니다.</p>
+<p><strong>재생성:</strong> 각 CREATE TABLE 앞의 짧은 PL/SQL은 해당 테이블이 있을 때만 삭제합니다. 재실행하면 그 테이블 행이 삭제되며 DDL은 취소할 수 없습니다. 미션 변경 뒤에는 RUN 적용·CSV 적재·전처리 저장·재학습도 진행합니다.</p>
+<h3>창의 · 본인 SQL을 직접 작성</h3>
+<p>기본·미션에서 익힌 흐름으로 문제·데이터·테이블·전처리·모델·검증을 직접 설계합니다. <code>sql/custom/creative/01_tables.sql</code>·<code>02_procedure.sql</code>에는 고정 이름·입출력 규칙만 있으며 실행 답안은 없습니다. 미션과 같이 객체·CSV·전처리·모델을 직접 SQL로 준비한 뒤 웹에 연결해 조회·TEST 평가·예측을 활용합니다. 웹은 연결·메타데이터·실행 가능 여부를 확인하며 안내 쿼리를 제공하지 않습니다.</p>
+<p><strong>고정할 것:</strong> 객체 이름 네 개, 인자 네 개, 결과 형식입니다. PREPARED의 CASE_ID·PREP_MODE·SOURCE_KIND·USE_YN·FIT_YN·EXCLUDE_REASON·PREPARED_AT도 유지합니다. 특성·타깃은 SQL에서 정하고 웹 코드는 수정하지 않습니다.</p>
+<p><strong>객체가 없다면:</strong> 누락된 이름·컴파일 오류·인자 불일치를 진단합니다. 미션은 선택 미션 SQL 가이드를 적용하고 창의는 직접 작성한 SQL을 고칩니다. DB 접속 실패와 구분합니다.</p>
+<p>창의 원본은 직접 SQL·누적 적재를 포함해 총 10,000건 이하입니다. 기본의 웹 CSV 적재 파일당 5,000행·2MiB 제한과 구분합니다. 미션은 로컬 CSV 적재기 또는 SQL Developer 데이터 가져오기로 적재하고, 창의는 적재 방법을 직접 구현합니다.</p>
+<details><summary>고정 입력·출력과 자동 연결 코드</summary><p>입력 p_action·p_mode, 출력 p_result·p_sql을 유지합니다. EVALUATE 결과는 VARIANT·ACTUAL·PREDICTED·N, PREDICT 결과는 CASE_ID·PREDICTED·PROBABILITY입니다. CSV 헤더는 실제 컬럼과 비교하고 표는 반환 컬럼을 표시합니다.</p>@@readiness@@@@custom@@</details>
+<details class="question"><summary>확인 질문 · 미션과 창의의 지원 범위는 어떻게 다른가?</summary><p>미션은 선택한 데이터에 맞는 실행 SQL을 가이드로 제공합니다. 창의는 안내 쿼리 없이 본인이 SQL을 직접 작성하고 연결·실행 여부와 오류 진단으로 확인합니다.</p></details>
+</section>
+
+<section class="chapter" id="trace">
+<h2>6. 파일 저장과 DB 적용을 구분합니다</h2>
+<ol><li>기본은 버튼 옆 <b>?</b>에서 Oracle 코드를, 미션은 선택 미션의 SQL 가이드를 봅니다. 창의는 본인 SQL을 점검합니다.</li><li><b>수정 위치</b>에서 파일·줄·검색 키워드를 찾습니다.</li><li>프로시저 파일을 수정했다면 같은 계정에서 전체 F5 실행합니다.</li><li>전처리 저장 → 재학습 → 같은 TEST 비교를 합니다.</li></ol>
+<p><strong>파일 저장만으로 DB는 바뀌지 않습니다.</strong> 웹은 DB에 저장된 프로시저를 호출합니다. 객체 확인 버튼은 조회만 하며 생성·컴파일하지 않습니다.</p>
+<div class="table-wrap"><table><thead><tr><th>상태</th><th>다음 행동</th></tr></thead><tbody><tr><th>DB 접속 실패</th><td>로그인 정보·실제 접속 오류 확인</td></tr><tr><th>테이블·프로시저 없음</th><td>미션은 선택 SQL 가이드 적용, 창의는 고정 이름으로 직접 작성·적용</td></tr><tr><th>컴파일 오류</th><td>USER_ERRORS의 LINE·POSITION·TEXT 확인 → 수정 후 F5</td></tr><tr><th>인자·결과 불일치</th><td>고정 인자 네 개와 결과 컬럼 확인</td></tr></tbody></table></div>
+<details><summary>CSV 묶음 적재와 DB 연결 재사용</summary><p>미션 CSV 도움말은 행별 INSERT 목록 대신 로컬 파일 명령과 바인드 SQL 한 문장을 보여 줍니다. <code>scripts/load_mission_csv.py</code>에서 <code>--file</code>·<code>--owner</code>를 지정해 검사한 뒤, 기존 행 교체에 동의할 때만 <code>--replace</code>를 추가합니다. 첫 줄 영문 헤더·쉼표 구분·UTF-8/BOM을 사용합니다.</p><p>500행씩 같은 커서의 executemany로 전달하고 마지막 한 번만 COMMIT합니다. 오류가 나면 교체 전체를 ROLLBACK합니다. 1,500행은 3묶음이며 전체 바인드 데이터를 실행 기록에 복사하지 않습니다. 웹 기본과제도 같은 묶음 실행기를 사용합니다.</p><p>DB 작업은 한 번에 하나이며 최대 1개 연결의 풀을 재사용합니다. 최초 물리 연결만 공통 세션 설정을 실행합니다. 로그인 비밀번호 확인은 새 연결을 사용하고, 로그아웃·계정 변경 때는 이전 풀을 정리합니다. 소스 변경 감지는 유지하면서 RAW/CLEAN 공통 조회를 공유합니다.</p></details>
+<details id="source-and-db"><summary>파일별 적용 방법</summary><ul><li><b>기본 정의:</b> 웹 테이블·프로시저 준비 또는 <code>.\scripts\db-init.ps1</code>. 기존 데이터를 보존하며 모델 학습은 하지 않습니다.</li><li><b>미션 정의:</b> 선택 미션의 01_tables.sql → 02_procedure.sql을 내려받거나 수정한 후 직접 적용합니다.</li><li><b>창의 정의:</b> 같은 이름의 두 파일에 본인이 SQL을 작성·적용합니다. 기본 db-init은 미션·창의 폴더를 적용하지 않습니다.</li><li><b>적용 확인:</b> USER_OBJECTS의 VALID, USER_ERRORS 0행, USER_SOURCE의 수정 원문 확인.</li><li><b>조회·적재 .sql:</b> 다음 작업에 반영. 프로시저 컴파일 불필요.</li><li><b>Python:</b> 서버 재시작 후 로그인. <b>HTML·JS·CSS:</b> Ctrl+F5. SQL만 변경하면 서버 재시작 불필요.</li></ul><p>파일 저장만으로 DB는 바뀌지 않습니다. 데이터를 보존할 컬럼 변경은 ALTER를 적용합니다. 미션의 DROP 포함 생성 SQL은 해당 테이블을 삭제·재생성합니다. DDL은 자동 커밋되며 ALTER PROCEDURE COMPILE은 DB 저장 원문만 다시 컴파일합니다.</p></details>
+<details id="message-layer-guide"><summary>도움말·메시지 사용법</summary><p>제목 드래그·방향키로 이동하고 최소화·최대화·복원·ESC 닫기를 사용합니다. 최소화 후 본문을 조작할 수 있습니다. 작업 확인창의 취소·닫기·ESC는 실행하지 않습니다.</p><p>자세히 보기에는 오류 원인·누락 객체명·진단 결과처럼 다음 행동에 필요한 내용을 담습니다. 미션·창의 연결 진단은 생성 SQL 예제를 중복 제공하지 않습니다. 요약과 같은 내용만 반복한다면 표시할 필요가 없습니다.</p></details>
+<details><summary>버튼에서 SQL까지 · 호출 흐름으로 코드 읽기</summary><p>코딩도움말의 화면 버튼(Jinja) → 이벤트(JavaScript) → API(FastAPI) → 서비스(Python) → DB 연결 → 실행 SQL(Oracle) 상자를 선택합니다. 왼쪽은 파일별로 묶고 그 아래 함수·실행 구간을 표시합니다. 오른쪽 파일 전체에서 선택 구간으로 이동하므로 앞뒤 문맥을 함께 읽을 수 있습니다. 같은 파일은 스크롤만 이동하며 다른 파일은 원문을 바꿉니다. 선택 구간 복사와 파일 전체 복사를 구분합니다. 핵심 모델 비교표는 내부 스크롤 없이 전체 결과를 보여 줍니다. 각 과제의 현황 상단에는 객체 준비·데이터/전처리·모델/TEST·예측 성공 여부가 모입니다. RAW/CLEAN TEST 평가와 새 입력 예측까지 완료하고 현황을 확인하세요. 모든 단계가 성공이면 이름·학번·DB 계정·미션명·확인 시각이 담긴 최종 실습 현황을 캡처하여 PPT 증적자료로 사용하세요. 데이터·모델·미션·예측 입력이 바뀌면 관련 단계를 다시 확인해야 합니다. 기본과제 4단계에서는 RAW/CLEAN을 직접 선택해 예측합니다. 별도 확정 버튼 없이 실행 성공 시 사용 모델을 저장하며, 3단계에서는 기본 예측 모델을 미리 지정할 수 있습니다. 분류·확률은 화면 조회 결과이며, 예측 입력·전처리 값은 DB에 저장됩니다. 화면 결과·비교 기록은 새로고침하면 초기화됩니다. 새 TRAIN을 추가한 경우에도 적재·전처리 저장 후 전체 다시 학습을 사용합니다. 작업 버튼은 이름이 고정되어 있으며 상태는 옆에 표시합니다. 기본과제는 테이블 생성 → 프로시저 등록을 각각 실행하고 최초/교체 적재도 구분합니다. 다시 시작할 때는 데이터 비우기·모델 삭제·확정 해제·실습 오브젝트 삭제에서 필요한 범위만 선택하세요. 미션은 제공된 정리 SQL을 직접 실행하고 창의는 직접 작성합니다. 미션의 스키마 조회는 원본 DATA → 전처리 PREPARED → 예측 PREDICT → 실행 프로시저 RUN 탭 순서입니다. RUN 탭에서 선택 미션의 전체 프로시저 생성 SQL을 복사하고 같은 발급 계정에서 직접 F5 실행합니다. 적용 안내는 현재 작업의 핵심 3단계로 요약하며, 오류 해결·터미널 명령·DB 확인 SQL은 필요한 항목만 펼쳐 봅니다. SQL 단계는 별도 색상으로 강조하며 선언·실행 분기·조회문은 각각의 원문으로 읽습니다.</p><p>CSV 검사의 DB 미사용과 미션 SQL 가이드의 직접 실행을 구분하세요. 흐름도는 실행 전 소스 안내이며 실제 결과는 작업 화면에서 확인합니다. 로컬 원문과 DB 원문이 다르면 USER_SOURCE를 비교합니다. 생성된 선택값 SQL은 파일 원문과 별도로 표시합니다. 직접 호출 예제는 sql/examples/run.sql입니다.</p>@@trace@@</details>
+<details class="question"><summary>확인 질문 · 파일을 저장했는데 결과가 그대로라면?</summary><p>같은 계정에 F5로 적용했는지 확인합니다. 원본·정제 SQL을 바꿨다면 전처리 저장과 재학습도 해야 합니다.</p></details>
+</section>
+
+<section class="chapter" id="lesson">
+<h2>7. 수업은 실행과 설명에 시간을 씁니다</h2>
+<p><strong>60분:</strong> 준비·적재 10분 → 전처리값 확인 15분 → RAW/CLEAN 학습·비교 15분 → 수정·재학습·예측 10분 → 학생 설명 10분.</p>
+<p><strong>150분:</strong> 기본 실습 60분 → SQL 수정·결과 비교 30분 → 미션·창의 작성 45분 → 결과·이유 설명 15분. Python·HTTP 설명은 아래 참고를 엽니다.</p>
+<ul><li><strong>질문:</strong> 원본과 준비값은 어디에 있는가? 어떤 행을 학습했는가? 무엇을 바꿨고 같은 TEST 결과는 어떻게 달라졌는가?</li><li><strong>평가:</strong> 기본 50점(수행·이해 40, 데이터 5, 검증 3, 재현 2) / 미션 30점(문제 5, 구현 20, 제약 5) / 창의 20점(설계 10, 이유·활용 10).</li><li><strong>제출:</strong> Python·DDL·프로시저·PPT 원본과 직접 쓴 report.pdf/html/txt. submission/presentation.pptx 또는 .ppt 필수. ZIP은 source/·report/ 구조.</li><li><strong>마감:</strong> 2026-12-18 18:00 KST, 별도 수업 공지 제출처. 웹은 접수 시스템이 아닙니다.</li><li><strong>작성:</strong> 직접 코딩·AI 보조 허용. 본인 설명·검증 기록 확인. 복제 제공자·이용자 모두 감점하며 공통 샘플·정상 토론과 구분합니다.</li></ul>
+</section>
+
+<section class="chapter appendix" id="procedure">
+<h2>참고 · 프로시저의 입력 두 개, 출력 두 개</h2>
+<p><code>p_action</code>은 할 일, <code>p_mode</code>는 RAW/CLEAN입니다. <code>p_result</code>는 결과 행, <code>p_sql</code>은 실제 결과·학습 SELECT 또는 삭제 PL/SQL 원문입니다.</p>
+<details><summary>Python 호출·결과 처리 코드</summary><p>DB의 RUN을 호출하고 결과 행을 화면 표로 전달합니다.</p>@@call@@@@rows@@</details>
+</section>
+<section class="chapter appendix" id="python">
+<h2>참고 · Python이 하는 일</h2>
+<p>입력값을 받아 SQL을 호출하고 결과를 돌려줍니다. dict는 이름·값 묶음, list는 여러 행, 함수는 정해진 처리입니다.</p>
+<details><summary>독립 예제와 자원 정리</summary><p><code>python instructor/samples/python_basics.py</code>에서 빈 문자열·None의 차이와 준비 → 실행 → 정리를 확인합니다. with의 자원 정리는 COMMIT·ROLLBACK과 구분합니다.</p>@@python-example@@</details>
+</section>
+<section class="chapter appendix" id="http">
+<h2>참고 · 웹 버튼에서 DB까지</h2>
+<p>버튼 → HTTP → Python → Oracle → 결과 표 순서입니다. GET은 조회, POST는 적재·학습 같은 작업에 사용합니다.</p>
+<details><summary>FastAPI 코드와 독립 예제</summary><p>Jinja2는 화면을 만들고 Uvicorn은 요청을 받습니다. 실습 화면은 서버 주소로 엽니다. <code>python instructor/samples/http_basics.py</code>에서 문자열을 보내 received·length를 확인합니다. 빈 입력은 422입니다.</p>@@http-example@@@@page@@</details>
+</section>
+<section class="chapter appendix" id="auth">
+<h2>참고 · 로그인과 최신 모델</h2>
+<p>인트로의 로그인 버튼은 메인 본문에 입력 폼을 표시합니다. 로그인 후 첫 화면은 기본과제가 아닌 메인 접속 카드입니다. 학생의 학번·이름·학과·학년·발급 DB 계정, 실제 계정/스키마·웹 주소·DB 서비스/서버·연결 테스트 시각을 함께 캡처해 PPT에 넣도록 안내합니다. 비밀번호는 카드에 표시하지 않습니다. 과제는 카드 아래 또는 메뉴에서 선택합니다.</p>
+<p>명단 확인과 실제 DB 접속을 통과해야 실습합니다. 접속 성공·객체 준비·모델 생성 권한은 각각 확인합니다. 강사 교재·원문은 강사 로그인에서만 열립니다.</p>
+<details><summary>인증·확정 코드</summary><p>DB API는 세션·CSRF를 검사합니다. 웹은 원본·프로시저·방식별 TRAIN/TEST 준비값과 모델 생성 시각으로 최신 여부를 확인합니다.</p><p>확정은 Oracle 모델 변경이 아니라 runtime/model-choice-*.json에 선택을 저장하는 동작입니다. 기본의 상태 파일이 없어지면 DB 모델은 남지만 웹 준비·확정 상태를 다시 확인해야 합니다. 미션·창의는 직접 만든 준비값·모델을 실제 DB 상태 재확인으로 연계합니다. 비밀번호·Wallet·개인환경·runtime은 공개 소스에 넣지 않습니다.</p>@@auth@@@@confirm@@</details>
+</section>
+</main><script type="application/json" id="source-manifest">@@MANIFEST@@</script><script>@@JS@@</script>
+</body></html>

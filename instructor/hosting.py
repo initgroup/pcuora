@@ -1,42 +1,32 @@
-"""Hosting configuration for the same classroom application and Oracle examples."""
+"""강사 시연 전용 인증 계층. 학생 앱과 동일한 FastAPI 앱을 감쌉니다."""
+import base64
+import binascii
 import hmac
 import os
-from flask import request, Response
-from oml.app import create_app
-
+from fastapi.responses import Response
+from app import create_app
 
 def create_hosted_app(environment=None):
-    env = os.environ if environment is None else environment
-    mode = env.get('OML_SITE_MODE', 'lab')
-    if mode not in ('lab', 'guide'):
-        raise ValueError('OML_SITE_MODE must be lab or guide.')
-    secret = env.get('SECRET_KEY', '')
-    password = env.get('OML_ACCESS_PASSWORD', '')
-    username = env.get('OML_ACCESS_USER', 'instructor')
-    if len(secret) < 32:
-        raise ValueError('Set SECRET_KEY to at least 32 random characters.')
-    if mode == 'lab' and len(password) < 24:
-        raise ValueError('Online lab requires OML_ACCESS_PASSWORD of at least 24 random characters.')
-    hosts = {'localhost', '127.0.0.1', '[::1]'}
-    for host in [env.get('RENDER_EXTERNAL_HOSTNAME', ''), *env.get('OML_ALLOWED_HOSTS', '').split(',')]:
-        host = host.strip().lower()
-        if host:
-            if any(token in host for token in ('/', ':', '*', ' ')):
-                raise ValueError('Use exact hostnames in OML_ALLOWED_HOSTS.')
-            hosts.add(host)
-    app = create_app({'SECRET_KEY': secret, 'SESSION_COOKIE_SECURE': True,
-                      'ALLOWED_HOSTS': hosts, 'ENABLE_LAB': mode == 'lab',
-                      'ALLOW_STUDENT_KIT': False})
-
-    def authenticate():
-        if request.path == '/healthz' or mode != 'lab':
-            return None
-        auth = request.authorization
-        if (not auth or auth.type != 'basic'
-            or not hmac.compare_digest((auth.username or '').encode(), username.encode())
-            or not hmac.compare_digest((auth.password or '').encode(), password.encode())):
-            return Response('Instructor authentication required.', 401,
-                            {'WWW-Authenticate': 'Basic realm="OML Demo", charset="UTF-8"',
-                             'Cache-Control': 'no-store'})
-    app.before_request_funcs.setdefault(None, []).insert(0, authenticate)
+    env=os.environ if environment is None else environment
+    secret=env.get('SECRET_KEY',''); password=env.get('OML_ACCESS_PASSWORD','')
+    username=env.get('OML_ACCESS_USER','instructor')
+    if len(secret)<32 or len(password)<24: raise ValueError('Configure SECRET_KEY (32+) and OML_ACCESS_PASSWORD (24+).')
+    hosts=['localhost','127.0.0.1','[::1]']
+    for value in [env.get('RENDER_EXTERNAL_HOSTNAME',''),*env.get('OML_ALLOWED_HOSTS','').split(',')]:
+        value=value.strip().lower()
+        if value:
+            if any(c in value for c in '/:* '): raise ValueError('Use exact allowed hostnames.')
+            hosts.append(value)
+    app=create_app({'SECRET_KEY':secret,'SECURE_COOKIE':True,'ALLOWED_HOSTS':hosts})
+    @app.middleware('http')
+    async def authenticate(request,next_call):
+        if request.url.path=='/healthz': return await next_call(request)
+        valid=False
+        try:
+            scheme,token=request.headers.get('Authorization','').split(' ',1)
+            user,provided=base64.b64decode(token,validate=True).decode('utf-8').split(':',1)
+            valid=scheme.lower()=='basic' and hmac.compare_digest(user.encode(),username.encode()) and hmac.compare_digest(provided.encode(),password.encode())
+        except (ValueError,UnicodeError,binascii.Error): pass
+        if not valid: return Response('Instructor authentication required.',401,headers={'WWW-Authenticate':'Basic realm="OML Studio", charset="UTF-8"','Cache-Control':'no-store'})
+        return await next_call(request)
     return app

@@ -1,5 +1,7 @@
 """Publish only the public inventory from an isolated checkout. Never force-push."""
 import argparse
+import hashlib
+import re
 import json
 from pathlib import Path
 import subprocess
@@ -7,7 +9,7 @@ import tempfile
 import sys
 from urllib.parse import urlsplit
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'scripts'))
-from source_files import ROOT, inventory, manifest, safe_path
+from source_files import ROOT, inventory, manifest
 
 MARKER = 'OML_SOURCE_MANIFEST.json'
 PROJECT = 'pcuora-oml-classroom'
@@ -20,6 +22,33 @@ def git(cwd, *args, check=True):
     if check and result.returncode:
         raise RuntimeError(result.stderr.strip() or result.stdout.strip() or 'Git failed.')
     return result
+
+
+
+def managed_path(name):
+    """과거 manifest 경로도 검증하되 최신 배포 목록에 있을 것을 요구하지 않습니다."""
+    if not isinstance(name, str) or not name or re.search(r'[\\\\:<>"|?*\x00]', name):
+        return False
+    parts = name.split('/')
+    if any(not part or part in ('.', '..') or part.endswith((' ', '.')) for part in parts):
+        return False
+    if any(part.startswith('.') for part in parts):
+        return name in ('.gitignore', '.gitattributes') or (
+            parts[0] == '.vscode' and all(not part.startswith('.') for part in parts[1:]))
+    return True
+
+
+def retired_content_matches(raw, expected):
+    candidates = [raw]
+    # Git checkout의 CRLF/LF 변환만 허용하며 다른 내용 변경은 폐기하지 않습니다.
+    if b'\0' not in raw:
+        try:
+            raw.decode('utf-8')
+            lf = raw.replace(b'\r\n', b'\n')
+            candidates.extend((lf, lf.replace(b'\n', b'\r\n')))
+        except UnicodeDecodeError:
+            pass
+    return expected in {hashlib.sha256(value).hexdigest() for value in candidates}
 
 
 def publish(root, repository, branch, message, push=False, author_name='', author_email=''):
@@ -52,7 +81,7 @@ def publish(root, repository, branch, message, push=False, author_name='', autho
         if data.get('project') != PROJECT or not isinstance(data.get('files'), dict):
             raise ValueError('Unrecognized source manifest. No files changed or pushed.')
         previous = set(data['files'])
-        if any(not safe_path(name) for name in previous):
+        if any(not managed_path(name) or name == MARKER for name in previous):
             raise ValueError('Unsafe path in remote source manifest.')
         # Do not publish unexpected tracked files, even if added outside this script.
         if tracked - previous - {MARKER}:
@@ -66,8 +95,16 @@ def publish(root, repository, branch, message, push=False, author_name='', autho
                 break
             if part.is_symlink() or part.is_junction():
                 raise ValueError('Remote contains linked path: ' + name)
-    for name in previous - files.keys():
-        (checkout / name).unlink(missing_ok=True)
+    retired = previous - files.keys()
+    if previous - tracked:
+        raise ValueError('Remote manifest names files absent from tracked source.')
+    for name in retired:
+        target = checkout / name
+        if not retired_content_matches(target.read_bytes(), data['files'][name]):
+            raise ValueError('Retired managed file differs from its manifest; preserve and review: ' + name)
+    for name in retired:
+        (checkout / name).unlink()
+
     for name, raw in files.items():
         target = checkout / name
         target.parent.mkdir(parents=True, exist_ok=True)

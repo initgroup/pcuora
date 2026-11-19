@@ -1,0 +1,3 @@
+if(['http:','https:'].includes(location.protocol))document.querySelectorAll('[data-lecture-source]').forEach(a=>a.href='/instructor/lecture-source/'+encodeURIComponent(a.dataset.lectureSource));
+document.querySelectorAll('[data-copy]').forEach(button=>button.addEventListener('click',async()=>{const code=button.closest('figure').querySelector('code').textContent;try{await navigator.clipboard.writeText(code);document.getElementById('copy-status').textContent='코드를 복사했습니다.';}catch{document.getElementById('copy-status').textContent='코드를 선택해 Ctrl+C로 복사하세요.';}}));
+document.getElementById('print-book').addEventListener('click',()=>window.print());

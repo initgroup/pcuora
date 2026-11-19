@@ -1,6 +1,7 @@
 .venv/
 runtime/
-downloads/
+downloads/*
+!downloads/COM22417_과제설명및평가.html
 backups/
 /.local/
 *.env
@@ -13,9 +14,10 @@ backups/
 *.zip
 security/*
 !security/*.example
+!security/students.example.json
 __pycache__/
 *.pyc
 .pytest_cache/
-reference/wheels/
+reference/wheels*/
 reference/installers/*
 !reference/installers/README.md

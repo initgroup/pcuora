@@ -1,5 +1,6 @@
-"""Package a learner's completed source and reports. Does not submit to any server."""
+"""Python·SQL 소스, 보고서와 PPT를 묶습니다. 서버에 제출하지는 않습니다."""
 import argparse
+import io
 import re
 from html.parser import HTMLParser
 from pathlib import Path
@@ -9,9 +10,36 @@ from distribution_guard import validate_files
 
 
 def build(root, student_id):
+    root = Path(root).resolve()
     if not re.fullmatch(r'[A-Za-z0-9_-]{4,20}', student_id):
         raise ValueError('Invalid student ID for filename.')
-    files = inventory(root, audience='student')
+    files = inventory(root, audience='submission')
+    # 실행 코드뿐 아니라 테이블 DDL과 프로시저 원문도 제출해야 합니다.
+    for required in ('manage.py', 'app.py',
+                     'sql/schema.sql', 'sql/prediction_table.sql', 'sql/classifier.sql'):
+        if not files.get(required, b'').strip():
+            raise ValueError('Required Python/DDL/procedure source missing: ' + required)
+    presentations = [name for name in files if name.lower() in
+                     ('submission/presentation.pptx', 'submission/presentation.ppt')]
+    if len(presentations) != 1:
+        raise ValueError('Add one PPT deliverable: submission/presentation.pptx (or presentation.ppt).')
+    presentation = presentations[0]
+    data = files[presentation]
+    if presentation.lower().endswith('.pptx'):
+        try:
+            with zipfile.ZipFile(io.BytesIO(data)) as deck:
+                names = deck.namelist()
+                if (deck.testzip() or '[Content_Types].xml' not in names
+                        or 'ppt/presentation.xml' not in names
+                        or not any(re.fullmatch(r'ppt/slides/slide\d+\.xml', name) for name in names)):
+                    raise ValueError('Save a PPTX with at least one slide before packaging.')
+                # PPTX는 ZIP이므로 내부 XML에 복사된 비밀번호도 검사합니다.
+                validate_files({presentation + '/' + name: deck.read(name)
+                                for name in names if name.lower().endswith('.xml')}, root)
+        except zipfile.BadZipFile:
+            raise ValueError('The PPTX file is not a readable PowerPoint archive.') from None
+    elif not data.startswith(bytes.fromhex('D0CF11E0A1B11AE1')):
+        raise ValueError('The PPT file header is invalid. Save as PPTX and try again.')
     reports = [name for name in files if name.lower() in
                ('submission/report.pdf', 'submission/report.html', 'submission/report.txt')]
     if len(reports) != 1:

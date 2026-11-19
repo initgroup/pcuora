@@ -13,7 +13,7 @@ Write-Host "`nVS Code extensions:"
 if (Get-Command code -ErrorAction SilentlyContinue) {
     $installed = @(code --list-extensions --show-versions)
     if ($LASTEXITCODE -ne 0) { throw 'VS Code extension inventory failed.' }
-    $required = @('ms-python.python', 'ms-python.vscode-pylance', 'ms-python.debugpy', 'oracle.sql-developer')
+    $required = @('ms-python.python', 'ms-python.vscode-pylance', 'ms-python.debugpy')
     foreach ($extension in $required) {
         $match = @($installed | Where-Object { $_ -match ('(?i)^' + [regex]::Escape($extension) + '@') })
         if ($match.Count) { Write-Host "OK: $($match[0])" }
