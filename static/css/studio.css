@@ -687,6 +687,28 @@ body[data-auth="locked"][data-entry="login"]>.workspace{margin-left:0}
 .reset-actions {display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin:.8rem 0;padding:.65rem .8rem;border:1px dashed #d4c9bb;border-radius:.4rem;background:#fcf9f5;}
 .reset-actions>span:not(.action-with-help),.reset-actions>small {font-size:.75rem;color:#735f49;}
 
+/* 같은 검증 스냅샷: 현황 · 단계 우측 상단 · 실행 위치의 작업번호 */
+.practice-stage-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:.4rem 1rem;}
+.practice-stage-heading>*:not(.practice-stage-status){grid-column:1;min-width:0;}
+.practice-stage-status{grid-column:2;grid-row:1/span 2;justify-self:end;display:grid;justify-items:end;gap:.25rem;text-align:right;max-width:24rem;min-width:0;}
+.practice-stage-status .practice-step-stamp{white-space:normal;text-align:center;}
+.practice-stage-status[data-state=success] .practice-step-stamp{background:#e3f4ec;color:#12634f;border-color:#6bb29b;}
+.practice-stage-status[data-state=unchecked] .practice-step-stamp{background:#f0f4f8;color:#566b7b;}
+.practice-action-slot{display:inline-flex;flex-direction:column;align-items:stretch;min-width:0;max-width:100%;vertical-align:middle;}
+.practice-action-slot>.action-with-help{width:100%;}
+.actions>.practice-action-slot{flex:1 1 12rem;}
+.practice-stage-heading>.practice-action-slot{max-width:24rem;}
+.practice-task-markers{display:grid;gap:.3rem;min-width:0;max-width:100%;margin:.4rem 0;}
+.practice-task-marker{display:block;width:100%;min-width:0;padding:.45rem .6rem;border:1px solid #d8c3a0;border-left:3px solid #a67c36;border-radius:.35rem;background:#fff7e9;color:#75521c;text-align:left;white-space:normal;font-size:.75rem;line-height:1.45;box-shadow:none;overflow-wrap:anywhere;}
+.practice-task-marker strong,.practice-task-marker>span{display:block;}
+.practice-task-marker[data-state=success]{background:#e8f5ee;border-color:#a5d1bf;border-left-color:#34846b;color:#17604c;}
+.practice-task-marker:hover:not(:disabled){background:#f3ead9;color:#654615;}
+.practice-task-marker[data-state=success]:hover{background:#d7eee2;color:#10523f;}
+.practice-task-marker:focus-visible{outline:3px solid #628bb9;outline-offset:2px;}
+.practice-dependency{margin:.35rem 0 .5rem;}
+.practice-check-list li[data-focused=true]{outline:2px solid #4c7c9a;outline-offset:2px;background:#eaf2f7;}
+@media(max-width:760px){.practice-stage-heading{grid-template-columns:minmax(0,1fr);}.practice-stage-status{grid-column:1;grid-row:auto;max-width:100%;}.practice-action-slot{width:100%;}.practice-stage-heading>.practice-action-slot{max-width:100%;}.practice-task-marker{font-size:.8125rem;}}
+
 /* 최종 증적: 단계별 결과를 내부 스크롤 없는 카드로 표시합니다. */
 .practice-proof{border:1px solid #aabfce;padding:1.25rem;background:#fff;scroll-margin-top:1rem;}
 .practice-proof-heading{display:flex;align-items:center;justify-content:space-between;gap:1rem;}

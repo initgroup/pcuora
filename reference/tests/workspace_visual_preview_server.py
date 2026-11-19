@@ -113,6 +113,9 @@ def proof_result(key):
         state['objects']=[obj for obj in state.get('objects',[]) if obj['object_type']!='PROCEDURE']
         state['initialized']=False;state['ready']=False
     if qa.get('proof_clean_pending'):state['preparation']['CLEAN']['ready']=False
+    if qa.get('proof_work_pending'):
+        state['preparation']={mode:dict(ready=False,fit_rows=0,test_rows=0) for mode in ('RAW','CLEAN')}
+        state['models']=[dict(model,exists=0,is_current=0,is_confirmed=0) for model in state['models']]
     if qa.get('stale_proof'):
         state['models']=[dict(m,is_current=0) for m in state['models']]
     topic=next(item for item in CATALOG if item['key']==selection['key']) if key=='mission' else None

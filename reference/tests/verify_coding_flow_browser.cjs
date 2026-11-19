@@ -1,6 +1,7 @@
 // Isolated flow UI verification. Synthetic identity only; all real DB access is forbidden.
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn}=require('node:child_process');
 const workspaceFlowOnly=process.argv.includes('--workspace-flow-only'),runtimeOnly=process.argv.includes('--runtime-only'),schemaOnly=process.argv.includes('--schema-only'),evidenceOnly=process.argv.includes('--evidence-only'),selectionOnly=process.argv.includes('--selection-only'),comparisonOnly=process.argv.includes('--comparison-only')||process.argv.includes('--assignment-comparison-only'),lifecycleOnly=process.argv.includes('--lifecycle-only'),guidanceOnly=process.argv.includes('--guidance-only'),contextOnly=process.argv.includes('--context-only'),importOnly=process.argv.includes('--import-only'),layoutOnly=process.argv.includes('--layout-only'),allButtons=process.argv.includes('--all-buttons');
+const taskMarkersOnly=process.argv.includes('--task-markers-only');
 const root=path.resolve(__dirname,'../..'),out=fs.mkdtempSync(path.join(os.tmpdir(),'coding-flow-ui-')),pause=ms=>new Promise(r=>setTimeout(r,ms));
 const server=spawn(path.join(root,'.venv/Scripts/python.exe'),['-B',path.join(__dirname,'workspace_visual_preview_server.py')],{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});
 let serverErrors='';server.stderr.on('data',c=>serverErrors+=c);
@@ -354,7 +355,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      await tab('home');
      await fetch(base+'/qa/evidence/change?kind=proof_missing_run&value=1');await click('#practice-verify');await until('!practiceEvidenceBusy&&practiceEvidenceResult');
      assert.equal(await ev('practiceEvidenceResult.steps[0].completed'),3);assert.equal(await ev('practiceEvidenceResult.steps[0].remaining'),1);
-     assert.match(await ev('document.querySelector("[data-proof-step=home]").textContent'),/3\/4/);
+     assert.match(await ev('document.querySelector("[data-proof-step=home]").textContent'),/성공 3개 · 대기 1개/);
      let before=requests.length;await click('[data-proof-step=home]');await until('document.getElementById("practice-detail-dialog").open');
      assert.equal(requests.length,before,'Opening detail uses current verification result without another DB/API request');
      assert.equal(await ev('document.querySelectorAll("#practice-detail-groups li[data-state=success]").length'),3);
@@ -500,6 +501,76 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    const qa=await(await fetch(base+'/qa/state')).json();assert.deepEqual(qa.mutations,[]);assert.deepEqual(qa.blocked,[]);assert.deepEqual(errors,[]);
    fs.writeFileSync(path.join(root,'runtime/mission-schema-run-verification.json'),JSON.stringify({ok:true,synthetic_data_only:true,real_database_access:false,tab_order:4,full_sql_copy:true,mission_specific:true,stale_response_guard:true,views,screenshots:out},null,2));
    console.log(JSON.stringify({ok:true,procedure_tab:true,exact_full_sql_copy:true,read_only:true,mission_switch_and_stale_response:true,layouts:views.length,screenshots:out}));return;
+ }
+ if(taskMarkersOnly){
+   await fetch(base+'/qa/evidence');
+   const snapshots=[];
+   const tab=async(key,id)=>{
+     await click(key==='basic'?'#basic-workflow [data-basic-tab="'+id+'"]':'.assignment-tabs [data-assignment-tab="'+id+'"]');
+     await until(key==='basic'?'page==='+JSON.stringify(id)+'&&!refreshing&&!basicSwitching':'!document.getElementById("assignment-panel-'+id+'").hidden&&!assignmentBusy&&!activeTasks');
+   };
+   const snapshot=()=>ev('practiceEvidenceResult.steps.map(step=>({id:step.id,success:step.success,completed:step.completed,total:step.total,remaining:step.remaining,overview:document.querySelector("#practice-proof-steps [data-proof-step="+step.id+"]").textContent,header:document.querySelector("[data-practice-stage="+step.id+"] button").textContent,markers:[...document.querySelectorAll(".practice-task-marker[data-proof-step="+step.id+"]")].map(marker=>({index:Number(marker.dataset.proofCheck),state:marker.dataset.state,label:marker.querySelector("span").textContent,slot:marker.closest(".practice-action-slot")?.querySelector("button:not(.code-help):not(.practice-task-marker),a")?.id||"group"}))}))');
+   const checkSnapshot=async()=>{
+     const steps=await snapshot();
+     for(const step of steps){
+       assert.equal(step.header,step.overview);assert.equal(step.markers.length,step.total,JSON.stringify(step));
+       assert.deepEqual(step.markers.map(marker=>marker.index).sort((a,b)=>a-b),Array.from({length:step.total},(_,i)=>i));
+       assert.equal(step.markers.filter(marker=>marker.state==='success').length,step.completed);
+       assert.equal(step.markers.filter(marker=>marker.state==='pending').length,step.remaining);
+     }
+     assert.ok(await ev('practiceEvidenceResult.steps.every(step=>step.checks.every((check,index)=>{const marker=[...document.querySelectorAll(".practice-task-marker")].find(marker=>marker.dataset.proofStep===step.id&&Number(marker.dataset.proofCheck)===index);return marker.querySelector("span").textContent===check.label}))'));
+     return steps;
+   };
+   for(const key of ['basic','mission','creative']){
+     await fetch(base+'/qa/evidence/change?kind=proof_work_pending&value=1');await fetch(base+'/qa/evidence/change?kind=input_version&value=1');
+     await call('Page.navigate',{url:base+'/'+key});
+     await until(key==='basic'?'typeof statusPhase!=="undefined"&&statusPhase==="ready"&&!refreshing&&practiceEvidenceResult':'typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!activeTasks&&practiceEvidenceResult');
+     let steps=await checkSnapshot();
+     assert.deepEqual(steps.find(step=>step.id==='data').markers.map(marker=>marker.state),['success','success','pending','pending']);
+     assert.equal(steps.find(step=>step.id==='models').completed,0);
+     assert.equal(steps.find(step=>step.id==='models').remaining,key==='basic'?6:5);
+     assert.equal(steps.find(step=>step.id==='predictions').completed,1);assert.equal(steps.find(step=>step.id==='predictions').remaining,4);
+     assert.equal(steps.find(step=>step.id==='data').markers.find(marker=>marker.index===0).slot,key==='basic'?'import-submit':'assignment-import');
+     for(const id of ['data','models','predictions']){
+       await tab(key,id);steps=await checkSnapshot();
+       for(const [width,font] of [[1440,16],[1280,22],[390,16],[320,22]]){
+         await size(width);await ev('fontSize('+font+')');await ev('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+         const box=await ev('(()=>{const panel=document.getElementById('+JSON.stringify(key==='basic'?'basic-'+id:'assignment-panel-'+id)+'),header=panel.querySelector("[data-practice-stage]").getBoundingClientRect();return {width:innerWidth,scroll:document.documentElement.scrollWidth,left:header.left,right:header.right,overflow:[...panel.querySelectorAll(".practice-task-marker")].some(marker=>marker.getBoundingClientRect().right>innerWidth+1)}})()');
+         assert.ok(box.scroll<=width+1&&box.left>=-1&&box.right<=width+1&&!box.overflow,JSON.stringify({key,id,font,...box}));views.push({key,id,font,...box});
+         if(width===1440||width===320){await ev('document.getElementById('+JSON.stringify(key==='basic'?'basic-'+id:'assignment-panel-'+id)+').scrollIntoView()');await shot('task-markers-'+key+'-'+id+'-'+width)}
+       }
+       await size(1440);await ev('fontSize(16)');
+     }
+     await tab(key,'data');
+     const marker='.practice-task-marker[data-proof-step=data][data-proof-check="3"]',before=requests.length;
+     await click(marker);await until('document.getElementById("practice-detail-dialog").open');
+     assert.equal(requests.length,before,'Clicking a criterion never executes or rereads DB work');
+     assert.ok(await ev('document.querySelector("#practice-detail-groups li[data-focused=true]").textContent.includes("작업 4")&&document.querySelector("#practice-detail-groups li[data-focused=true]").textContent.includes("CLEAN")'));
+     await click('#close-practice-detail');assert.ok(await ev('document.activeElement.matches('+JSON.stringify(marker)+')'));
+     await fetch(base+'/qa/evidence/change?kind=proof_work_pending&value=0');
+     await click('#refresh');await until('!activeTasks&&!refreshing&&(typeof assignmentBusy==="undefined"||!assignmentBusy)&&practiceEvidenceResult');
+     await tab(key,'models');
+     if(key==='basic'){await click('#query-models');await until('!activeTasks&&practiceEvidenceResult');}
+     else for(const mode of ['RAW','CLEAN']){
+       await ev('document.querySelector("#assignment-mode input[value='+mode+']").checked=true;renderAssignmentControls()');
+       await click('#assignment-evaluate');await until('!assignmentBusy&&!activeTasks&&practiceEvidenceResult');
+       assert.ok(await ev('practiceEvidenceResult.steps.find(step=>step.id==="models").checks.find(check=>check.label==='+JSON.stringify(mode+' TEST 평가 성공')+').success'));
+     }
+     steps=await checkSnapshot();assert.equal(steps.find(step=>step.id==='models').remaining,0);
+     await tab(key,'predictions');await click(key==='basic'?'#run':'#assignment-predict');await until('document.getElementById("confirm-dialog").open');
+     await click('#accept-confirm');await until('!activeTasks&&!predictionRunning&&(typeof assignmentBusy==="undefined"||!assignmentBusy)&&practiceEvidenceResult');
+     steps=await checkSnapshot();assert.equal(steps.find(step=>step.id==='predictions').remaining,0,'Prediction criteria update in the active tab without a home visit');
+     snapshots.push({key,steps});
+     await fetch(base+'/qa/evidence/change?kind=input_version&value=2');await click('#refresh');await until('!activeTasks&&!refreshing&&(typeof assignmentBusy==="undefined"||!assignmentBusy)&&practiceEvidenceResult');
+     steps=await checkSnapshot();assert.equal(steps.find(step=>step.id==='predictions').remaining,1);
+     const rows=steps.find(step=>step.id==='predictions').markers;assert.equal(rows.find(marker=>marker.index===3).state,'pending');
+     const idle=requests.length;await pause(250);assert.equal(requests.length,idle,'Markers never start DB polling');
+     await ev('person=null;++sessionGeneration;clearPracticeEvidence("로그인 후 확인하세요.")');
+     assert.ok(await ev('[...document.querySelectorAll("[data-practice-stage] button")].every(button=>button.disabled)&&!document.querySelector(".practice-task-marker")'));
+   }
+   const qa=await(await fetch(base+'/qa/state')).json();assert.deepEqual(qa.blocked,[]);assert.deepEqual(errors,[]);
+   const report={ok:true,assignments:3,real_database_access:false,one_snapshot_for_overview_headers_and_actions:true,numbered_criteria:true,active_tab_updates:true,input_change_revocation:true,detail_without_requests:true,logout_cleanup:true,views,snapshots,screenshots:out};
+   fs.writeFileSync(path.join(root,'runtime/practice-task-markers-verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify({ok:true,assignments:3,layouts:views.length,screenshots:out}));return;
  }
  if(evidenceOnly){
    await fetch(base+'/qa/evidence');

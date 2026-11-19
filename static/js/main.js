@@ -149,7 +149,7 @@ function presentMessage(message,state='info',markup=null){
 async function api(path,body){
   const options={credentials:'same-origin',headers:{}};
   if(body!==undefined){options.method='POST';options.headers['X-CSRF-Token']=csrf;if(body instanceof FormData)options.body=body;else{options.headers['Content-Type']='application/json';options.body=JSON.stringify(body);}}
-  if((body!==undefined&&/^\/api\/(?:data|models|predictions|basic|assignments)/.test(path)||path==='/api/models')&&typeof clearPracticeEvidence==='function')clearPracticeEvidence('작업 후 최종 현황을 다시 확인하세요.');
+  if((body!==undefined&&/^\/api\/(?:data|models|predictions|basic|assignments)/.test(path)||path==='/api/models')&&!/\/(?:preview|data|prepared-data|prediction-data)(?:\?|$)/.test(path)&&typeof clearPracticeEvidence==='function')clearPracticeEvidence('작업 후 최종 현황을 다시 확인하세요.');
   const generation=sessionGeneration,queryContext=typeof captureCodingQuery==='function'?captureCodingQuery(path,body):null;
   const progress=window.RequestProgress?.request(path,body);
   try{
@@ -561,9 +561,9 @@ function renderConnectionCheck(result){
 }
 function accountBusy(busy){signingIn=busy;for(const id of ['cancel-identity','test-connection','login-submit','login-id','login-name','login-password','remember-identity'])if($(id))$(id).disabled=busy;}
 async function loadStatus(){
-  if(page==='home'&&typeof clearPracticeEvidence==='function')clearPracticeEvidence('현재 상태를 확인하고 있습니다.');
+  if(typeof clearPracticeEvidence==='function')clearPracticeEvidence('현재 상태를 확인하고 있습니다.');
   renderOverview('loading');renderBasicControls();
-  try{const data=await api('/api/status'+(page==='home'?'?include_evidence=1':''));if(data.practice&&typeof renderPracticeEvidence==='function')renderPracticeEvidence(data.practice);state=data.state;models=data.models;initialized=data.initialized!==false;basicObjects=data.objects||[];storage=data.storage||null;predictionStorage=data.prediction_storage||null;preparation=data.preparation||state.preparation||{};preparedStorage=data.prepared_storage||null;
+  try{const data=await api('/api/status?include_evidence=1');if(data.practice&&typeof renderPracticeEvidence==='function')renderPracticeEvidence(data.practice);state=data.state;models=data.models;initialized=data.initialized!==false;basicObjects=data.objects||[];storage=data.storage||null;predictionStorage=data.prediction_storage||null;preparation=data.preparation||state.preparation||{};preparedStorage=data.prepared_storage||null;
     text('connection','Oracle 연결됨');$('connection').className='pill good';
     text('total-rows',number(state.total_rows));text('split-counts',number(state.train_rows)+' / '+number(state.test_rows));
     statusCheckedAt=new Date();renderOverview('ready');
@@ -729,6 +729,7 @@ on('query-models','click',event=>task(event.currentTarget,loadModels,{mutation:f
 on('query-prediction-data','click',event=>task(event.currentTarget,loadPredictionRows,{mutation:false}));
 on('query-prediction-columns','click',event=>task(event.currentTarget,loadColumns,{mutation:false}));
 async function loadModels(){modelResults=await api('/api/models');models=modelResults.models;renderModels();
+  if(typeof syncPracticeEvidence==='function')await syncPracticeEvidence();
   for(const model of models.filter(m=>m.is_current===1)){const score=modelScore(model.variant),key=JSON.stringify([model.model_name,model.trained_at,model.trained_rev,modelResults.metrics]);if(!score.total||labSeen.has(key))continue;labSeen.add(key);labHistory.unshift({time:date(new Date()),model:model.model_name,trained:date(model.trained_at),revision:model.trained_rev,accuracy:percent(score.accuracy),correct:`${score.correct} / ${score.total}`});}
   labHistory=labHistory.slice(0,20);table('model-lab-history',labHistory,[['time','평가 시각'],['model','모델'],['trained','모델 생성 시각'],['revision','학습 버전'],['accuracy','TEST 정확도'],['correct','정답 / TEST']]);
 }
@@ -926,9 +927,10 @@ on('run','click',async event=>{
     const probabilityChanged=same?data.rows.filter(r=>Math.abs((old.get(r.case_id)?.probability??-1)-r.probability)>1e-9).length:null;
     entry={...entry,model:data.model_name,status:'완료',rows:data.rows.length,comparison:!previousPrediction?'첫 예측':!same?'입력이 달라 직접 비교하지 않음':`같은 입력 · 이전 대비 분류 ${changed}행 / 확률 ${probabilityChanged}행 변경`};
     if(data.verified){state.confirmed_variant=variant;state.confirmed_current=1;models.forEach(m=>m.is_confirmed=Number(m.variant===variant));}
-    previousPrediction={input:data.input_fingerprint,rows:data.rows};text('result-state','완료');text('result-caption',data.model_name+' · '+data.rows.length+'행 · '+entry.comparison);$('prediction-proof-return').hidden=!data.verified;if(data.verified)notice('예측 실행 성공 · 최종 현황을 확인하고 PPT에 캡처하세요.');else text('result-state','결과 확인 필요');
+    previousPrediction={input:data.input_fingerprint,rows:data.rows};text('result-state','완료');text('result-caption',data.model_name+' · '+data.rows.length+'행 · '+entry.comparison);$('prediction-proof-return').hidden=!data.verified;if(data.verified)notice('예측 실행 성공 · 단계별 작업 상태와 최종 현황을 확인하세요.');else text('result-state','결과 확인 필요');
   }catch(error){executionError=error;entry={...entry,status:'오류',rows:'—',comparison:error.message};text('prediction-error',error.message);table('results',[]);text('result-state','실행 오류');}
   history.unshift(entry);history=history.slice(0,20);table('history',history,[['time','시각'],['model','실행 모델'],['status','상태'],['rows','결과 행'],['comparison','이전 성공 실행과 비교']]);
+  if(typeof syncPracticeEvidence==='function')await syncPracticeEvidence();
   if(executionError)throw executionError;
   });}finally{predictionRunning=false;renderPredictionStorage();}
 });

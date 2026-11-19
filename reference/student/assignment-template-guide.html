@@ -5,6 +5,8 @@
 </style></head><body><main>
 <header><h1>객체·프로시저 입출력 규약</h1><p>설치·수행·평가·Git/Render는 <strong>COM22417_과제설명및평가.html</strong>, SQL의 이름·인자·결과 컬럼은 이 부록을 확인하세요.</p><nav aria-label="규약 바로가기"><a href="#objects">고정 이름</a><a href="#contract">입출력 규칙</a></nav></header>
 <p class="muted">미션·창의 SQL은 sql/custom 아래의 01_tables.sql·02_procedure.sql에 저장하고 DB에 적용합니다.</p>
+<p>현황과 단계 상단 우측의 성공·대기 개수는 같은 검증 결과입니다. 버튼 옆 작업번호는 세부 성공 기준과 일치하며 번호를 누르면 해당 기준의 설명을 확인합니다. 직접 SQL 적용 후 SQL 실행 결과 연계로 상태를 갱신하세요. 자세한 수행 흐름은 통합 안내서의 ‘배포 사이트에서 완료 여부 확인’을 따릅니다.</p>
+<p>현재 연계·성공 요약과 미션 선택은 서버의 runtime JSON에 저장되어 로컬 PC와 Render 사이에서 자동 공유되지 않습니다. DB 객체·행이 같아도 진행 표시가 다를 수 있습니다. 통합 안내서의 ‘진행 상태가 저장되는 위치’에서 현재 제한을 확인하세요.</p>
 <section id="objects"><h2>1. 고정 이름과 역할을 유지하세요</h2>
 <p class="note"><strong>학번과 DB 계정을 구분하세요.</strong> 객체 소유자는 학생에게 발급된 DB 계정입니다. 아래 STUDENT00은 예시이며 본인 발급 계정으로 바꿉니다. 화면과 제공 SQL에는 로그인한 실제 계정을 붙여 테이블·프로시저·모델을 표시합니다. 다른 계정으로 접속한 경우 제공 SQL은 생성·삭제 전에 계정 검사에서 중단됩니다. 직접 작성할 때도 소유자와 접속 계정을 확인하세요.</p>
 <div class="scroll"><table class="objects"><thead><tr><th>역할·준비 순서</th><th>기본</th><th>미션</th><th>창의</th></tr></thead><tbody>

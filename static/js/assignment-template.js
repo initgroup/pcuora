@@ -179,7 +179,7 @@ async function loadAssignmentReadiness(includeEvidence=false){
   assignmentEmpty('assignment-readiness-table','실제 DB 메타데이터를 조회하고 있습니다.');
   if($('assignment-diagnostic'))$('assignment-diagnostic').hidden=true;
   try{
-    const result=await api(`/api/assignments/${assignmentKey}/status`+(includeEvidence===true||!$('assignment-panel-home').hidden?'?include_evidence=1':''));
+    const result=await api(`/api/assignments/${assignmentKey}/status?include_evidence=1`);
     if(version!==assignmentReadinessVersion||!person)return;
     assignmentState=result;assignmentPhase='ready';
     if(result.practice&&typeof renderPracticeEvidence==='function')renderPracticeEvidence(result.practice);
@@ -233,10 +233,10 @@ async function assignmentTask(button,action,file,variant=selectedMode(action==='
       if(action==='prepare')assignmentNext('모델 최신 상태를 확인하세요',`${variant} 전처리 저장 완료 · FIT_YN=Y TRAIN으로 학습하며, 저장값이 달라졌으면 다시 학습합니다.`,'models','모델 생성·비교로 이동');
       if(action==='train')assignmentNext('같은 TEST로 평가하세요',`${variant} 모델 생성 결과를 확인하고 TEST 평가를 실행합니다.`,'models','모델 생성·비교로 이동');
       if(action==='evaluate')assignmentNext('새 입력으로 예측하세요','평가 결과를 확인하고 본인 모델의 새 입력 예측을 실행합니다.','predictions','예측 실행으로 이동');
-      if(action==='predict')assignmentNext('현황에서 최종 성공 여부를 확인하세요','모든 단계가 성공이면 최종 실습 현황을 캡처하여 PPT에 사용하세요.','home','최종 현황 확인');
+      if(action==='predict')assignmentNext('현황에서 최종 성공 여부를 확인하세요','각 단계의 작업 상태와 최종 실습 현황에서 모든 성공 기준을 확인하세요.','home','최종 현황 확인');
       if(result.message&&!['data','prepared-data','prediction-data'].includes(action))notice(result.message);
     }catch(error){if(!person||version!==assignmentReadinessVersion)return;if(target)assignmentEmpty(target,'작업에 실패했습니다. 알림의 안내를 확인하세요.','실행 실패');throw error;}
-  },{mutation:!['data','prepared-data','prediction-data','evaluate'].includes(action),feedback:!['data','prepared-data','prediction-data'].includes(action)});}finally{assignmentBusy=false;renderAssignmentControls();}
+  },{mutation:!['data','prepared-data','prediction-data','evaluate'].includes(action),feedback:!['data','prepared-data','prediction-data'].includes(action)});}finally{if(['evaluate','predict'].includes(action)&&typeof syncPracticeEvidence==='function')await syncPracticeEvidence();assignmentBusy=false;renderAssignmentControls();}
 }
 async function confirmAssignmentLink(button){
   if(assignmentBusy||!person)return;
