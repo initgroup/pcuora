@@ -166,15 +166,20 @@ async function api(path,body){
   }finally{window.RequestProgress?.end(progress);}
 }
 
+function loginPayload(studentId,name,password){
+  const data={student_id:studentId.trim(),name:name.trim()};
+  if($('login-password')?.type!=='hidden')data.db_password=password;
+  return data;
+}
 async function confirmIdentity(studentId,name,password){
   // 오래 열린 화면이나 서버 재시작 뒤에도 현재 세션의 확인 토큰을 먼저 받습니다.
   const session=await api('/api/session');csrf=session.csrf;
-  return api('/api/identity',{student_id:studentId.trim(),name:name.trim(),db_password:password});
+  return api('/api/identity',loginPayload(studentId,name,password));
 }
 const rememberedKey='com22417-login-v1';
 function rememberedIdentity(){try{return JSON.parse(localStorage.getItem(rememberedKey)||'null');}catch{return null;}}
 function saveRememberedIdentity(studentId,name,password,remember){
-  try{if(remember)localStorage.setItem(rememberedKey,JSON.stringify({student_id:studentId.trim(),name:name.trim(),db_password:password}));else localStorage.removeItem(rememberedKey);}
+  try{if(remember)localStorage.setItem(rememberedKey,JSON.stringify(loginPayload(studentId,name,password)));else localStorage.removeItem(rememberedKey);}
   catch{notice('로그인했습니다. 브라우저에서 입력값 저장을 허용하지 않아 다음 접속에는 다시 입력해야 합니다.');}
 }
 let lookupVersion=0,signingIn=false;
@@ -526,7 +531,7 @@ function openIdentity(){
   const saved=rememberedIdentity();text('identity-title',person?'계정 전환':'로그인');text('identity-error',identityConfigured?'':'명단 등록 후 사용할 수 있습니다. security/students.json을 확인하세요.');$('identity-error').hidden=identityConfigured;$('connection-check').hidden=true;
   $('login-id').value=person?.student_id||saved?.student_id||'';$('login-name').value=person?.name||saved?.name||'';
   const same=saved&&saved.student_id===$('login-id').value&&saved.name===$('login-name').value;
-  $('login-password').value=same?saved.db_password||'':'';$('remember-identity').checked=Boolean(same);
+  $('login-password').value=same&&$('login-password').type!=='hidden'?saved.db_password||'':'';$('remember-identity').checked=Boolean(same);
   $('login-db-user').value='';renderPerson();lookupIdentity();
   $('login-id').focus({preventScroll:true});window.scrollTo(0,0);
 }
@@ -770,8 +775,8 @@ on('test-connection','click',async()=>{
   const id=$('login-id').value,name=$('login-name').value,password=$('login-password').value,button=$('test-connection');
   accountBusy(true);button.setAttribute('aria-busy','true');$('identity-error').hidden=true;++lookupVersion;
   renderConnectionCheck({title:'Oracle DB에 연결하고 있습니다.',message:'네트워크와 DB 응답을 기다리고 있습니다.'});
-  try{const session=await api('/api/session');csrf=session.csrf;const result=await api('/api/identity/test',{student_id:id.trim(),name:name.trim(),db_password:password});$('login-db-user').value=result.db_user;renderConnectionCheck(result);}
-  catch(error){if(error.diagnostic)renderConnectionCheck(error.diagnostic);else renderConnectionCheck({success:false,title:error.message,steps:[],message:'학번·이름·DB 비밀번호 입력을 확인한 뒤 다시 테스트하세요.'});}
+  try{const session=await api('/api/session');csrf=session.csrf;const result=await api('/api/identity/test',loginPayload(id,name,password));$('login-db-user').value=result.db_user;renderConnectionCheck(result);}
+  catch(error){if(error.diagnostic)renderConnectionCheck(error.diagnostic);else renderConnectionCheck({success:false,title:error.message,steps:[],message:'학번·이름과 DB 연결 설정을 확인한 뒤 다시 테스트하세요.'});}
   finally{accountBusy(false);button.removeAttribute('aria-busy');}
 });
 on('remember-identity','change',()=>{if(!$('remember-identity').checked){try{localStorage.removeItem(rememberedKey);}catch{}}});

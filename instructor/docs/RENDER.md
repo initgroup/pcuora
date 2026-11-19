@@ -19,12 +19,11 @@
 - SECRET_KEY: 서비스마다 생성한 32자 이상 난수 (실제 값은 Render에만 입력)
 - DB_USER / DB_PASSWORD / DB_DSN: 본인 DB 계정·비밀번호·Wallet의 DSN 별칭 (예: pcuora_high)
 - WALLET_DIR=/etc/secrets / WALLET_PASSWORD: Wallet 다운로드 당시 암호
-- OML_ROSTER_FILE=/etc/secrets/students.json
 - ORACLE_CLIENT_LIB: Thin에서는 빈 값
 
 PORT·RENDER_EXTERNAL_HOSTNAME은 Render가 제공한다. 사용자 도메인은 OML_ALLOWED_HOSTS에 정확한 호스트명을 추가한다. OML_SITE_MODE=lab은 현재 소스에서 읽지 않는다. OML_ACCESS_USER·OML_ACCESS_PASSWORD도 사용하지 않으며 브라우저 Basic 인증 팝업은 없다.
 
-Secret Files에 tnsnames.ora·ewallet.pem·본인 한 행의 students.json을 등록한다. 명단의 db_user는 DB_USER와 일치해야 한다. 메인에서 학번·이름·DB 비밀번호로 실제 Oracle 인증을 거친다. 개인 설정·명단·Wallet은 Git에 넣지 않는다. 운영에서 security/student.env가 없을 때 플랫폼 DB 환경변수를 사용한다.
+학생 본인 Git에는 한 행의 security/students.json을 포함한다. 강사 전체 명단·비밀번호·환경파일·Wallet은 포함하지 않는다. Wallet의 tnsnames.ora·ewallet.pem만 Secret Files에 등록한다. Render 메인에서 학번·이름이 일치하면 JSON의 db_user를 사용하고 서버 환경변수 DB_PASSWORD로 Oracle에 연결한다. 클라이언트 DB 계정·비밀번호와 기존 로컬 환경파일은 운영 인증에 사용하지 않는다. DB_USER는 선택 기본값이며 JSON 매핑을 우선한다. Git 명단이 있으면 OML_ROSTER_FILE·Secret Files 명단보다 우선한다. 강사 운영처럼 Git 명단이 없을 때만 OML_ROSTER_FILE을 대체 경로로 사용한다.
 
 Save, rebuild, and deploy 후 /healthz의 {"status":"ok"}와 메인 연결 테스트를 각각 확인한다. healthz는 DB를 조회하지 않는다. 로그인 전 업무 API 차단·CSRF·Secure 쿠키·강사 교재 권한을 유지한다. 검사는 reference/tests/test_hosted_auth.py와 학생 ZIP·Git 관련 검사에서 격리 실행하며 실제 학생 DB를 변경하지 않는다.
 

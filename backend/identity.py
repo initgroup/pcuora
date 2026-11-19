@@ -5,7 +5,10 @@ import re
 from pathlib import Path
 from .db import ROOT
 
-ROSTER = Path(os.environ.get('OML_ROSTER_FILE', ROOT / 'security/students.json'))
+ROSTER = ROOT / 'security/students.json'
+# 학생 Git의 명단을 우선하며 강사 운영의 기존 비밀 명단 경로는 파일이 없을 때만 사용합니다.
+if not ROSTER.is_file() and os.environ.get('OML_ROSTER_FILE'):
+    ROSTER = Path(os.environ['OML_ROSTER_FILE'])
 if not ROSTER.is_absolute():
     ROSTER = ROOT / ROSTER
 FIELDS = ('student_id', 'name', 'department', 'grade', 'db_user')

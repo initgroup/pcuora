@@ -93,7 +93,7 @@ setup은 프로젝트 .venv에 설치하고 현재 터미널을 활성화합니�
 .\scripts\restart.ps1
 ```
 
-security/student.env의 ORACLE_CLIENT_LIB는 비우고 WALLET_PASSWORD에 Wallet 다운로드 당시 암호를 설정합니다. DB 비밀번호와 별개입니다. security/students.json에 본인 학번·이름·db_user를 등록합니다. 웹 로그인에서 입력한 DB 비밀번호로 실제 Oracle 접속을 확인한 후에만 student.env에 저장합니다. 로그인 전에는 인트로가 보이며 로그인 버튼을 누르면 메인 본문에 입력 폼이 표시됩니다. 취소하면 인트로로 돌아갑니다. 로그인 후 첫 화면은 과제가 아닌 메인입니다. 중앙 카드에 학번·이름·학과·학년·발급 DB 계정과 실제 접속 계정/스키마, 웹 주소·DB 별칭·서비스·서버 및 로그인/연결 확인 시각을 표시합니다. 연결 테스트 결과와 함께 캡처해 PPT에 넣으세요. 비밀번호는 카드에 표시하지 않습니다. 과제는 메인 아래 또는 메뉴에서 선택합니다. 입력값 저장은 선택 사항이며 공용 PC에서는 선택하지 않습니다.
+security/student.env의 ORACLE_CLIENT_LIB는 비우고 WALLET_PASSWORD에 Wallet 다운로드 당시 암호를 설정합니다. DB 비밀번호와 별개입니다. security/students.json에 본인 학번·이름·db_user를 등록합니다. 로컬 웹 로그인에서 입력한 DB 비밀번호로 실제 Oracle 접속을 확인한 후에만 student.env에 저장합니다. 로그인 전에는 인트로가 보이며 로그인 버튼을 누르면 메인 본문에 입력 폼이 표시됩니다. 취소하면 인트로로 돌아갑니다. 로그인 후 첫 화면은 과제가 아닌 메인입니다. 중앙 카드에 학번·이름·학과·학년·발급 DB 계정과 실제 접속 계정/스키마, 웹 주소·DB 별칭·서비스·서버 및 로그인/연결 확인 시각을 표시합니다. 연결 테스트 결과와 함께 캡처해 PPT에 넣으세요. 비밀번호는 카드에 표시하지 않습니다. 과제는 메인 아래 또는 메뉴에서 선택합니다. 입력값 저장은 선택 사항이며 공용 PC에서는 선택하지 않습니다.
 
 ## DB 구조와 수정 위치
 
@@ -322,6 +322,8 @@ Oracle 명령은 단일 프로시저 안의 create_raw_model/create_clean_model,
 
 강사 Git 배포는 격리 checkout에서 기존 manifest 관리 파일을 갱신한다. 폐기 파일은 경로·링크·기존 SHA256을 확인한 뒤에만 삭제하며 Git의 CRLF/LF 변환만 허용한다. 관리 밖 파일·실제 내용 변경·경로 탈출은 중단한다. 원격 main 이력을 보존하고 강제 push하지 않는다. 검증은 reference/tests/test_instructor_git.py의 로컬 임시 저장소를 사용한다.
 
-학생 Render 설정은 통합 안내의 ‘04 Git·Render 배포’를 따릅니다. Source는 본인 Git Provider 저장소, Branch는 main, Root Directory는 비움, Build는 bash scripts/render-build.sh, Start는 bash scripts/render-start.sh, Health Check Path는 /healthz입니다. /healthz는 DB 연결을 조회하지 않으므로 메인 연결 테스트도 수행합니다. 환경변수·Wallet·본인 명단은 Render에서 직접 등록합니다.
+학생 Render 설정은 통합 안내의 ‘04 Git·Render 배포’를 따릅니다. Source는 본인 Git Provider 저장소, Branch는 main, Root Directory는 비움, Build는 bash scripts/render-build.sh, Start는 bash scripts/render-start.sh, Health Check Path는 /healthz입니다. /healthz는 DB 연결을 조회하지 않으므로 메인 연결 테스트도 수행합니다. 환경변수·Wallet은 Render에서 등록하고 본인 한 명의 security/students.json은 본인 Git에 포함합니다. Render는 학번·이름으로 db_user를 찾아 환경변수 DB_PASSWORD로 인증하며 비밀번호 입력·로컬 파일 저장은 하지 않습니다.
 
 강사 운영·검증 파일 허용 목록은 reference/distribution/public-files.json으로 분리하며 학생 실행 허용 목록은 scripts/source_files.py에 둡니다. 참조 목록은 학생 ZIP/Git에 포함하지 않습니다. 학생 Git에는 ZIP 루트의 통합 안내 HTML을 포함하여 Render에서도 안내 메뉴를 제공합니다.
+
+학생 Git은 본인 한 행의 security/students.json만 검증하여 명시적으로 포함합니다. 강사 전체 명단은 강사 Git·공통 학생 ZIP에서 제외하며 학생.env·Wallet·비밀번호는 학생 Git에도 포함하지 않습니다. Render는 Git의 security/students.json을 우선 읽습니다. OML_ROSTER_FILE은 Git 명단이 없는 기존 강사 운영의 대체 경로입니다.

@@ -6,7 +6,8 @@ from backend.hosting import create_hosted_app
 from reference.tests import test_classifier as fixtures
 
 ENVIRONMENT = {'SECRET_KEY': 'hosted-auth-test-secret-' * 3,
-               'RENDER_EXTERNAL_HOSTNAME': 'classroom.example.invalid'}
+               'RENDER_EXTERNAL_HOSTNAME': 'classroom.example.invalid',
+               'DB_PASSWORD': 'RenderEnvironmentPassword_Test', 'DB_DSN': 'render_test'}
 
 
 class HostedAuthTests(unittest.TestCase):
@@ -59,6 +60,38 @@ class HostedAuthTests(unittest.TestCase):
                 self.assertEqual(fixture.login(client, people[1]).status_code, 200)
                 self.assertEqual(client.get('/instructor/python-web-lecture.html').status_code, 403)
 
+    def test_hosted_login_maps_json_user_and_uses_only_environment_password(self):
+        fixture=fixtures.ClassifierTests()
+        with fixture.login_project() as (_, env, people), patch('app.connection') as connect, patch('app.save_credentials') as save:
+            original=env.read_bytes()
+            with TestClient(create_hosted_app({**ENVIRONMENT,'DB_USER':'IGNORED_DEFAULT'}),
+                            base_url='https://classroom.example.invalid') as client:
+                page=client.get('/?login=1').text
+                self.assertIn('id="login-password" type="hidden"',page)
+                token=client.get('/api/session').json()['csrf']
+                headers={'X-CSRF-Token':token}
+                who={'student_id':people[0]['student_id'],'name':people[0]['name']}
+                self.assertEqual(client.post('/api/identity/lookup',json=who,headers=headers).json()['identity']['db_user'],people[0]['db_user'])
+                result=client.post('/api/identity',json={**who,'db_user':'OTHER','db_password':'AttackerValue'},headers=headers)
+                self.assertEqual(result.status_code,200,result.text)
+                cfg=connect.call_args.args[0]
+                self.assertEqual(cfg['DB_USER'],people[0]['db_user'])
+                self.assertEqual(cfg['DB_PASSWORD'],ENVIRONMENT['DB_PASSWORD'])
+                self.assertNotIn(ENVIRONMENT['DB_PASSWORD'],result.text)
+                self.assertEqual(client.get('/api/session').json()['identity']['db_user'],people[0]['db_user'])
+                self.assertEqual(env.read_bytes(),original)
+                save.assert_not_called()
+
+    def test_missing_environment_password_cannot_fall_back_to_browser_password(self):
+        fixture=fixtures.ClassifierTests()
+        with fixture.login_project() as (_, env, people), patch('app.connection') as connect:
+            with TestClient(create_hosted_app({**ENVIRONMENT,'DB_PASSWORD':''}),
+                            base_url='https://classroom.example.invalid') as client:
+                response=fixture.login(client,people[0])
+                self.assertEqual(response.status_code,400)
+                self.assertIn('DB_PASSWORD',response.json()['error'])
+                connect.assert_not_called()
+
     def test_secret_and_hostname_restrictions_remain(self):
         for secret in ('', 'short'):
             with self.subTest(secret_length=len(secret)), self.assertRaises(ValueError):
@@ -93,12 +126,14 @@ class StudentRenderPackageTests(unittest.TestCase):
             with zipfile.ZipFile(archive) as bundle:
                 self.assertTrue(all((project/name).resolve().is_relative_to(project.resolve()) for name in bundle.namelist()))
                 bundle.extractall(project)
+            (project/'security/students.json').write_text(json.dumps([{'student_id':'20260001','name':'Example','db_user':'STUDENT01'}]),encoding='utf-8')
             files=inventory(project,audience='student-git')
+            self.assertIn('security/students.json',files)
             for name in ('backend/hosting.py','scripts/render-build.sh','scripts/render-start.sh',STUDENT_GUIDE):
                 self.assertIn(name,files)
             self.assertNotIn('reference/distribution/public-files.json',files)
             self.assertFalse(any(name.startswith('instructor/') or name.endswith('student.env')
-                                 or name.endswith('students.json') or 'Wallet_' in name for name in files))
+                                 or 'Wallet_' in name for name in files))
             for name in ('render-build.sh','render-start.sh'):
                 result=subprocess.run([str(shell),'-n',str(project/'scripts'/name)],capture_output=True,timeout=20)
                 self.assertEqual(result.returncode,0,result.stderr.decode(errors='replace'))

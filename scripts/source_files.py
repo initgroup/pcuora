@@ -174,7 +174,7 @@ def student_git_path(name):
     path=Path(name)
     if path.is_absolute() or any(p in ('','..','.') for p in name.split('/')):
         return False
-    if name == STUDENT_GUIDE: return True
+    if name in (STUDENT_GUIDE,'security/students.json'): return True
     if name in (*APP_FILES,*('scripts/'+n for n in STUDENT_SCRIPTS),*CONFIG):
         return True
     if any(part.startswith('.') or part=='__pycache__' for part in path.parts):
@@ -193,7 +193,7 @@ def inventory(root=ROOT,audience='all'):
         # 학생의 제출·Git 업로드는 추가 Python·SQL·화면·데이터도 수집합니다.
         # 강사의 공통 배포 ZIP과 백업은 명시적 목록만 사용합니다.
         candidates=list(root.glob('*.py'))
-        if audience=='student-git': candidates.append(root/STUDENT_GUIDE)
+        if audience=='student-git': candidates.extend((root/STUDENT_GUIDE,root/'security/students.json'))
         for folder in ('backend','sql','templates','static','data'):
             candidates.extend((root/folder).rglob('*'))
         additions=(path.relative_to(root).as_posix() for path in candidates
@@ -215,7 +215,11 @@ def inventory(root=ROOT,audience='all'):
                 name=path.relative_to(root).as_posix()
                 if safe_path(name) and not path.is_symlink() and path.resolve().is_relative_to(root):
                     result[name]=path.read_bytes()
-    from distribution_guard import validate_files
+    from distribution_guard import validate_files, validate_student_roster
+    if audience=='student-git':
+        if 'security/students.json' not in result:
+            raise ValueError('본인 정보로 작성한 security/students.json이 필요합니다.')
+        validate_student_roster(result['security/students.json'])
     validate_files(result,root)
     return result
 def manifest(files):

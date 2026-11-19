@@ -313,7 +313,10 @@
 
 - 강사용 scripts/git-publish-main.ps1은 기존 instructor/scripts/deploy-github.ps1에 main 배포를 위임하는 진입점이다. 기본 실행은 Push, -Preview는 원격 작업 없는 미리보기, -Prepare는 로컬 준비이며 동시에 지정하지 않는다. 자신의 위치로 루트를 계산하고 PUBLIC에만 등록하여 학생 ZIP·학생 Git·제출에 넣지 않는다. 허용 목록·비밀값 검사·이력 보존을 우회하는 별도 Git 구현을 추가하지 않는다.
 
-- Render 운영은 메인 화면의 학번·이름·DB 비밀번호 로그인만 사용한다. backend/hosting.py는 SECRET_KEY 길이·Secure 쿠키·허용 호스트만 설정하며 OML_ACCESS_USER/OML_ACCESS_PASSWORD 및 Basic 인증을 요구하지 않는다. 메인 앱의 세션·CSRF·로그인 전 업무 API 차단·강사 교재 권한 검사는 유지한다. 검증은 reference/tests/test_hosted_auth.py를 사용하고 실제 DB 변경이나 로컬 서버 재시작을 하지 않는다.
+- Render 운영은 학번·이름을 확인하고 서버 환경변수 DB_PASSWORD로 로그인한다. backend/hosting.py는 SECRET_KEY 길이·Secure 쿠키·허용 호스트만 설정하며 OML_ACCESS_USER/OML_ACCESS_PASSWORD 및 Basic 인증을 요구하지 않는다. 메인 앱의 세션·CSRF·로그인 전 업무 API 차단·강사 교재 권한 검사는 유지한다. 검증은 reference/tests/test_hosted_auth.py를 사용하고 실제 DB 변경이나 로컬 서버 재시작을 하지 않는다.
 
-- 학생 Render 실행 코드는 backend/hosting.py와 scripts/render-build.sh·render-start.sh다. 공통 파일은 학생 ZIP/Git/제출에 포함하며 instructor의 기존 시작·빌드 경로도 공통 파일에 위임한다. 학생 본인 Git에는 ZIP 루트의 통합 안내 HTML도 포함하여 Render 안내 메뉴가 동작하게 한다. OML_SITE_MODE는 현재 미사용이며 기능 전환 설정으로 안내하지 않는다. 명단은 OML_ROSTER_FILE=/etc/secrets/students.json, Wallet은 Secret Files로 본인 서비스에만 등록하고 공개 소스에 비밀값을 넣지 않는다.
+- 학생 Render 실행 코드는 backend/hosting.py와 scripts/render-build.sh·render-start.sh다. 공통 파일은 학생 ZIP/Git/제출에 포함하며 instructor의 기존 시작·빌드 경로도 공통 파일에 위임한다. 학생 본인 Git에는 ZIP 루트의 통합 안내 HTML도 포함하여 Render 안내 메뉴가 동작하게 한다. OML_SITE_MODE는 현재 미사용이며 기능 전환 설정으로 안내하지 않는다. 본인 한 명의 security/students.json은 학생 Git에 포함하며 Wallet만 Secret Files로 등록한다. Git 명단을 우선하며 OML_ROSTER_FILE은 Git 명단이 없을 때만 대체 경로로 사용한다. 공개 소스에 비밀번호를 넣지 않는다.
 - 공개 배포 허용 목록은 scripts/source_files.py의 학생 목록과 reference/distribution/public-files.json의 강사 운영·검증 목록을 합친다. 참조 JSON은 학생 ZIP/Git/제출에서 제외한다. 전체 배포·백업 시 참조 목록이 없으면 중단하고, 학생 Git은 기본 학생 목록·본인 추가 실행 소스만 사용한다. 변경 후 학생 ZIP 1,000,000바이트 상한·현재 바이트 일치와 학생 런처의 격리 실행을 함께 확인한다.
+
+- 최신 사용자 요청: 학생이 작성한 본인 한 명의 security/students.json은 본인 Git 배포에 포함한다. 강사 전체 명단은 강사 Git·공통 학생 ZIP에서 제외한다. student-git inventory에서 한 행·허용 필드·DB 식별자를 검사하고 학생 publisher만 해당 한 파일을 명시적으로 add한다. 환경파일·Wallet·비밀번호는 제외한다.
+- Render의 HOSTED_DATABASE는 플랫폼 환경변수에서만 생성한다. 메인에서 학번·이름을 JSON으로 확인해 db_user를 결정하고 DB_PASSWORD는 서버 값만 쓴다. 클라이언트의 DB 계정·암호는 사용하지 않고 누락 시 서버 설정 오류로 실패한다. 비밀번호 입력·브라우저 저장·student.env 쓰기를 하지 않는다. 업무 API·세션 지문도 같은 서버 연결 설정을 사용한다. 로컬 실행은 기존 DB 비밀번호 입력·검증·개인 환경 저장을 유지한다.

@@ -66,6 +66,7 @@ def experiment_name(value):
 
 def create_app(config=None):
     config = config or {}
+    hosted_database = config.get('HOSTED_DATABASE')
     @asynccontextmanager
     async def lifespan(app):
         try:
@@ -81,6 +82,7 @@ def create_app(config=None):
     # templates의 HTML을 렌더링하고 static의 CSS·JS를 브라우저에 제공합니다.
     # 경로는 이 파일 위치를 기준으로 하므로 실행한 터미널 폴더와 무관합니다.
     templates = Jinja2Templates(directory=str(Path(__file__).parent / 'templates'))
+    templates.env.globals['environment_db_password'] = hosted_database is not None
     templates.env.globals['navigation'] = assignment_templates.navigation()
     templates.env.globals['assignments'] = assignment_templates.ASSIGNMENTS
     templates.env.globals['basic_points'] = assignment_templates.BASIC_POINTS
@@ -93,6 +95,14 @@ def create_app(config=None):
     session_lock = threading.RLock()
     session_clock = config.get('SESSION_CLOCK', time.time)
     session_timeout = int(config.get('SESSION_TIMEOUT_SECONDS', SESSION_IDLE_SECONDS))
+
+    def database_settings():
+        if hosted_database is None:
+            return student_settings()
+        cfg = dict(hosted_database)
+        if login_state.get('db_user'):
+            cfg['DB_USER'] = login_state['db_user']
+        return cfg
 
     def session_info(request):
         return {'expires_at': getattr(request.state, 'session_expires_at', None),
@@ -109,7 +119,7 @@ def create_app(config=None):
         with session_lock:
             person = identity.current(request.session)
             token = request.session.get('login_token')
-            cfg = student_settings()
+            cfg = database_settings()
             if (person and token and login_state['token']
                     and hmac.compare_digest(token, login_state['token'])
                     and person['db_user'] == cfg.get('DB_USER', '').upper()
@@ -213,7 +223,7 @@ def create_app(config=None):
         connected = False
         try:
             authorized(request)
-            with connection(student_settings()) as conn:
+            with connection(database_settings()) as conn:
                 if str(conn.username).upper()!=person['db_user'].upper():
                     raise ValueError('실제 DB 연결 계정이 발급 계정과 다릅니다. 발급 계정으로 다시 로그인하세요.')
                 connected = True
@@ -464,10 +474,11 @@ def create_app(config=None):
 
     def login_values(data):
         person = identity.confirm(data.get('student_id', ''), data.get('name', ''))
-        password = data.get('db_password')
+        cfg = database_settings()
+        password = cfg.get('DB_PASSWORD') if hosted_database is not None else data.get('db_password')
         if not isinstance(password, str) or not password:
-            raise ValueError('발급받은 DB 비밀번호를 입력하세요.')
-        cfg = student_settings()
+            raise ValueError('Render 환경변수 DB_PASSWORD를 설정하세요.' if hosted_database is not None
+                             else '발급받은 DB 비밀번호를 입력하세요.')
         cfg.update(DB_USER=person['db_user'], DB_PASSWORD=password)
         return person, cfg
 
@@ -509,10 +520,11 @@ def create_app(config=None):
                 verify_connection(cfg)
             except Exception as error:
                 return connection_failure(error)
-            save_credentials(person['db_user'], cfg['DB_PASSWORD'])
+            if hosted_database is None:
+                save_credentials(person['db_user'], cfg['DB_PASSWORD'])
             close_connections()
             with session_lock:
-                login_state.update(token=secrets.token_hex(32), credentials=credential_stamp(cfg),
+                login_state.update(token=secrets.token_hex(32), credentials=credential_stamp(cfg), db_user=person['db_user'],
                                    expires_at=session_clock() + session_timeout, logged_at=session_clock())
                 request.state.session_expires_at = login_state['expires_at']
             request.session.clear()
@@ -542,7 +554,7 @@ def create_app(config=None):
     def account_connection(request: Request):
         person=authorized(request)
         with database(request) as conn:
-            profile=connection_profile.inspect_connection(conn,student_settings())
+            profile=connection_profile.inspect_connection(conn,database_settings())
         return {'identity':person, 'connection':profile, 'session':session_info(request)}
 
     @app.get('/api/status')

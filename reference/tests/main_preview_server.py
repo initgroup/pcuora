@@ -35,7 +35,10 @@ def query(conn,name,**binds):
         return [{'privilege':value} for value in ('CREATE TABLE','CREATE PROCEDURE','CREATE MINING MODEL')]
     raise AssertionError('Unexpected SQL '+name)
 
-app=create_app({'SECRET_KEY':'main-browser-fixture','SESSION_CLOCK':lambda:time.time()+qa['offset']})
+configuration={'SECRET_KEY':'main-browser-fixture','SESSION_CLOCK':lambda:time.time()+qa['offset']}
+if '--hosted-login' in sys.argv:
+    configuration['HOSTED_DATABASE']={'DB_PASSWORD':'FixturePassword','DB_DSN':'lab_low'}
+app=create_app(configuration)
 @app.middleware('http')
 async def fixture(request,next_call):
     if request.url.path=='/qa/state':return JSONResponse(qa)

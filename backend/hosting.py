@@ -15,7 +15,10 @@ def create_hosted_app(environment=None):
             if any(c in value for c in '/:* '):
                 raise ValueError('Use exact allowed hostnames.')
             hosts.append(value)
-    return create_app({'SECRET_KEY': secret, 'SECURE_COOKIE': True, 'ALLOWED_HOSTS': hosts})
+    keys = ('DB_USER', 'DB_PASSWORD', 'DB_DSN', 'WALLET_DIR', 'WALLET_PASSWORD', 'WALLET_ZIP', 'ORACLE_CLIENT_LIB')
+    database = {key: env[key] for key in keys if key in env}
+    return create_app({'SECRET_KEY': secret, 'SECURE_COOKIE': True, 'ALLOWED_HOSTS': hosts,
+                       'HOSTED_DATABASE': database})
 
 def main():
     import argparse

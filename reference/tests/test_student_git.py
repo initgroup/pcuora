@@ -30,7 +30,7 @@ class StudentGitTests(unittest.TestCase):
         self.write('sql/custom/mission.sql', '-- own procedure\n')
         self.write('templates/creative.html', '<main>My task</main>')
         self.write('security/student.env', 'DB_PASSWORD=PrivateOnly_22417\n')
-        self.write('security/students.json', '[{"name":"private-person"}]')
+        self.write('security/students.json', '[{"student_id":"20260001","name":"Example Student","db_user":"STUDENT01"}]')
         self.write('security/Wallet_PCUORA.zip', 'private-wallet')
         self.write('instructor/private.py', '# instructor only')
         self.write('submission/report.txt', 'private report')
@@ -112,13 +112,22 @@ class StudentGitTests(unittest.TestCase):
         files = inventory(self.root, audience='student-git')
         self.assertEqual(set(files), {'app.py', '.gitignore', 'security/student.env.example',
                                      'security/students.example.json', 'sql/custom/mission.sql',
-                                     'templates/creative.html'})
-        for name in ('../outside.py', '/outside.py', 'instructor/private.py', 'security/students.json',
+                                     'templates/creative.html', 'security/students.json'})
+        for name in ('../outside.py', '/outside.py', 'instructor/private.py',
                      '.local/private.py', 'sql/.hidden/test.sql', 'sql/a/../../outside.sql'):
             self.assertFalse(student_git_path(name), name)
         self.write('backend/leak.py', 'password = "PrivateOnly_22417"')
         with self.assertRaisesRegex(ValueError, 'Configured secret'):
             inventory(self.root, audience='student-git')
+
+    def test_invalid_or_multiple_roster_is_rejected_before_any_git_call(self):
+        for value in ('[]','[{"student_id":"1","name":"A","db_user":"STUDENT01","password":"bad"}]',
+                      '[{"student_id":"1","name":"A","db_user":"STUDENT01"},{"student_id":"2","name":"B","db_user":"STUDENT02"}]'):
+            with self.subTest(value=value):
+                self.write('security/students.json',value)
+                with patch.object(student_git,'git') as git, self.assertRaises(ValueError):
+                    inventory(self.root,audience='student-git')
+                git.assert_not_called()
 
     def test_root_assignment_guide_is_included_in_student_git(self):
         self.write(STUDENT_GUIDE, '<main>My assignment guide</main>')
@@ -136,7 +145,7 @@ class StudentGitTests(unittest.TestCase):
         names = self.real_git(self.remote, 'ls-tree', '-r', '--name-only', 'main').stdout.splitlines()
         self.assertIn('security/students.example.json', names)
         self.assertNotIn('security/student.env', names)
-        self.assertNotIn('security/students.json', names)
+        self.assertIn('security/students.json', names)
         self.assertNotIn('security/Wallet_PCUORA.zip', names)
         self.assertNotIn('instructor/private.py', names)
         self.write('app.py', 'print("updated")\n')

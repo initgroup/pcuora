@@ -106,8 +106,11 @@ def publish(root, repository, branch='main', message='Update my OML assignment',
         target.write_bytes(raw)
     marker.write_text(json.dumps({'project': PROJECT, 'files': json.loads(manifest(files))}, indent=2) + '\n', encoding='utf-8')
     paths = sorted(set(files) | previous | {MARKER})
+    # 공통 ignore 규칙은 실제 명단을 보호합니다. 검증한 본인 명단 한 파일만 명시적으로 올립니다.
+    paths = [name for name in paths if name != 'security/students.json']
     for offset in range(0, len(paths), 50):
         git(checkout, 'add', '-A', '--', *paths[offset:offset + 50])
+    git(checkout, 'add', '-f', '--', 'security/students.json')
     print(git(checkout, 'diff', '--cached', '--stat').stdout.strip() or '소스 변경 없음')
     changed = git(checkout, 'diff', '--cached', '--quiet', check=False).returncode
     if changed not in (0, 1):

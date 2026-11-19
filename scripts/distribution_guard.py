@@ -1,6 +1,7 @@
 """Reject credentials in distributable bytes without ever printing secret values."""
 from pathlib import Path
 import io
+import json
 import re
 from dotenv import dotenv_values
 
@@ -42,3 +43,18 @@ def validate_files(files, root, allow_wallet=False, allow_student_env=False):
         cfg = dotenv_values(stream=io.StringIO(example.decode('utf-8')))
         if cfg.get('DB_USER') or cfg.get('DB_PASSWORD') or cfg.get('WALLET_PASSWORD'):
             raise ValueError('Student example must have blank DB_USER and passwords; login fills credentials.')
+
+def validate_student_roster(raw):
+    """본인 Git에는 비밀번호 없는 본인 한 행의 명단만 포함합니다."""
+    data=json.loads(raw.decode('utf-8-sig'))
+    fields={'student_id','name','department','grade','db_user'}
+    if not isinstance(data,list) or len(data)!=1:
+        raise ValueError('본인 Git의 security/students.json에는 본인 한 명만 등록하세요.')
+    person=data[0]
+    if not isinstance(person,dict) or set(person)-fields or not {'student_id','name','db_user'}<=person.keys():
+        raise ValueError('students.json에는 학번·이름·DB 계정과 선택 학과·학년만 작성하세요.')
+    if (not isinstance(person['student_id'],(str,int)) or isinstance(person['student_id'],bool)
+            or not str(person['student_id']).strip() or not isinstance(person['name'],str)
+            or not person['name'].strip() or not isinstance(person['db_user'],str)
+            or not re.fullmatch(r'[A-Za-z][A-Za-z0-9_]{0,127}',person['db_user'])):
+        raise ValueError('students.json의 student_id·name·db_user 형식을 확인하세요.')

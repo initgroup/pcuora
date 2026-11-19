@@ -1,6 +1,6 @@
 const fs=require('node:fs'),path=require('node:path'),os=require('node:os'),assert=require('node:assert/strict'),{spawn}=require('node:child_process');
 const root=path.resolve(__dirname,'../..'),out=fs.mkdtempSync(path.join(os.tmpdir(),'main-login-ui-')),pause=ms=>new Promise(r=>setTimeout(r,ms));
-const server=spawn(path.join(root,'.venv/Scripts/python.exe'),['-B',path.join(__dirname,'main_preview_server.py')],{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});
+const server=spawn(path.join(root,'.venv/Scripts/python.exe'),['-B',path.join(__dirname,'main_preview_server.py'),...(process.argv.includes('--hosted-login')?['--hosted-login']:[])],{cwd:root,windowsHide:true,stdio:['ignore','pipe','pipe']});
 let serverErrors='';server.stderr.on('data',c=>serverErrors+=c);
 const basePromise=new Promise((resolve,reject)=>{let buffer='';server.stdout.on('data',c=>{buffer+=c;const match=buffer.match(/MAIN_QA_URL=(http:\/\/127\.0\.0\.1:\d+)/);if(match)resolve(match[1])});server.on('error',reject);server.on('exit',code=>reject(new Error('Fixture exited '+code+' '+serverErrors)))});
 const profile=path.join(out,'profile'),browser=spawn('C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',['--headless=new','--disable-gpu','--no-first-run','--no-default-browser-check','--remote-debugging-port=0','--user-data-dir='+profile,'about:blank'],{windowsHide:true,stdio:'ignore'});
@@ -23,6 +23,25 @@ let ws;
  await call('Page.enable');await call('Runtime.enable');await call('Network.enable');await call('Emulation.setFocusEmulationEnabled',{enabled:true});
  await size(1440);const base=await basePromise;
  await call('Page.navigate',{url:base+'/'});await until('typeof csrf!=="undefined"&&csrf&&document.body.dataset.auth==="locked"');
+ if(process.argv.includes('--hosted-login')){
+   await click('#gate-login');await until('!document.getElementById("main-login").hidden');
+   assert.ok(await ev('document.getElementById("login-password").type==="hidden"&&!document.getElementById("login-password").required'));
+   await ev('document.getElementById("login-id").value="QA2026";document.getElementById("login-name").value="홍길동";document.getElementById("login-name").dispatchEvent(new Event("change"));document.getElementById("remember-identity").checked=true');
+   await until('document.getElementById("login-db-user").value==="STUDENT_QA"');
+   assert.deepEqual(await ev('loginPayload("QA2026","홍길동","ignored")'),{student_id:"QA2026",name:"홍길동"});
+   await click('#test-connection');await until('!document.getElementById("test-connection").disabled');
+   assert.ok(await ev('document.getElementById("connection-check").textContent.includes("LAB_DB")'));
+   await shot('hosted-login-1440');
+   await click('#login-submit');await until('document.body.dataset.auth==="ready"');
+   assert.deepEqual(await ev('JSON.parse(localStorage.getItem(rememberedKey))'),{student_id:"QA2026",name:"홍길동"});
+   assert.equal(await ev('document.getElementById("main-db-owner").textContent'),'STUDENT_QA');
+   await click('#logout');await until('document.body.dataset.auth==="locked"&&!signingOut');
+   await click('#gate-login');await until('!document.getElementById("main-login").hidden');
+   for(const width of [390,320]){await size(width);assert.ok(await ev('document.documentElement.scrollWidth<=innerWidth'));await shot('hosted-login-'+width)}
+   assert.deepEqual(errors,[]);
+   const report={ok:true,json_db_user:true,environment_password:true,no_browser_password_field:true,remember_only_id_and_name:true,widths:[1440,390,320],no_real_database:true,screenshots:out};
+   fs.writeFileSync(path.join(root,'runtime/hosted-login-browser.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));return;
+ }
  if(process.argv.includes('--guide-menu-only')){
    await click('#gate-login');await until('!document.getElementById("main-login").hidden');await login();
    assert.ok(await ev('document.getElementById("instructor-lecture-link").hidden&&document.getElementById("mobile-instructor-lecture-link").hidden'));
