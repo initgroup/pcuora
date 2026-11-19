@@ -3,6 +3,8 @@ import hashlib
 import importlib.util
 import json
 import os
+import shutil
+import subprocess
 from contextlib import redirect_stdout, contextmanager
 import io
 from pathlib import Path
@@ -76,3 +78,42 @@ class InstructorGitTests(unittest.TestCase):
     def test_modified_unmanaged_and_unsafe_remote_files_stop_publication(self):
         for failure in ('modified','unmanaged','unsafe'):
             with self.subTest(failure=failure):self.run_publication(failure)
+
+class InstructorMainEntryTests(unittest.TestCase):
+    def test_main_entry_delegates_modes_from_another_working_directory(self):
+        shell=shutil.which('powershell') or shutil.which('pwsh')
+        if not shell:self.skipTest('PowerShell is unavailable')
+        with temporary_repository() as directory:
+            base=Path(directory);source=base/'instructor source';scripts=source/'scripts'
+            scripts.mkdir(parents=True);target=source/'instructor/scripts';target.mkdir(parents=True)
+            entry=scripts/'git-publish-main.ps1'
+            shutil.copyfile(ROOT/'scripts/git-publish-main.ps1',entry)
+            stub=target/'deploy-github.ps1'
+            stub.write_text("""param([string]$Branch,[string]$Message,[string]$AuthorName,[string]$AuthorEmail,[switch]$Push,[switch]$Prepare)
+$PSBoundParameters | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $PSScriptRoot 'call.json') -Encoding utf8
+if ($Message -eq 'fail') { throw 'Publication failed' }
+""",encoding='utf-8')
+            def invoke(*args):
+                return subprocess.run([shell,'-NoProfile','-NonInteractive','-File',str(entry),*args],
+                                      cwd=base,capture_output=True,timeout=30)
+            for args,mode in (((), 'Push'),(('-Push',),'Push'),(('-Preview',),None),(('-Prepare',),'Prepare')):
+                with self.subTest(args=args):
+                    result=invoke(*args,'-Message','Main update','-AuthorName','Teacher')
+                    self.assertEqual(result.returncode,0,result.stderr.decode(errors='replace'))
+                    call=json.loads((target/'call.json').read_text(encoding='utf-8-sig'))
+                    self.assertEqual(call['Branch'],'main')
+                    self.assertEqual(call['Message'],'Main update')
+                    self.assertEqual(call['AuthorName'],'Teacher')
+                    self.assertEqual(bool(call.get('Push')),mode=='Push')
+                    self.assertEqual(bool(call.get('Prepare')),mode=='Prepare')
+            self.assertNotEqual(invoke('-Push','-Preview').returncode,0)
+            self.assertNotEqual(invoke('-Message','fail').returncode,0)
+            stub.unlink()
+            self.assertNotEqual(invoke('-Preview').returncode,0)
+
+    def test_main_entry_is_instructor_distribution_only(self):
+        from source_files import inventory, student_git_path
+        name='scripts/git-publish-main.ps1'
+        self.assertIn(name,inventory(ROOT))
+        self.assertNotIn(name,inventory(ROOT,audience='student'))
+        self.assertFalse(student_git_path(name))

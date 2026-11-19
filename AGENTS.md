@@ -310,3 +310,5 @@
 - 미션·창의 모델 비교표는 기본과제와 같은 compare-table·model-comparison-wrap·score-row·compare-model-name 스타일을 사용한다. 모델명은 열 제목, 모델 상태는 배지, 정확도는 강조 숫자, 정답/TEST·오분류는 같은 행으로 표시한다. 상태 조회 실패·로그아웃·미생성·현재 모델과 다른 평가 결과를 성공으로 표시하지 않으며 기본과제 전용 확정 동작을 임의로 추가하지 않는다.
 
 - 강사 Git 배포는 격리 checkout에서 기존 manifest 관리 파일을 갱신한다. 폐기 파일은 경로·링크·기존 SHA256을 확인한 뒤에만 삭제하며 Git의 CRLF/LF 변환만 허용한다. 관리 밖 파일·실제 내용 변경·경로 탈출은 중단한다. 원격 main 이력을 보존하고 강제 push하지 않는다. 검증은 reference/tests/test_instructor_git.py의 로컬 임시 저장소를 사용한다.
+
+- 강사용 scripts/git-publish-main.ps1은 기존 instructor/scripts/deploy-github.ps1에 main 배포를 위임하는 진입점이다. 기본 실행은 Push, -Preview는 원격 작업 없는 미리보기, -Prepare는 로컬 준비이며 동시에 지정하지 않는다. 자신의 위치로 루트를 계산하고 PUBLIC에만 등록하여 학생 ZIP·학생 Git·제출에 넣지 않는다. 허용 목록·비밀값 검사·이력 보존을 우회하는 별도 Git 구현을 추가하지 않는다.

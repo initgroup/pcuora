@@ -197,6 +197,16 @@ downloads/COM22417_학번_20261120.zip을 갱신하며, 기존 downloads/COM2241
 
 학생 Git 명령은 scripts/deploy-github.ps1이며 본인 HTTPS 저장소 주소를 필수로 받습니다. 기본 미리보기, 선택 -Prepare, 명시적 -Push이며 강제 push하지 않습니다. 강사 Git·Render 운영은 instructor/입니다. 강사 Git 대상은 https://github.com/initgroup/pcuora.git 입니다. Render는 별도 웹 인증을 둔 강사 시연용 단일 계정이며 학생별 서비스가 아닙니다. 실제 비밀번호는 문서에 쓰지 않습니다.
 
+
+강사용 main 배포는 프로젝트 루트에서 다음 명령으로 실행합니다. 기본 실행은 기존 강사 배포기의 허용 목록·비밀값 검사·이력 보존을 거쳐 업로드합니다. 학생용 ZIP/Git에는 이 진입점을 포함하지 않습니다.
+
+~~~powershell
+Set-Location 'D:\work\pcu\2026H2\COM22417\V01041'
+.\scripts\git-publish-main.ps1
+~~~
+
+미리보기는 -Preview, 업로드 없이 로컬 커밋 준비는 -Prepare입니다. 이 파일은 자신의 위치에서 루트를 계산하므로 다른 작업 폴더에서는 스크립트의 전체 경로로 호출할 수 있습니다.
+
 보고서는 submission/report.pdf, report.html, report.txt 중 하나, PPT는 submission/presentation.pptx 또는 presentation.ppt를 직접 작성합니다. 첫 접속 증빙으로 메인 로그인 정보·DB 연결 테스트 결과 카드를 캡처해 포함합니다. scripts/submit.ps1은 source/에 Python·SQL·웹 소스, report/에 PPT·보고서를 담습니다. 필수 자료 누락 시 중단합니다. Wallet·인증정보는 제출에서 제외합니다. 제출은 2026-12-18(금) 18:00 KST까지 별도 수업 공지 경로이며 웹은 제출 접수 시스템이 아닙니다.
 
 ## 강사 교재·검증
