@@ -11,6 +11,7 @@
   "scripts/compress.ps1",
   "scripts/source_backup.py",
   "scripts/git-publish-main.ps1",
+  "scripts/git-republish-main.ps1",
   "scripts/verify-db.ps1",
   "downloads/COM22417_과제설명및평가.html",
   "reference/docs/ARCHITECTURE.md",

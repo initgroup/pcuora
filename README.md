@@ -331,3 +331,7 @@ Oracle 명령은 단일 프로시저 안의 create_raw_model/create_clean_model,
 통합 안내의 개발환경 설정 4단계는 student.env 항목별 입력값과 students.json 필드·JSON 문법을 설명합니다. ‘파일 수정 → 본인 Git → Render 연결 관계’에서 로컬 환경파일 제외·본인 JSON 포함·운영 환경변수 재입력과 Wallet Secret Files를 구분합니다. GitHub main의 JSON 확인 후 Render 등록 순서를 따릅니다.
 
 - 강사용 git-publish-main.ps1도 운영 Git에 본인 한 행의 security/students.json을 포함한다. instructor/scripts/git_publish.py의 publication_files가 경로·한 행·허용 필드·비밀번호 미포함을 검사하고 해당 파일만 명시적으로 add한다. 일반 소스 백업·공통 학생 ZIP의 명단 범위는 변경하지 않으며 전체 명단·환경파일·Wallet은 Git에 포함하지 않는다. 검증은 reference/tests/test_instructor_git.py의 실제 로컬 Git 저장소를 사용한다.
+
+VS Code 탐색기에서는 runtime 하위 배포·검증 복제 저장소를 자동 탐색하지 않습니다. 실제 소스의 Git 장식은 유지하고 파일명의 Problems 색상·배지만 끕니다. 오류·경고는 Problems 패널과 편집기에서 확인합니다. 설정 반영 후에도 기존 표시가 남으면 명령 팔레트의 Developer: Reload Window를 실행하세요. 로컬 웹 서버를 재시작할 필요는 없습니다.
+
+Git 전체 재배포는 `scripts/git-republish-main.ps1`을 사용합니다. 전체 배포 허용 목록을 격리 checkout에 동기화하고 내용이 같아도 새 커밋을 만들어 main에 push합니다. Git은 동일 파일을 중복 전송하지 않으며 기존 커밋 이력을 유지합니다. `-Preview`는 목록만, `-Prepare`는 로컬 커밋까지만 수행합니다. Render 자동 배포에는 연결된 Git Provider·main·On Commit 설정이 필요합니다. 일반 `git-publish-main.ps1`은 변경이 없으면 커밋·push 없이 Already up to date로 종료합니다. 개인 운영 명령은 Git 제외 `.local/operations-commands.txt`에 둡니다.

@@ -5,6 +5,7 @@ param(
     [string]$AuthorName = '',
     [string]$AuthorEmail = '',
     [switch]$Prepare,
+    [switch]$Republish,
     [switch]$Push
 )
 . (Join-Path (Split-Path -Parent (Split-Path -Parent $PSScriptRoot)) 'scripts/common.ps1')
@@ -14,6 +15,7 @@ if (-not (Get-Command git -ErrorAction SilentlyContinue)) { throw 'Install Git f
 $arguments = @((Join-Path $PSScriptRoot 'git_publish.py'), '--repository', $Repository, '--branch', $Branch, '--message', $Message)
 if ($AuthorName) { $arguments += @('--author-name', $AuthorName) }
 if ($AuthorEmail) { $arguments += @('--author-email', $AuthorEmail) }
+if ($Republish) { $arguments += '--republish' }
 if ($Prepare) { $arguments += '--prepare' }
 if ($Push) { $arguments += '--push' }
 & $Python @arguments

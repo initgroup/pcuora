@@ -6,11 +6,31 @@
   "terminal.integrated.profiles.windows": {
     "OML (.venv)": {
       "path": "${env:windir}\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
-      "args": ["-NoLogo", "-NoProfile", "-NoExit", "-ExecutionPolicy", "Bypass", "-File", "${workspaceFolder}\\scripts\\terminal-init.ps1"],
+      "args": [
+        "-NoLogo",
+        "-NoProfile",
+        "-NoExit",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\terminal-init.ps1"
+      ],
       "icon": "terminal-powershell"
     }
   },
   "files.encoding": "utf8",
-  "files.exclude": {"**/__pycache__": true},
-  "search.exclude": {".venv": true, "security": true, "runtime": true, "downloads": true, "backups": true, "reference/wheels-classifier-py312": true}
+  "files.exclude": {
+    "**/__pycache__": true
+  },
+  "search.exclude": {
+    ".venv": true,
+    "security": true,
+    "runtime": true,
+    "downloads": true,
+    "backups": true,
+    "reference/wheels-classifier-py312": true
+  },
+  "git.autoRepositoryDetection": false,
+  "git.decorations.enabled": true,
+  "problems.decorations.enabled": false
 }

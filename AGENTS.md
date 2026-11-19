@@ -324,3 +324,7 @@
 - 통합 안내의 personal-settings·student-env-fields·student-roster·settings-handoff에서 압축 해제 후 수정할 두 파일과 항목별 입력·저장·Git 포함 여부·Render 입력 위치를 설명한다. 로컬 비밀번호 입력/성공 후 저장과 Render의 환경변수 비밀번호 사용을 구분한다. JSON 예시는 설치 절 한 곳에서 관리하고 Render 절은 해당 앵커로 연결한다.
 
 - 강사용 git-publish-main.ps1도 운영 Git에 본인 한 행의 security/students.json을 포함한다. instructor/scripts/git_publish.py의 publication_files가 경로·한 행·허용 필드·비밀번호 미포함을 검사하고 해당 파일만 명시적으로 add한다. 일반 소스 백업·공통 학생 ZIP의 명단 범위는 변경하지 않으며 전체 명단·환경파일·Wallet은 Git에 포함하지 않는다. 검증은 reference/tests/test_instructor_git.py의 실제 로컬 Git 저장소를 사용한다.
+
+- VS Code의 runtime 하위 배포·검증 저장소를 제품 소스의 Git 변경으로 표시하지 않는다. .vscode/settings.json에서 git.autoRepositoryDetection=false, git.decorations.enabled=true, problems.decorations.enabled=false를 유지한다. 루트 저장소의 Git 변경 표시와 Problems 패널·편집기 진단은 유지하며 장식을 없애려고 runtime 파일이나 저장소를 삭제하지 않는다.
+
+- 변경 없는 Git 재배포는 scripts/git-republish-main.ps1 → instructor/scripts/deploy-github.ps1 -Republish → git_publish.py --republish로 처리한다. 전체 배포 허용 목록·manifest·본인 한 행 JSON·비밀값 검증을 동일하게 적용하고 새 커밋만 허용하며 force push·기존 이력 교체는 금지한다. 일반 배포는 변경이 없으면 새 커밋·push 없이 명확히 종료한다. 새 래퍼는 강사용 공개 목록에만 포함하고 학생 ZIP에는 추가하지 않는다. 명령은 .local/operations-commands.txt에도 유지한다.

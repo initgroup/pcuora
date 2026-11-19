@@ -67,7 +67,7 @@ def publication_files(root):
     return files
 
 
-def publish(root, repository, branch, message, push=False, author_name='', author_email=''):
+def publish(root, repository, branch, message, push=False, author_name='', author_email='', republish=False):
     files = publication_files(root)
     git(root, 'check-ref-format', '--branch', branch)
     runtime = root / 'runtime'
@@ -136,16 +136,26 @@ def publish(root, repository, branch, message, push=False, author_name='', autho
         git(checkout, 'add', '-f', '--', 'security/students.json')
     elif 'security/students.json' in previous:
         git(checkout, 'add', '-A', '--', 'security/students.json')
-    print(git(checkout, 'diff', '--cached', '--stat').stdout.strip() or 'No source changes.')
+    summary = git(checkout, 'diff', '--cached', '--stat').stdout.strip()
+    if summary:
+        print(summary)
     changed = git(checkout, 'diff', '--cached', '--quiet', check=False).returncode
     if changed not in (0, 1):
         raise RuntimeError('Could not inspect staged changes.')
-    if changed:
+    if not changed and not republish:
+        print('Already up to date: all deployment source files match ' + repository + ' (' + branch + ').')
+        print('No new commit or push. Use git-republish-main.ps1 to request another deployment.')
+        return checkout
+    if republish:
+        print('Full deployment inventory synchronized; creating a new deployment commit even without source changes.')
+    if changed or republish:
         if author_name:
             git(checkout, 'config', 'user.name', author_name)
         if author_email:
             git(checkout, 'config', 'user.email', author_email)
-        git(checkout, 'commit', '-m', message)
+        options = ['--allow-empty'] if republish else []
+        git(checkout, 'commit', *options, '-m', message)
+    print('Commit: ' + git(checkout, 'rev-parse', 'HEAD').stdout.strip())
     if push:
         git(checkout, 'push', '--set-upstream', 'origin', 'HEAD:refs/heads/' + branch)
         print('Published to ' + repository + ' (' + branch + ').')
@@ -159,6 +169,8 @@ def main():
     parser.add_argument('--repository', default=DEFAULT_REPO)
     parser.add_argument('--branch', default='main')
     parser.add_argument('--message', default='Update OML classroom source')
+    parser.add_argument('--republish', action='store_true',
+                        help='Synchronize the full deployment inventory and create a new commit even if unchanged.')
     parser.add_argument('--author-name', default='')
     parser.add_argument('--author-email', default='')
     mode = parser.add_mutually_exclusive_group()
@@ -175,8 +187,10 @@ def main():
         for name in files:
             print('  ' + name)
         print(f'{len(files)} public source files. No remote changes. Use -Prepare or -Push explicitly.')
+        if args.republish:
+            print('REPUBLISH PREVIEW: a new commit will be created even when source content is unchanged.')
         return
-    publish(ROOT, args.repository, args.branch, args.message, args.push, args.author_name, args.author_email)
+    publish(ROOT, args.repository, args.branch, args.message, args.push, args.author_name, args.author_email, republish=args.republish)
 
 
 if __name__ == '__main__':
