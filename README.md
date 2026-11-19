@@ -195,7 +195,7 @@ downloads/COM22417_학번_20261120.zip을 갱신하며, 기존 downloads/COM2241
 공통 ZIP의 명단은 가상 예시만, 개별 ZIP은 본인 한 명만 포함합니다. student.env는 공개 예제에서 만들며 DB_USER·DB_PASSWORD·WALLET_PASSWORD는 비어 있습니다. 원본 Wallet은 포함합니다. Markdown·운영문서·개인 설정·실제 전체 명단·강사 교재·설치파일·wheel·runtime·가상환경·로그·.local은 제외합니다. 다른 폴더로 옮긴 후에는 .venv를 새로 설치합니다.
 설치자료는 reference/installers에 두고 오프라인 PC에만 별도 제공합니다. 온라인 설치가 기본이며 확장은 VS Code에서 누락분만 설치합니다. VC++ Runtime은 Thin에는 필요 없고 Thick 로드 오류 시 경로·x64·버전부터 확인합니다.
 
-학생 Git 명령은 scripts/deploy-github.ps1이며 본인 HTTPS 저장소 주소를 필수로 받습니다. 기본 미리보기, 선택 -Prepare, 명시적 -Push이며 강제 push하지 않습니다. 강사 Git·Render 운영은 instructor/입니다. 강사 Git 대상은 https://github.com/initgroup/pcuora.git 입니다. Render는 메인 화면 로그인만 사용하는 강사 시연용 단일 계정이며 학생별 서비스가 아닙니다. 실제 비밀번호는 문서에 쓰지 않습니다.
+학생 Git 명령은 scripts/deploy-github.ps1이며 본인 HTTPS 저장소 주소를 필수로 받습니다. 기본 미리보기, 선택 -Prepare, 명시적 -Push이며 강제 push하지 않습니다. 강사 Git·Render 운영은 instructor/입니다. 강사 Git 대상은 https://github.com/initgroup/pcuora.git 입니다. 학생도 본인 Git·Render에 배포할 수 있습니다. scripts/render-build.sh·render-start.sh와 backend/hosting.py를 공유하며 서비스별 본인 DB 계정 하나·프로세스 하나·메인 로그인을 사용합니다. 실제 비밀번호는 문서에 쓰지 않습니다.
 
 
 강사용 main 배포는 프로젝트 루트에서 다음 명령으로 실행합니다. 기본 실행은 기존 강사 배포기의 허용 목록·비밀값 검사·이력 보존을 거쳐 업로드합니다. 학생용 ZIP/Git에는 이 진입점을 포함하지 않습니다.
@@ -310,7 +310,7 @@ Oracle 명령은 단일 프로시저 안의 create_raw_model/create_clean_model,
 
 미션·창의의 학습/예측 CSV 파일 선택은 로그인 후 DB 객체 준비와 관계없이 사용할 수 있습니다. 대상 테이블이 있으면 CSV 교체 적재로 업로드할 수 있습니다. 미션·창의 모두 CSV 업로드를 제공하며 테이블 생성·전처리·학습은 직접 SQL로 수행합니다. 미션을 바꾸거나 로그아웃하면 파일 선택을 비웁니다.
 
-통합 학생 안내는 downloads/COM22417_과제설명및평가.html에서 관리한다. 최종 소스 기준으로 개발환경 설정·과제 수행방법·과제 평가 기준 3개 메뉴를 현행화했다. 변경 후에는 해당 안내와 객체 규약 부록의 흐름을 맞추고 학생 ZIP 루트에 통합 HTML을 같은 이름·바이트로 포함하여 검증한다. 별도 개발환경설정 HTML은 생성하지 않는다.
+통합 학생 안내는 downloads/COM22417_과제설명및평가.html에서 관리한다. 최종 소스 기준으로 개발환경 설정·과제 수행방법·과제 평가 기준·Git/Render 배포 4개 메뉴를 현행화했다. 변경 후에는 해당 안내와 객체 규약 부록의 흐름을 맞추고 학생 ZIP 루트에 통합 HTML을 같은 이름·바이트로 포함하여 검증한다. 별도 개발환경설정 HTML은 생성하지 않는다.
 
 
 공통 흐름·세부 현황 검사는 `node reference/tests/verify_coding_flow_browser.cjs --workspace-flow-only`로 수행합니다. 세 과제의 단계 순서·동일한 스타일·버튼과 결과 인접 배치·3/4 부분 완료·상세 레이어의 추가 요청 없음·초점 복귀·모바일·로그아웃 정리를 확인합니다. CSV 저장 검사는 `node reference/tests/verify_assignment_files_browser.cjs --upload`로 수행하며 실제 학생 DB를 교체하지 않습니다.
@@ -321,3 +321,7 @@ Oracle 명령은 단일 프로시저 안의 create_raw_model/create_clean_model,
 미션·창의 모델 비교표는 기본과제와 같은 compare-table·model-comparison-wrap·score-row·compare-model-name 스타일을 사용한다. 모델명은 열 제목, 모델 상태는 배지, 정확도는 강조 숫자, 정답/TEST·오분류는 같은 행으로 표시한다. 상태 조회 실패·로그아웃·미생성·현재 모델과 다른 평가 결과를 성공으로 표시하지 않으며 기본과제 전용 확정 동작을 임의로 추가하지 않는다.
 
 강사 Git 배포는 격리 checkout에서 기존 manifest 관리 파일을 갱신한다. 폐기 파일은 경로·링크·기존 SHA256을 확인한 뒤에만 삭제하며 Git의 CRLF/LF 변환만 허용한다. 관리 밖 파일·실제 내용 변경·경로 탈출은 중단한다. 원격 main 이력을 보존하고 강제 push하지 않는다. 검증은 reference/tests/test_instructor_git.py의 로컬 임시 저장소를 사용한다.
+
+학생 Render 설정은 통합 안내의 ‘04 Git·Render 배포’를 따릅니다. Source는 본인 Git Provider 저장소, Branch는 main, Root Directory는 비움, Build는 bash scripts/render-build.sh, Start는 bash scripts/render-start.sh, Health Check Path는 /healthz입니다. /healthz는 DB 연결을 조회하지 않으므로 메인 연결 테스트도 수행합니다. 환경변수·Wallet·본인 명단은 Render에서 직접 등록합니다.
+
+강사 운영·검증 파일 허용 목록은 reference/distribution/public-files.json으로 분리하며 학생 실행 허용 목록은 scripts/source_files.py에 둡니다. 참조 목록은 학생 ZIP/Git에 포함하지 않습니다. 학생 Git에는 ZIP 루트의 통합 안내 HTML을 포함하여 Render에서도 안내 메뉴를 제공합니다.

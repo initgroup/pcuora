@@ -16,3 +16,18 @@ def create_hosted_app(environment=None):
                 raise ValueError('Use exact allowed hostnames.')
             hosts.append(value)
     return create_app({'SECRET_KEY': secret, 'SECURE_COOKIE': True, 'ALLOWED_HOSTS': hosts})
+
+def main():
+    import argparse
+    import uvicorn
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host', default=os.environ.get('OML_BIND_HOST', '0.0.0.0'))
+    parser.add_argument('--port', type=int, default=int(os.environ.get('PORT', '10000')))
+    args = parser.parse_args()
+    if not 1 <= args.port <= 65535:
+        parser.error('Invalid port')
+    uvicorn.run(create_hosted_app(), host=args.host, port=args.port, workers=1)
+
+
+if __name__ == '__main__':
+    main()

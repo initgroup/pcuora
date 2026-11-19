@@ -10,3 +10,5 @@ DB 초기화는 기존 행을 보존하고 테이블3개·프로시저1개를 �
 ## 강사 main 배포
 
 프로젝트 루트에서 .\scripts\git-publish-main.ps1을 실행하면 기존 강사 배포기를 통해 main에 업로드합니다. -Preview는 원격 접속 없는 파일 목록 확인, -Prepare는 로컬 커밋만 준비합니다. 강제 push·학생 Wallet 공개·서버 재시작은 하지 않습니다. 다른 폴더에서는 이 스크립트의 전체 경로로 실행합니다. 학생 배포는 본인 저장소를 지정하는 scripts/deploy-github.ps1을 그대로 사용합니다.
+
+학생 Render는 scripts/render-build.sh·render-start.sh와 backend/hosting.py를 사용한다. Git Provider의 본인 main을 연결하고 통합 안내의 04 Git·Render 배포를 따른다. 강사 운영의 기존 instructor/scripts 경로도 같은 공통 실행 파일에 위임한다.

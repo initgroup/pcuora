@@ -7,6 +7,7 @@ APP_FILES=(
     'app.py',
     'manage.py',
     'backend/__init__.py',
+    'backend/hosting.py',
     'backend/assignment_templates.py',
     'backend/basic_lifecycle.py',
     'backend/practice_evidence.py',
@@ -150,104 +151,15 @@ APP_FILES=(
     'reference/student/assignment-template-guide.html',
 )
 APP_FILES=(*APP_FILES,'sql/examples/run.sql')
-STUDENT_SCRIPTS=('load_mission_csv.py','common.ps1','setup.ps1','terminal-init.ps1','check-environment.ps1','db-init.ps1','deploy-github.ps1','git_publish.py',
+STUDENT_SCRIPTS=('render-build.sh','render-start.sh','load_mission_csv.py','common.ps1','setup.ps1','terminal-init.ps1','check-environment.ps1','db-init.ps1','deploy-github.ps1','git_publish.py',
 'start.ps1','stop.ps1','restart.ps1','submit.ps1','package_submission.py','source_files.py','distribution_guard.py')
+STUDENT_GUIDE='COM22417_과제설명및평가.html'
 CONFIG=('.gitignore','.gitattributes','.vscode/settings.json','.vscode/extensions.json','.vscode/launch.json',
 'requirements.txt','security/student.env.example','security/students.example.json')
-PUBLIC=(*APP_FILES,*('scripts/'+n for n in STUDENT_SCRIPTS),*CONFIG,
-    'README.md','AGENTS.md',
-    'reference/requirements.in',
-    'reference/requirements.lock',
-    'reference/requirements-test.lock',
-    'scripts/package.ps1',
-    'scripts/package_student.py',
-    'scripts/backup.ps1',
-    'scripts/compress.ps1',
-    'scripts/source_backup.py',
-    'scripts/git-publish-main.ps1',
-    'scripts/verify-db.ps1',
-    'downloads/COM22417_과제설명및평가.html',
-    'reference/docs/ARCHITECTURE.md',
-    'reference/docs/OPERATIONS.md',
-    'reference/docs/DB_PERMISSIONS.md',
-    'reference/docs/ASSESSMENT.md',
-    'reference/installers/README.md',
-    'reference/tests/test_classifier.py',
-    'reference/tests/main_preview_server.py',
-    'reference/tests/session_preview_server.py',
-    'reference/tests/test_assignment_upload.py',
-    'reference/tests/test_basic_lifecycle.py',
-    'reference/tests/test_csv_resources.py',
-    'reference/tests/test_dataset_preview.py',
-    'reference/tests/test_main_connection.py',
-    'reference/tests/test_practice_evidence.py',
-    'reference/tests/test_prediction_choice.py',
-    'reference/tests/test_runtime_sql.py',
-    'reference/tests/test_session_runtime.py',
-    'reference/tests/test_sql_provision.py',
-    'reference/tests/verify_assignment_files_browser.cjs',
-    'reference/tests/verify_main_browser.cjs',
-    'reference/tests/verify_mission_guide_db.py',
-    'reference/tests/verify_session_browser.cjs',
-    'reference/tests/verify_sql_provision_db.py',
-    'reference/tests/verify_portability.py',
-    'reference/tests/design_preview_server.py',
-    'reference/tests/test_student_git.py',
-    'reference/tests/test_instructor_git.py',
-    'reference/tests/test_hosted_auth.py',
-    'reference/tests/verify_simple_browser.cjs',
-    'reference/tests/verify_layer_messages.cjs',
-    'reference/tests/test_code_highlight.cjs',
-    'reference/tests/test_coding_help.py',
-    'reference/tests/test_coding_flow.py',
-    'reference/tests/verify_coding_flow_browser.cjs',
-    'reference/tests/test_assignment_guides.py',
-    'reference/tests/workspace_visual_preview_server.py',
-    'reference/tests/verify_workspace_visual_browser.cjs',
-    'reference/tests/mission_csv_preview_server.py',
-    'reference/tests/verify_mission_csv_browser.cjs',
-    'reference/tests/test_model_lifecycle.py',
-    'reference/tests/verify_final_ddl.py',
-    'reference/tests/verify_oml_lab_db.py',
-    'reference/tests/test_oml_lab.py',
-    'reference/tests/sql/oml_lab_check.sql',
-    'reference/tests/verify_oml_lab_browser.cjs',
-    'reference/tests/test_model_dictionary.py',
-    'reference/tests/verify_prediction_contract.py',
-    'reference/tests/sql/prediction_contract.sql',
-    'reference/tools/verify_release.py',
-    'reference/tools/audit_student_content.py',
-    'reference/tools/package_install_assets.py',
-    'reference/tools/make_stock_sample.py',
-    'reference/tests/test_stock_sample.py',
-    'instructor/hosting.py',
-    'instructor/server.py',
-    'instructor/__init__.py',
-    'instructor/scripts/git_publish.py',
-    'instructor/scripts/deploy-github.ps1',
-    'instructor/scripts/render-build.sh',
-    'instructor/scripts/render-start.sh',
-    'instructor/docs/RENDER.md',
-    'instructor/docs/VERIFICATION.md',
-    'instructor/python-web-lecture.html',
-    'reference/tools/make_mission_samples.py',
-    'reference/tools/verify_mission_baseline.py',
-    'reference/tests/sql/mission_baseline.sql',
-    'reference/tests/test_mission_samples.py',
-    'instructor/build_lecture.py',
-    'instructor/verify_lecture.py',
-    'instructor/lecture/template.html',
-    'instructor/lecture/lecture.css',
-    'instructor/lecture/lecture.js',
-    'instructor/samples/python_basics.py',
-    'instructor/samples/payload_walkthrough.py',
-    'instructor/samples/http_basics.py',
-    'instructor/samples/http_basics.html',
-    'reference/tests/verify_simple_db.py',
-    'reference/tests/verify_simple_http.py',
-    'reference/tests/test_simple.py',
-    'reference/tests/verify_simple_assignments.py',
-)
+# 강사 운영·검증 파일 목록은 학생 실행 소스와 분리합니다.
+_PUBLIC_CATALOG=ROOT/'reference/distribution/public-files.json'
+_PUBLIC_EXTRAS=json.loads(_PUBLIC_CATALOG.read_text(encoding='utf-8')) if _PUBLIC_CATALOG.is_file() else []
+PUBLIC=(*APP_FILES,*('scripts/'+n for n in STUDENT_SCRIPTS),*CONFIG,*_PUBLIC_EXTRAS)
 
 def safe_path(name):
     if not isinstance(name,str) or '\\' in name or ':' in name or '..' in name.split('/'): return False
@@ -262,6 +174,7 @@ def student_git_path(name):
     path=Path(name)
     if path.is_absolute() or any(p in ('','..','.') for p in name.split('/')):
         return False
+    if name == STUDENT_GUIDE: return True
     if name in (*APP_FILES,*('scripts/'+n for n in STUDENT_SCRIPTS),*CONFIG):
         return True
     if any(part.startswith('.') or part=='__pycache__' for part in path.parts):
@@ -273,11 +186,14 @@ def student_git_path(name):
 def inventory(root=ROOT,audience='all'):
     root=Path(root).resolve()
     if audience not in ('all','student','submission','student-git'): raise ValueError('Unknown audience')
+    if audience=='all' and not _PUBLIC_CATALOG.is_file():
+        raise ValueError('Public source catalog is missing: reference/distribution/public-files.json')
     names=PUBLIC if audience=='all' else (*APP_FILES,*('scripts/'+n for n in STUDENT_SCRIPTS),*CONFIG)
     if audience in ('submission','student-git'):
         # 학생의 제출·Git 업로드는 추가 Python·SQL·화면·데이터도 수집합니다.
         # 강사의 공통 배포 ZIP과 백업은 명시적 목록만 사용합니다.
         candidates=list(root.glob('*.py'))
+        if audience=='student-git': candidates.append(root/STUDENT_GUIDE)
         for folder in ('backend','sql','templates','static','data'):
             candidates.extend((root/folder).rglob('*'))
         additions=(path.relative_to(root).as_posix() for path in candidates

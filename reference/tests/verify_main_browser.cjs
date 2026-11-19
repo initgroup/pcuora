@@ -51,14 +51,14 @@ let ws;
        assert.equal(Number(await evaluate('document.getElementById("font-size").value')),Math.min(22,before+2));
        await evaluate('document.getElementById("font-minus").click()');
        if(opened.length===1){
-         assert.deepEqual(await evaluate('[...document.querySelectorAll(".quick-nav .links a")].map(a=>a.getAttribute("href"))'),['#setup','#run','#assessment']);
+         assert.deepEqual(await evaluate('[...document.querySelectorAll(".quick-nav .links a")].map(a=>a.getAttribute("href"))'),['#setup','#run','#assessment','#deployment']);
          assert.deepEqual(await evaluate('[...document.querySelectorAll("a[href^=\\\"#\\\"]")].filter(a=>!document.getElementById(a.hash.slice(1))).map(a=>a.hash)'),[]);
          assert.equal(await evaluate('document.body.textContent.includes("COM22417_개발환경설정.html")'),false);
          for(const width of [1440,390,320])for(const font of [16,22]){
            await command('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<600});
            await evaluate('document.documentElement.style.setProperty("--size","'+font+'px");document.documentElement.style.scrollBehavior="auto"');
            assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'Guide page overflow '+width+' '+font);
-           for(const section of ['setup','run','assessment']){
+           for(const section of ['setup','run','assessment','deployment','render-environment']){
              await evaluate('document.getElementById('+JSON.stringify(section)+').scrollIntoView()');
              const capture=await command('Page.captureScreenshot',{format:'png'});
              fs.writeFileSync(path.join(out,'guide-'+section+'-'+width+'-'+font+'.png'),Buffer.from(capture.data,'base64'));

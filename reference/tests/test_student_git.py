@@ -13,7 +13,7 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'scripts'))
 import git_publish as student_git
-from source_files import inventory, student_git_path
+from source_files import inventory, student_git_path, STUDENT_GUIDE
 
 
 class StudentGitTests(unittest.TestCase):
@@ -119,6 +119,11 @@ class StudentGitTests(unittest.TestCase):
         self.write('backend/leak.py', 'password = "PrivateOnly_22417"')
         with self.assertRaisesRegex(ValueError, 'Configured secret'):
             inventory(self.root, audience='student-git')
+
+    def test_root_assignment_guide_is_included_in_student_git(self):
+        self.write(STUDENT_GUIDE, '<main>My assignment guide</main>')
+        self.assertIn(STUDENT_GUIDE, inventory(self.root, audience='student-git'))
+        self.assertTrue(student_git_path(STUDENT_GUIDE))
 
     def test_prepare_push_update_and_delete_use_real_git(self):
         checkout = self.publish()

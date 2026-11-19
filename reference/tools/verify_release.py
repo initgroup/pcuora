@@ -24,6 +24,9 @@ def verify(archive=None):
         assert source.testzip() is None
         names = source.namelist()
         assert all(name in names for name in ('app.py','manage.py','templates/index.html','static/js/main.js'))
+        assert all(name in names for name in ('backend/hosting.py','scripts/render-build.sh','scripts/render-start.sh'))
+        assert 'reference/distribution/public-files.json' not in names
+
         assert all(name in names for name in ('scripts/deploy-github.ps1','scripts/git_publish.py','.gitignore','.gitattributes'))
         assert not any(b'github.com/initgroup/pcuora' in source.read(name).lower() for name in names)
         assert not any(name.startswith(archive.stem+'/') for name in names)
@@ -101,7 +104,7 @@ def verify(archive=None):
                 assert (destination / name).resolve().is_relative_to(destination.resolve())
             source.extractall(destination)
             extracted = destination
-            for name in ('manage.py', 'app.py', 'backend/service.py', 'backend/identity.py'):
+            for name in ('manage.py', 'app.py', 'backend/service.py', 'backend/identity.py', 'backend/hosting.py'):
                 compile((extracted / name).read_text(encoding='utf-8'), str(extracted / name), 'exec')
 
     record = {

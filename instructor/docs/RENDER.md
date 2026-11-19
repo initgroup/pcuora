@@ -1,26 +1,31 @@
-# Render 강사 시연 운영
+# Render 운영
+학생과 강사는 같은 backend/hosting.py·scripts/render-build.sh·scripts/render-start.sh를 사용한다. 학생 ZIP에 공통 실행 파일을 포함한다. 서비스 하나당 본인의 DB 계정 하나·프로세스 하나를 사용한다. 통합 안내 downloads/COM22417_과제설명및평가.html의 ‘04 Git·Render 배포’가 화면별 상세 절차다.
 
-학생과 동일한 FastAPI 분류 사이트를 단일 강사 DB 계정으로 실행한다. 학생별 실습·제출 시스템이 아니다.
-Git main 반영 후 Render의 새 배포에서 적용한다. 실제 Render 배포 성공 여부는 배포 로그와 운영 화면으로 별도 확인한다.
+| 항목 | 설정 |
+| --- | --- |
+| Source | 본인 Git Provider → GitHub 저장소 |
+| Branch | main |
+| Language | Python 3 |
+| Root Directory | 비움 (app.py가 있는 저장소 루트) |
+| Build Command | bash scripts/render-build.sh |
+| Start Command | bash scripts/render-start.sh |
+| Health Check Path | /healthz |
+| Auto-Deploy | On Commit |
 
-Build: bash instructor/scripts/render-build.sh
-Start: bash instructor/scripts/render-start.sh
-플랫폼 PORT를 사용하고 OML_BIND_HOST와 실행 --host/--port를 지원한다. 웹 프로세스는 하나만 실행한다.
+기존 강사 instructor/scripts/render-build.sh·render-start.sh와 instructor/server.py도 공통 구현에 위임한다. Git 반영과 Render 배포 성공은 구분하고 Live의 커밋을 확인한다.
 
 필수 환경변수:
-- SECRET_KEY: 32자 이상 임의 값
-- DB_USER / DB_PASSWORD / DB_DSN: 강사 DB 계정
-- WALLET_DIR=/etc/secrets 또는 배치한 Wallet 디렉터리
-- WALLET_PASSWORD: Wallet 다운로드 당시 비밀번호
-- ORACLE_CLIENT_LIB: Thin에서는 빈 값
+- PYTHON_VERSION=3.12.10 / PYTHONUNBUFFERED=1
+- SECRET_KEY: 서비스마다 생성한 32자 이상 난수 (실제 값은 Render에만 입력)
+- DB_USER / DB_PASSWORD / DB_DSN: 본인 DB 계정·비밀번호·Wallet의 DSN 별칭 (예: pcuora_high)
+- WALLET_DIR=/etc/secrets / WALLET_PASSWORD: Wallet 다운로드 당시 암호
 - OML_ROSTER_FILE=/etc/secrets/students.json
-- RENDER_EXTERNAL_HOSTNAME: 플랫폼 지정 또는 OML_ALLOWED_HOSTS에 정확한 호스트명 등록
+- ORACLE_CLIENT_LIB: Thin에서는 빈 값
 
-Secret Files로 tnsnames.ora, ewallet.pem과 강사 식별정보 한 행의 students.json을 제공한다.
-실제 비밀번호·개인 명단·Wallet을 Git에 넣지 않는다.
-사이트는 메인 인트로를 바로 표시하고, 메인 로그인에서 학번·이름·DB 비밀번호로 실제 DB 인증을 거친다. 로그인 전 업무 API와 강사 교재의 접근 검사는 유지한다. 학생 배포 ZIP을 웹에서 제공하지 않는다.
-기본과제의 테이블 생성·프로시저 최초 등록 버튼으로 고정 테이블 3개(DATA·PREPARED·PREDICT)와 OML_BASIC_RUN 프로시저를 준비하고 CSV를 적재한다. 실제 연결·학습 결과만 표시한다.
+PORT·RENDER_EXTERNAL_HOSTNAME은 Render가 제공한다. 사용자 도메인은 OML_ALLOWED_HOSTS에 정확한 호스트명을 추가한다. OML_SITE_MODE=lab은 현재 소스에서 읽지 않는다. OML_ACCESS_USER·OML_ACCESS_PASSWORD도 사용하지 않으며 브라우저 Basic 인증 팝업은 없다.
 
-OML_ACCESS_USER / OML_ACCESS_PASSWORD는 더 이상 읽거나 검사하지 않는다. Render Environment에 기존 키가 남아 있어도 무시되며 삭제해도 된다. 브라우저 기본 인증 팝업은 제공하지 않는다. SECRET_KEY·DB·Wallet·명단 설정은 계속 필요하다.
+Secret Files에 tnsnames.ora·ewallet.pem·본인 한 행의 students.json을 등록한다. 명단의 db_user는 DB_USER와 일치해야 한다. 메인에서 학번·이름·DB 비밀번호로 실제 Oracle 인증을 거친다. 개인 설정·명단·Wallet은 Git에 넣지 않는다. 운영에서 security/student.env가 없을 때 플랫폼 DB 환경변수를 사용한다.
 
-운영 인증 회귀 검사는 reference/tests/test_hosted_auth.py에서 기본 인증 없이 인트로 접근, 메인 로그인·로그아웃, 미로그인 API 차단·CSRF·강사 권한·Secure 쿠키·호스트 제한을 실제 Oracle 대신 격리된 연결 대역으로 확인한다.
+Save, rebuild, and deploy 후 /healthz의 {"status":"ok"}와 메인 연결 테스트를 각각 확인한다. healthz는 DB를 조회하지 않는다. 로그인 전 업무 API 차단·CSRF·Secure 쿠키·강사 교재 권한을 유지한다. 검사는 reference/tests/test_hosted_auth.py와 학생 ZIP·Git 관련 검사에서 격리 실행하며 실제 학생 DB를 변경하지 않는다.
+
+공식 참고: https://render.com/docs/web-services · https://render.com/docs/configure-environment-variables · https://render.com/docs/python-version · https://render.com/docs/deploys · https://render.com/docs/health-checks
