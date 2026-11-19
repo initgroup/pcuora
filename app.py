@@ -408,6 +408,7 @@ def create_app(config=None):
         request.state.assignment_action = 'status'
         with database(request) as conn:
             state = assignment_templates.readiness(conn, key)
+            state.update(assignment_templates.input_state(conn,state))
             pending = next((action for action,item in state['actions'].items() if not item['ready']), None)
             result = {**state, 'preparation':assignment_templates.preparation_status(conn,key) if state['ready'] else {}, 'models':assignment_templates.model_state(conn,key,verify=state['ready']), 'diagnostic': assignment_templates.diagnostic(key, pending, state) if pending else None}
             if include_evidence:result['practice']=practice_summary(request,conn,key,result)
@@ -589,8 +590,10 @@ def create_app(config=None):
     @app.get('/api/coding-help')
     def coding_help(request: Request, operation: str = 'data', variant: str = 'RAW', use_yn: str = 'ALL', split: str = 'ALL', assignment: str = 'basic', source_kind: str = 'ALL', trigger_id: str = '', trigger_label: str = '', page: str = ''):
         authorized(request)
-        if assignment=='creative':raise HTTPException(404,'창의과제는 안내 쿼리를 제공하지 않습니다. 직접 작성한 SQL을 적용하세요.')
-        if assignment=='mission':
+        if assignment=='creative':
+            from backend.mission_guide import creative_manual
+            result=creative_manual(operation,variant,schema=current_user(request)['db_user'],trigger_id=trigger_id,trigger_label=trigger_label,page=page)
+        elif assignment=='mission':
             from backend.mission_guide import generate
             result=generate(selected_mission(request),operation,variant,source_kind,schema=current_user(request)['db_user'],trigger_id=trigger_id,trigger_label=trigger_label,page=page)
         else:

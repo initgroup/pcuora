@@ -6,8 +6,18 @@ from pathlib import Path
 import re
 import tempfile
 import zipfile
+import zlib
 from source_files import ROOT,inventory,manifest,APP_FILES,STUDENT_SCRIPTS
 from distribution_guard import validate_files
+
+
+class StudentArchive(zipfile.ZipFile):
+    """표 CSV는 FILTERED Deflate로 압축합니다. 파일 원문·표준 ZIP 형식은 보존합니다."""
+    def _open_to_write(self, zinfo, force_zip64=False):
+        stream=super()._open_to_write(zinfo,force_zip64)
+        if zinfo.compress_type==zipfile.ZIP_DEFLATED and zinfo.filename.endswith('.csv'):
+            stream._compressor=zlib.compressobj(9,zlib.DEFLATED,-15,zlib.DEF_MEM_LEVEL,zlib.Z_FILTERED)
+        return stream
 
 def student_roster(root, *, example=False):
     """로컬 명단 또는 가상 예시를 검증합니다. 배포 범위 선택은 build에서 수행합니다."""
@@ -78,9 +88,9 @@ def build(root=ROOT,*,student_id='학번',output=None,replace=False):
     # ZIP 안에는 포장용 최상위 폴더 없이 app.py·templates/ 등이 바로 들어갑니다.
     packed=files
     try:
-        with zipfile.ZipFile(temporary,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
+        with StudentArchive(temporary,'w',zipfile.ZIP_DEFLATED,compresslevel=9) as archive:
             for name,raw in sorted(packed.items()):
-                archive.writestr(name,raw,compress_type=zipfile.ZIP_STORED if name.endswith('Wallet_PCUORA.zip') else zipfile.ZIP_DEFLATED)
+                archive.writestr(name,raw,compress_type=zipfile.ZIP_DEFLATED)
             archive.writestr('MANIFEST.sha256.json',manifest(packed))
         with zipfile.ZipFile(temporary) as archive:
             if archive.testzip(): raise ValueError('ZIP 검증 실패')

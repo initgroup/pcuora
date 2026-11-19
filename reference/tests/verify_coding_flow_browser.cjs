@@ -131,6 +131,53 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
  };
  await call('Page.enable');await call('Runtime.enable');await call('Network.enable');await call('Emulation.setFocusEmulationEnabled',{enabled:true});await size(1440);
  const base=await basePromise;
+ if(process.argv.includes('--manual-actions-only')){
+   for(const assignment of ['mission','creative']){
+     await call('Page.navigate',{url:base+'/'+assignment});await until('typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!assignmentBusy');
+     await click('.assignment-tabs [data-assignment-tab=models]');
+     for(const mode of ['RAW','CLEAN']){
+       await ev('document.querySelector("#assignment-mode input[value='+mode+']").checked=true;assignmentState.models.find(m=>m.variant==="'+mode+'").exists=0;renderAssignmentControls()');
+       assert.deepEqual(await ev('["initial","retrain","delete-model"].map(id=>document.getElementById("assignment-"+id).disabled)'),[false,true,true]);
+       await click('#assignment-initial');await until('document.getElementById("execution-dialog").open&&executionStage?.id==="sql"');
+       assert.ok(await ev('!document.getElementById("execution-manual-note").hidden&&document.getElementById("execution-manual-note").textContent.includes(person.db_user)'));
+       assert.equal(await ev('executionItem.id'),await ev('executionStage.items[0].id'));
+       const sql=await ev('flowItemContent(executionItem)');
+       assert.ok(sql.includes('OML_'+assignment.toUpperCase()+"_RUN('INIT', '"+mode+"'"));
+       assert.ok(sql.includes('CURRENT_SCHEMA')&&sql.includes('PRINT result'));
+       await ev('window.manualCopied=null;navigator.clipboard.writeText=async value=>{window.manualCopied=value}');
+       await click('#copy-execution');assert.equal(await ev('manualCopied'),sql);
+       if(mode==='RAW')for(const width of [1440,390,320]){await layout(assignment+'-manual',width,width===320?22:16);}
+       await size(1440);await ev('fontSize(16)');await click('#close-execution');
+       await ev('assignmentState.models.find(m=>m.variant==="'+mode+'").exists=1;renderAssignmentControls()');
+       assert.deepEqual(await ev('["initial","retrain","delete-model"].map(id=>document.getElementById("assignment-"+id).disabled)'),[true,false,false]);
+       for(const [id,action] of [['retrain','RETRAIN'],['delete-model','DELETE']]){
+         await click('#assignment-'+id);await until('executionStage?.id==="sql"&&document.getElementById("execution-dialog").open');
+         assert.ok((await ev('flowItemContent(executionItem)')).includes("_RUN('"+action+"', '"+mode+"'"));await click('#close-execution');
+       }
+       await ev('assignmentState.preparation.'+mode+'.ready=false;renderAssignmentControls()');
+       assert.deepEqual(await ev('["initial","retrain","delete-model"].map(id=>document.getElementById("assignment-"+id).disabled)'),[true,true,false]);
+       await ev('assignmentState.preparation.'+mode+'.ready=true;assignmentState.preparation.'+mode+'.fit_rows=0;renderAssignmentControls()');
+       assert.equal(await ev('document.getElementById("assignment-retrain").disabled'),true);
+       await ev('assignmentState.preparation.'+mode+'.fit_rows=330;renderAssignmentControls()');
+     }
+     await click('#assignment-retrain + .code-help');await until('executionStage?.id==="ui"&&document.getElementById("execution-dialog").open');
+     assert.equal(await ev('document.getElementById("execution-manual-note").hidden'),true);await click('#close-execution');
+     await click('.assignment-tabs [data-assignment-tab=data]');
+     await click('#assignment-prepare');await until('executionStage?.id==="sql"&&document.getElementById("execution-dialog").open');
+     assert.ok((await ev('flowItemContent(executionItem)')).includes("_RUN('PREPARE'"));await click('#close-execution');
+     await ev('assignmentState.state.total_rows=0;renderAssignmentControls()');assert.equal(await ev('document.getElementById("assignment-prepare").disabled'),true);
+     await ev('assignmentBusy=true;renderAssignmentControls()');assert.equal(await ev('document.getElementById("assignment-delete-model").disabled'),true);
+     await ev('assignmentBusy=false;assignmentState.ready=false;renderAssignmentControls()');assert.equal(await ev('document.getElementById("assignment-initial").disabled'),true);
+     if(assignment==='mission'){
+       await ev('assignmentState.ready=true;missionSelectionCurrent="";renderAssignmentControls()');
+       assert.ok(await ev('[...document.querySelectorAll("[data-manual-action]")].every(button=>button.disabled)'));
+     }
+     await ev('clearCodingHelp()');assert.equal(await ev('document.getElementById("execution-manual-note").hidden'),true);
+   }
+   const qa=await(await fetch(base+'/qa/state')).json();assert.deepEqual(qa.blocked,[]);assert.deepEqual(qa.mutations,[]);assert.deepEqual(errors,[]);
+   const report={ok:true,assignments:2,modes:2,manual_buttons_open_sql:true,help_buttons_open_flow:true,availability_matches_basic:true,exact_copy:true,no_db_execution:true,layouts:views.length,screenshots:out};
+   fs.writeFileSync(path.join(root,'runtime/manual-actions-verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));return;
+ }
  if(process.argv.includes('--feedback-layout-only')){
    await call('Page.navigate',{url:base+'/basic'});await until('document.body.dataset.auth==="ready"&&!refreshing&&!activeTasks');
    const checks=[];
@@ -265,7 +312,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
        assert.equal(await ev('document.getElementById("assignment-panel-'+tab+'").hidden'),false,'Linking preserves the active tab');
        assert.equal(await ev('practiceEvidenceResult.steps[1].completed'),4);
      }
-     if(key==='creative')assert.equal(await ev('document.querySelectorAll("[data-code]").length'),0,'Creative receives linkage buttons without SQL guides');
+     if(key==='creative')assert.equal(await ev('document.querySelectorAll("[data-code]").length'),8,'Creative exposes only manual action help');
      reports.push({assignment:key,before:2,after:4,data_already_existed:true,no_prepare_or_train:true});
    }
    const qa=await(await fetch(base+'/qa/state')).json();
@@ -411,7 +458,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
 
    }
    await call('Page.navigate',{url:base+'/creative'});await until('typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!assignmentBusy');
-   assert.equal(await ev('document.querySelectorAll("[data-code],[data-execution]").length'),0);
+   assert.equal(await ev('document.querySelectorAll("[data-code],[data-execution]").length'),8);
    const qa=await(await fetch(base+'/qa/state')).json();assert.deepEqual(qa.blocked,[]);assert.deepEqual(errors,[]);
    const report={ok:true,synthetic_data_only:true,real_database_access:false,assignments:2,original_and_runtime_copy:true,actual_trace_filtering:true,stale_and_session_guard:true,no_csv_row_expansion:true,views,screenshots:out};
    fs.writeFileSync(path.join(root,'runtime/runtime-sql-browser-verification.json'),JSON.stringify(report,null,2));
@@ -637,7 +684,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      await ev('resetAssignmentWorkspace()');
      assert.equal(await ev('document.querySelectorAll("#assignment-comparison .compare-table").length'),1);
      assert.equal(await ev('document.getElementById("assignment-compare-state-RAW").textContent'),'확인 전');
-     if(key==='creative')assert.equal(await ev('document.querySelectorAll("#assignment-panel-models [data-code]").length'),0);
+     if(key==='creative')assert.equal(await ev('document.querySelectorAll("#assignment-panel-models [data-code]").length'),3);
    }
    const qa=await(await fetch(base+'/qa/state')).json();assert.deepEqual(qa.blocked,[]);assert.deepEqual(qa.mutations,[]);assert.deepEqual(errors,[]);
    fs.writeFileSync(path.join(root,'runtime/model-comparison-verification.json'),JSON.stringify({ok:true,synthetic_data_only:true,real_database_access:false,retrain_message:message,views,screenshots:out},null,2));
@@ -815,7 +862,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      await until('document.activeElement.matches('+JSON.stringify(selector)+')');
    }
  }
- await call('Page.navigate',{url:base+'/creative'});await until('typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!assignmentBusy');assert.equal(await ev('document.querySelectorAll("[data-code],[data-execution]").length'),0,'Creative scope unchanged');
+ await call('Page.navigate',{url:base+'/creative'});await until('typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!assignmentBusy');assert.equal(await ev('document.querySelectorAll("[data-code],[data-execution]").length'),8,'Creative exposes only manual action help');
  const qa=await(await fetch(base+'/qa/state')).json();assert.deepEqual(qa.blocked,[]);assert.deepEqual(errors,[]);
  const report={ok:true,synthetic_data_only:true,real_database_access:false,cases,checked_items:checkedItems,source_item_checks:checkedItems,original_snippet_checks:checkedItems-generatedSqlChecks,generated_sql_checks:generatedSqlChecks,unique_source_files:sourcePaths.size,unique_original_ranges:sourceRanges.size,source_files:[...sourcePaths].sort(),views,console_errors:errors,screenshots:out};
  fs.writeFileSync(path.join(root,guidanceOnly?'runtime/coding-guidance-verification.json':contextOnly?'runtime/coding-flow-file-context-verification.json':importOnly?'runtime/coding-flow-import-verification.json':layoutOnly?'runtime/coding-flow-layout-verification.json':'runtime/coding-flow-browser-verification.json'),JSON.stringify(report,null,2));

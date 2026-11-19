@@ -53,9 +53,18 @@ function renderAssignmentControls(){
   document.querySelector('[data-assignment]')?.setAttribute('aria-busy',String(assignmentBusy||assignmentPhase==='loading'));
   // Local file selection does not depend on DB object readiness and never uploads data.
   for(const id of ['assignment-file','assignment-prediction-file','assignment-add-file'])if($(id))$(id).disabled=!person||assignmentBusy||missionSelectionSaving;
+  controlState('assignment-prepare',reason||(!assignmentState?.state?.total_rows?'원본 데이터 없음 · 학습 CSV를 먼저 적재하세요.':''),'직접 실행 SQL 보기','assignment-prepared-status');
+  controlState('assignment-clear-prepared',reason||(!prep?.rows?'선택 방식의 저장값이 없습니다.':''),'선택 전처리값 삭제 SQL 보기');
+  controlState('assignment-clear-training',trainingReason||(!assignmentState?.state?.total_rows?'비울 원본 데이터가 없습니다.':''),'원본·전처리값 삭제 SQL 보기');
+  controlState('assignment-clear-prediction',predictionTableReason||(!assignmentState?.prediction_storage?.rows?'비울 예측 입력이 없습니다.':''),'예측 입력 삭제 SQL 보기');
+  const objectReason=!person?'로그인이 필요합니다.':assignmentBusy||assignmentPhase==='loading'?'DB 상태 확인 중입니다.':assignmentPhase!=='ready'?'현황에서 상태를 확인하세요.':'';
+  controlState('assignment-drop-objects',objectReason||(!assignmentState?.objects?.length&&!assignmentState?.models?.some(m=>m.exists)?'삭제할 실습 객체가 없습니다.':''),'실습 객체 삭제 SQL 보기');
   for(const button of document.querySelectorAll('[data-manual-action]')){
-    button.disabled=true;button.title=button.dataset.manualAction.includes('import')?'로컬 CSV 파일을 직접 적재한 뒤 테이블을 조회하세요.':'SQL Developer에서 직접 수행한 뒤 객체·모델을 연계하세요.';
-    text(button.id+'-status',button.dataset.manualAction.includes('import')?'로컬 CSV 파일 적재 · 완료 후 테이블 조회':'SQL Developer에서 직접 수행 · 완료 후 현황에서 연계 확인');
+    if(assignmentKey==='mission'&&(missionSelectionSaving||!missionSelectionCurrent))controlState(button.id,'미션을 선택하고 저장을 마친 뒤 SQL을 확인하세요.');
+    else if(!button.disabled){
+      button.title='직접 실행 SQL 보기 · SQL Developer에서 실행 후 결과를 연계하세요.';
+      text(button.id+'-status','직접 실행 SQL 보기 · 실행 후 SQL 실행 결과 연계');
+    }
   }
   controlState('assignment-import',assignmentImportUnavailable(false),'선택 CSV로 학습·TEST 데이터를 교체합니다.','assignment-file-state');
   controlState('assignment-prediction-import',assignmentImportUnavailable(true),'선택 CSV로 예측 입력을 교체합니다.','assignment-prediction-file-state');

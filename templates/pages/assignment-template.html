@@ -46,7 +46,7 @@
       <form id="assignment-connection">
         {% from 'object-names.html' import object_names %}
         {{ object_names('assignment-object',assignments[active],false) }}
-        {% call sql_result_link('assignment-check') %}<button type="button" id="assignment-check" aria-describedby="assignment-check-status">SQL 실행 결과 연계</button>{% endcall %}<div class="reset-actions">{% set guides=active=="mission" %}<span class="action-with-help"><button type="button" id="assignment-drop-objects" class="secondary danger" data-manual-action="drop-objects" disabled>실습 오브젝트 삭제 · 직접 SQL</button>{% if guides %}<button type="button" class="secondary code-help" data-code="drop-objects" aria-label="실습 오브젝트 삭제 · 직접 SQL 코딩도움말">?</button>{% endif %}</span><small>본인 SQL로 실행 후 연계 확인</small></div>
+        {% call sql_result_link('assignment-check') %}<button type="button" id="assignment-check" aria-describedby="assignment-check-status">SQL 실행 결과 연계</button>{% endcall %}<div class="reset-actions">{% set guides=true %}<span class="action-with-help"><button type="button" id="assignment-drop-objects" class="secondary danger" data-manual-action="drop-objects" disabled>실습 오브젝트 삭제 · 직접 SQL</button>{% if guides %}<button type="button" class="secondary code-help" data-code="drop-objects" aria-label="실습 오브젝트 삭제 · 직접 SQL 코딩도움말">?</button>{% endif %}</span><small>본인 SQL로 실행 후 연계 확인</small></div>
       </form>
       <div class="assignment-readiness-heading"><h3>테이블·프로시저 준비 상태</h3><button type="button" id="assignment-diagnostic" class="text-button" hidden>연결 상태·오류 상세</button></div>
       <p id="assignment-readiness-summary" class="assignment-state-copy">로그인 후 실제 DB 객체를 조회합니다.</p>
@@ -79,7 +79,7 @@
       {{ step_heading(1,'학습 CSV 적재','CSV 원본을 DATA 테이블에 저장합니다.') }}
       <div class="object-line"><span>원본 TRAIN·TEST</span><code id="assignment-training-target">{{ assignments[active].training_table }}</code></div>
       <div class="csv-upload"><label for="assignment-file">학습 CSV</label><div class="upload-choice-row"><input id="assignment-file" type="file" accept=".csv,text/csv" aria-describedby="assignment-file-state" disabled></div><div class="upload-footer"><span id="assignment-file-state" class="muted" role="status" aria-live="polite">{{ '파일 선택 → 교체 적재. 첫 줄 영문 헤더·쉼표 구분으로 500행씩 적재합니다.' if active=='mission' else '직접 만든 테이블에 맞는 CSV를 선택하고 교체 적재를 누르세요.' }}</span><div class="actions">{{ action_button('assignment-import','CSV 교체 적재','import') }}</div></div></div>
-      <div class="reset-actions">{% set guides=active=="mission" %}<span class="action-with-help"><button type="button" id="assignment-clear-training" class="secondary danger" data-manual-action="clear-training" disabled>학습 데이터 비우기 · 직접 SQL</button>{% if guides %}<button type="button" class="secondary code-help" data-code="clear-training" aria-label="학습 데이터 비우기 · 직접 SQL 코딩도움말">?</button>{% endif %}</span></div>
+      <div class="reset-actions">{% set guides=true %}<span class="action-with-help"><button type="button" id="assignment-clear-training" class="secondary danger" data-manual-action="clear-training" disabled>학습 데이터 비우기 · 직접 SQL</button>{% if guides %}<button type="button" class="secondary code-help" data-code="clear-training" aria-label="학습 데이터 비우기 · 직접 SQL 코딩도움말">?</button>{% endif %}</span></div>
   <p id="assignment-data-status" class="execution-status control-status" role="status">테이블·프로시저 준비 상태 확인 전입니다.</p>
       </section>
       <details id="assignment-original-detail" class="learning-workstep original-data-step" data-learning-stage="original" open>
@@ -118,7 +118,7 @@
       {% if active=='mission' %}<p id="mission-prediction-selection" class="execution-status">선택한 미션의 별도 예측 CSV 30행을 내려받아 적재하세요.</p>{% endif %}
       <section class="learning-workstep" data-prediction-stage="csv">{{ step_heading(1,'예측 CSV 적재','새 입력을 PREDICT 테이블에 저장합니다.') }}
       <div class="csv-upload"><label for="assignment-prediction-file">예측 CSV</label><div class="upload-choice-row"><input id="assignment-prediction-file" type="file" accept=".csv,text/csv" aria-describedby="assignment-prediction-file-state" disabled></div><div class="upload-footer"><span id="assignment-prediction-file-state" class="muted" role="status" aria-live="polite">예측 CSV를 선택하고 교체 적재를 누르세요.</span><div class="actions">{{ action_button('assignment-prediction-import','CSV 교체 적재','prediction-import') }}</div></div></div>
-      <div class="reset-actions">{% set guides=active=="mission" %}<span class="action-with-help"><button type="button" id="assignment-clear-prediction" class="secondary danger" data-manual-action="clear-prediction" disabled>예측 입력 비우기 · 직접 SQL</button>{% if guides %}<button type="button" class="secondary code-help" data-code="clear-prediction" aria-label="예측 입력 비우기 · 직접 SQL 코딩도움말">?</button>{% endif %}</span></div>
+      <div class="reset-actions">{% set guides=true %}<span class="action-with-help"><button type="button" id="assignment-clear-prediction" class="secondary danger" data-manual-action="clear-prediction" disabled>예측 입력 비우기 · 직접 SQL</button>{% if guides %}<button type="button" class="secondary code-help" data-code="clear-prediction" aria-label="예측 입력 비우기 · 직접 SQL 코딩도움말">?</button>{% endif %}</span></div>
   <p id="assignment-prediction-input-status" class="execution-status control-status" role="status">예측 입력 테이블의 상태 확인 전입니다.</p>
       </section>
       <details id="assignment-input-detail" class="learning-workstep original-data-step" data-prediction-stage="original" open>
@@ -209,7 +209,7 @@
     <div class="object-line"><span>테이블명</span><code id="assignment-schema-table"></code></div>
     <p id="assignment-schema-status" class="execution-status" role="status" aria-live="polite"></p>
     <div id="assignment-schema-columns" class="table-wrap mission-schema-columns"></div>
-    <p class="compact-note muted">창의과제는 예제 CSV·생성 SQL·처리 쿼리를 제공하지 않습니다. 직접 설계한 테이블·프로시저를 발급 DB 계정에 생성한 뒤 현황에서 연계하세요.</p>
+    <p class="compact-note muted">창의과제는 예제 CSV·구현 답안을 제공하지 않습니다. 직접 설계한 테이블·RUN을 발급 계정에 생성하세요. 직접 수행 버튼은 RUN 호출·객체 정리 SQL을 열며, 실행 후 결과를 연계합니다.</p>
   </div>
 </dialog>
 {% endif %}

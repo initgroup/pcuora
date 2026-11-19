@@ -455,6 +455,33 @@ class ClassifierTests(unittest.TestCase):
 
 
 
+    def test_shared_wallet_exception_keeps_private_credentials_blocked(self):
+        from distribution_guard import validate_files
+        with tempfile.TemporaryDirectory(dir=ROOT/'runtime') as temporary:
+            root=Path(temporary);(root/'security').mkdir()
+            personal=root/'security/student.env'
+            personal.write_text('DB_PASSWORD=PrivateDBPassword_22417\nWALLET_PASSWORD=Pcuora2026\nSECRET_KEY=PrivateSecretKey_22417\n',encoding='utf-8')
+            shared=b'DB_USER=\nDB_PASSWORD=\nWALLET_PASSWORD=Pcuora2026\n'
+            files={'security/student.env.example':shared,'security/student.env':shared,
+                   'guide.html':b'WALLET_PASSWORD=Pcuora2026'}
+            validate_files(files,root,allow_student_env=True)
+            for field,value in (('DB_USER','STUDENT23'),('DB_PASSWORD','PrivateDBPassword_22417'),
+                                ('WALLET_PASSWORD','OtherWalletPassword_22417'),('SECRET_KEY','PrivateSecretKey_22417'),
+                                ('API_TOKEN','Pcuora2026')):
+                with self.subTest(field=field):
+                    bad=shared+(field+'='+value+'\n').encode()
+                    with self.assertRaises(ValueError):
+                        validate_files({**files,'security/student.env.example':bad,'security/student.env':bad},root,allow_student_env=True)
+            for value in (b'PrivateDBPassword_22417',b'PrivateSecretKey_22417'):
+                with self.assertRaisesRegex(ValueError,'Configured secret'):
+                    validate_files({**files,'leak.html':value},root,allow_student_env=True)
+            with self.assertRaisesRegex(ValueError,'match the public example'):
+                validate_files({**files,'security/student.env':shared+b'# different bytes\n'},root,allow_student_env=True)
+            # The same text used as a private DB password is still a private secret.
+            personal.write_text('DB_PASSWORD=Pcuora2026\nWALLET_PASSWORD=Pcuora2026\n',encoding='utf-8')
+            with self.assertRaisesRegex(ValueError,'Configured secret'):
+                validate_files({'guide.html':b'Pcuora2026'},root)
+
     def test_student_zip_is_light_and_private(self):
         with tempfile.TemporaryDirectory(dir=ROOT/'runtime') as temporary:
             root=Path(temporary)
@@ -501,7 +528,7 @@ class ClassifierTests(unittest.TestCase):
                 import io
                 cfg=dotenv_values(stream=io.StringIO(zipped.read('security/student.env').decode('utf-8')),interpolate=False)
                 self.assertEqual(cfg['DB_USER'],'');self.assertEqual(cfg['DB_PASSWORD'],'')
-                self.assertEqual(cfg['WALLET_PASSWORD'],'')
+                self.assertEqual(cfg['WALLET_PASSWORD'],'Pcuora2026')
                 self.assertEqual(cfg['DB_DSN'],'pcuora_low')
                 self.assertEqual(local_env.read_text(encoding='utf-8'),original_env)
                 for name in names:
@@ -527,6 +554,12 @@ class ClassifierTests(unittest.TestCase):
                 self.assertIn(prefix+'static/css/studio.css',names)
                 self.assertIn('method-flow',zipped.read(prefix+'templates/pages/home.html').decode('utf-8'))
                 self.assertEqual(zipped.read(prefix+GUIDE_NAME),(root/'downloads'/GUIDE_NAME).read_bytes())
+                self.assertNotIn(b'Pcuora2026',zipped.read(prefix+GUIDE_NAME))
+                self.assertIn('WALLET_PASSWORD="본인의_Wallet_다운로드_암호"'.encode('utf-8'),zipped.read(prefix+GUIDE_NAME))
+                guide_text=zipped.read(prefix+GUIDE_NAME).decode('utf-8')
+                self.assertNotRegex(guide_text,r'(?i)ppt|powerpoint|보고서|submit\.ps1|submission/')
+                self.assertIn('제출 — Render 사이트 주소를 LMS 과제에 등록',guide_text)
+                self.assertIn('https://your-service.onrender.com',guide_text)
             with self.assertRaises(FileExistsError): build(root,student_id='20260001')
             updated=root/'templates/index.html'
             updated.write_bytes(updated.read_bytes()+b'\n<!-- latest source -->\n')

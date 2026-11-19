@@ -20,6 +20,7 @@
   "reference/docs/ASSESSMENT.md",
   "reference/installers/README.md",
   "reference/tests/test_classifier.py",
+  "reference/tests/test_submission_script.py",
   "reference/tests/main_preview_server.py",
   "reference/tests/session_preview_server.py",
   "reference/tests/test_assignment_upload.py",

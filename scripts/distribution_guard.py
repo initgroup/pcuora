@@ -5,6 +5,17 @@ import json
 import re
 from dotenv import dotenv_values
 
+SHARED_WALLET_PASSWORD = 'Pcuora2026'
+
+
+def validate_student_environment(raw):
+    cfg = dotenv_values(stream=io.StringIO(raw.decode('utf-8')), interpolate=False)
+    if cfg.get('DB_USER') or any(value for key,value in cfg.items()
+                               if any(word in key.upper() for word in ('PASSWORD','SECRET','TOKEN'))
+                               and not (key=='WALLET_PASSWORD' and value==SHARED_WALLET_PASSWORD)):
+        raise ValueError('Student environment must have blank DB_USER and private passwords; only the approved shared Wallet password is allowed.')
+    return cfg
+
 
 def secret_values(root):
     values = set()
@@ -12,6 +23,8 @@ def secret_values(root):
     for path in security.glob('*'):
         if path.is_file() and '.env' in path.name.lower() and not path.name.endswith('.example'):
             for key, value in dotenv_values(path, interpolate=False).items():
+                if key=='WALLET_PASSWORD' and value==SHARED_WALLET_PASSWORD:
+                    continue
                 if value and any(word in key.upper() for word in ('PASSWORD', 'SECRET', 'TOKEN')):
                     if len(value) < 8:
                         raise ValueError('A configured secret is too short for reliable distribution scanning. Review local settings.')
@@ -27,9 +40,7 @@ def validate_files(files, root, allow_wallet=False, allow_student_env=False):
             continue
         student_env = name == 'security/student.env' and allow_student_env
         if student_env:
-            cfg = dotenv_values(stream=io.StringIO(raw.decode('utf-8')), interpolate=False)
-            if cfg.get('DB_USER') or any(value for key,value in cfg.items() if any(word in key.upper() for word in ('PASSWORD','SECRET','TOKEN'))):
-                raise ValueError('Student environment must have blank DB_USER and passwords.')
+            validate_student_environment(raw)
             if raw != files.get('security/student.env.example'):
                 raise ValueError('Student environment must match the public example.')
         if ('.env' in Path(lower).name and not lower.endswith('.example') and not student_env) or re.search(r'(^|/)(teacher|tearher)[^/]*', lower):
@@ -40,9 +51,7 @@ def validate_files(files, root, allow_wallet=False, allow_student_env=False):
             raise ValueError('Configured secret detected in distribution: ' + name)
     example = files.get('security/student.env.example')
     if example is not None:
-        cfg = dotenv_values(stream=io.StringIO(example.decode('utf-8')))
-        if cfg.get('DB_USER') or cfg.get('DB_PASSWORD') or cfg.get('WALLET_PASSWORD'):
-            raise ValueError('Student example must have blank DB_USER and passwords; login fills credentials.')
+        validate_student_environment(example)
 
 def validate_student_roster(raw):
     """본인 Git에는 비밀번호 없는 본인 한 행의 명단만 포함합니다."""

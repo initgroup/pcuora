@@ -203,7 +203,7 @@ class CodingFlowTests(unittest.TestCase):
             self.assertEqual(client.get('/api/coding-help?operation=data').status_code, 401)
             connect.assert_not_called()
         with fixture.client() as (client, _, connect):
-            for operation in ('data', 'prepare', 'initial-train', 'predict'):
+            for operation in ('data', 'predict'):
                 response = client.get('/api/coding-help', params={'operation': operation, 'assignment': 'creative'})
                 self.assertEqual(response.status_code, 404)
             for query in ({'operation': '../../security/student.env'},

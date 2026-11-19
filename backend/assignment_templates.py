@@ -239,6 +239,15 @@ def run(conn,key,action,payload=None,mode='RAW',source_kind='ALL',mission_key=''
     return {'rows':result,'verified':verified,'message':ACTIONS[action]['label']+(' 성공' if verified else ' · 결과 확인 필요'),**context}
 
 
+def input_state(conn,state):
+    counts={}
+    for field,name in (('training_table','training'),('prediction_table','prediction')):
+        table=state['config'][field]
+        exists=any(o['object_name']==table and o['object_type']=='TABLE' and o['status']=='VALID' for o in state['objects'])
+        counts[name]=execute(conn,'queries/custom_count.sql',replacements={'table':table},fetch=True)[0]['rows_count'] if exists else 0
+    return {'state':{'total_rows':counts['training']},'prediction_storage':{'rows':counts['prediction']}}
+
+
 def link_external(conn,key):
     state=readiness(conn,key)
     if not state['ready']:raise AssignmentNotReady(diagnostic(key,'status',state))

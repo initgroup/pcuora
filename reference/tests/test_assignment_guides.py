@@ -109,21 +109,54 @@ class AssignmentGuideTests(unittest.TestCase):
 
     def test_creative_has_no_query_help_and_requires_manual_mutation(self):
         with self.client() as (client, headers, connect):
-            for operation in ('data', 'prepare', 'initial-train', 'evaluate', 'predict'):
+            for operation in ('data', 'evaluate', 'predict'):
                 response = client.get('/api/coding-help?assignment=creative&operation=' + operation)
                 self.assertEqual(response.status_code, 404, response.text)
                 response = client.post('/api/assignments/creative/script/' + operation, headers=headers)
                 self.assertEqual(response.status_code, 404, response.text)
             page = client.get('/creative')
             self.assertEqual(page.status_code, 200, page.text)
-            self.assertFalse(re.search(r'<button\b[^>]*\bclass="[^"]*\bcode-help\b', page.text))
+            self.assertIn('data-code="initial-train"',page.text)
+            self.assertNotIn('data-code="evaluate"',page.text)
             self.assertNotIn('data-execution=', page.text)
             connect.assert_not_called()
-            with patch.object(tasks, 'run') as run:
-                response = client.post('/api/assignments/creative/prepare', json={'variant': 'RAW'}, headers=headers)
-                self.assertEqual(response.status_code, 403, response.text)
-                run.assert_not_called()
+
+    def test_creative_manual_help_is_guarded_and_never_executes_or_generates_answers(self):
+        with self.client() as (client,headers,connect):
+            owner=connect.return_value.__enter__.return_value.username
+            for operation,action in (('prepare','PREPARE'),('initial-train','INIT'),('retrain','RETRAIN'),('delete-model','DELETE')):
+                for mode in ('RAW','CLEAN'):
+                    response=client.get('/api/coding-help',params={'assignment':'creative','operation':operation,'variant':mode})
+                    self.assertEqual(response.status_code,200,response.text)
+                    flow=response.json()['flow']
+                    self.assertEqual([stage['id'] for stage in flow['stages']],['ui','event','api','service','database','sql'])
+                    first=flow['stages'][-1]['items'][0]
+                    script=flow['files'][first['file_id']]['content']
+                    self.assertIn(owner+'.OML_CREATIVE_RUN',script)
+                    self.assertIn("('"+action+"', '"+mode+"'",script)
+                    self.assertIn("CURRENT_SCHEMA",script)
+                    self.assertIn('VARIABLE result REFCURSOR',script)
+                    self.assertIn('PRINT executed_sql',script)
+                    self.assertNotIn('CREATE OR REPLACE PROCEDURE',script)
+                    self.assertNotIn('CREATE_MODEL2',script)
+                    self.assertFalse(flow['stages'][4]['items'])
+                    self.assertEqual(client.post('/api/assignments/creative/'+operation,json={'variant':mode},headers=headers).status_code,403)
+            for operation in ('clear-training','clear-prepared','clear-prediction','drop-objects'):
+                response=client.get('/api/coding-help',params={'assignment':'creative','operation':operation})
+                self.assertEqual(response.status_code,200,response.text)
+                flow=response.json()['flow'];first=flow['stages'][-1]['items'][0]
+                script=flow['files'][first['file_id']]['content']
+                self.assertIn('OML_CREATIVE_',script)
+                self.assertNotIn('OML_MISSION_',script)
+                self.assertNotIn('OML_BASIC_',script)
             connect.assert_not_called()
+
+    def test_input_counts_use_only_existing_tables_and_no_row_download(self):
+        state={'config':tasks.assignment('mission'),'objects':[{'object_name':'OML_MISSION_DATA','object_type':'TABLE','status':'VALID'}]}
+        with patch.object(tasks,'execute',return_value=[{'rows_count':17}]) as execute:
+            result=tasks.input_state(None,state)
+            self.assertEqual(result,{'state':{'total_rows':17},'prediction_storage':{'rows':0}})
+            execute.assert_called_once_with(None,'queries/custom_count.sql',replacements={'table':'OML_MISSION_DATA'},fetch=True)
 
     def test_manual_mutations_are_forbidden_before_any_database_work(self):
         with self.client() as (client, headers, connect),patch.object(tasks,'run') as run,patch.object(tasks,'load_custom') as load:

@@ -95,6 +95,7 @@ function resetCodingFlow(){
   for(const id of ['execution-flow','execution-items','execution-code','execution-code-source','execution-code-role','execution-apply-steps','execution-apply-details','execution-verify-code'])$(id)?.replaceChildren();
   $('execution-stage-detail').hidden=true;$('execution-source-panel').hidden=true;
   $('execution-apply').hidden=true;$('execution-apply').open=false;$('execution-apply-command').hidden=true;$('execution-apply-command').open=false;
+  $('execution-manual-note').hidden=true;text('execution-manual-note','');
   for(const id of ['execution-copy-state','execution-flow-status','execution-warning','execution-apply-summary','execution-apply-owner','execution-mode'])text(id,'');
 }
 function clearCodingHelp(){codingQueryTraces.clear();++codingTraceVersion;hideHelpTooltip();++executionRequest;HelpWindow.closeAll();resetCodingFlow();}
@@ -278,15 +279,17 @@ async function openExecution(button){
   hideHelpTooltip();
   if(!person){openIdentity();return;}
   const assignment=document.querySelector('[data-assignment]')?.dataset.assignment||'basic';
-  if(assignment==='creative')return;
+  const manual=button.hasAttribute('data-manual-action');
+  if(manual&&button.disabled)return;
   executionOpener=button;const ticket=++executionRequest,dialog=$('execution-dialog'),trigger=codingTrigger(button);
-  const operation=button.dataset.code||button.dataset.execution;
+  const operation=button.dataset.manualAction||button.dataset.code||button.dataset.execution;
   const preparing=['prepare','prepared-data','clear-prepared'].includes(operation);
   const variant=button.dataset.variant||(assignment==='basic'?(preparing?selectedMode('preparation-mode'):['initial-train','retrain','append-train','delete-model','model-dictionary'].includes(operation)?selectedMode('model-lifecycle-mode'):operation==='predict'?selectedMode('prediction-model-select'):operation==='confirm'?selectedMode('model-lifecycle-mode'):'RAW'):(preparing?selectedMode('assignment-preparation-mode'):operation==='predict'?selectedMode('assignment-predict-mode'):selectedMode('assignment-mode')))||'RAW';
   const triggerLabel=(trigger.textContent||trigger.getAttribute('aria-label')||'').trim().replace(/\s+/g,' ');
   const values={operation,assignment,variant,use_yn:$('filter-use')?.value||'ALL',split:$('filter-split')?.value||'ALL',source_kind:$(assignment==='basic'?'prepared-source-kind':'assignment-prepared-source-kind')?.value||'TRAIN',trigger_id:trigger.id||'',trigger_label:triggerLabel,page:basicWorkspace?page:(document.body.dataset.page||'')};
   resetCodingFlow();text('execution-title',(triggerLabel&&triggerLabel!=='?'?triggerLabel:'코드')+' · 코딩도움말');
-  text('execution-context',({'basic':'기본과제','mission':'미션과제'})[assignment]+' · '+variant);
+  text('execution-context',({'basic':'기본과제','mission':'미션과제','creative':'창의과제'})[assignment]+' · '+variant);
+  if(manual){$('execution-manual-note').hidden=false;text('execution-manual-note','아래 구문을 복사하여 발급 계정 '+person.db_user+'의 실제 DB에 접속한 SQL Developer에서 전체 F5로 실행하세요. 완료 후 SQL 실행 결과 연계를 누르세요.');}
   text('execution-flow-status','버튼의 호출 흐름과 소스를 불러오는 중…');
   document.querySelector('.coding-flow-workspace').setAttribute('aria-busy','true');HelpWindow.open(dialog,{reset:true});dialog.scrollTop=0;
   try{
@@ -297,6 +300,7 @@ async function openExecution(button){
     const context=result.flow?.context;
     if(context)text('execution-context',context);
     renderCodingFlow(addExecutedCodingQueries(result.flow,values));renderCodingApplication(result);
+    if(manual)selectFlowStage('sql');
     $('execution-flow').scrollLeft=0;dialog.scrollTop=0;
   }catch(error){
     if(ticket!==executionRequest)return;
@@ -318,7 +322,7 @@ function codingFlowKeys(event,selector,select){
   }
 }
 document.addEventListener('click',event=>{
-  const button=event.target.closest('[data-code],[data-execution]');if(button)openExecution(button);
+  const button=event.target.closest('[data-code],[data-execution],[data-manual-action]');if(button&&!button.disabled)openExecution(button);
   const stage=event.target.closest('[data-flow-stage]');if(stage)selectFlowStage(stage.dataset.flowStage);
   const item=event.target.closest('[data-flow-item]');if(item)selectFlowItem(item.dataset.flowItem);
   const heading=event.target.closest('[data-flow-file]');

@@ -463,10 +463,11 @@ def basic_flow(result,*,trigger_id='',trigger_label='',page=''):
 @_file_snapshot
 def mission_flow(result,*,trigger_id='',trigger_label='',page=''):
     op=result['operation'];web=op in MISSION_WEB
+    creative=result['assignment']=='creative'
     summary=('직접 만든 미션 객체를 웹에서 조회·평가·예측하는 실제 호출 흐름입니다. 로컬 미션 SQL과 DB 적용 버전은 다를 수 있습니다.' if web else
              '웹은 선택 미션의 SQL을 생성·표시합니다. DB 연결·실행은 없으며, 생성 SQL은 SQL Developer에서 직접 실행합니다.')
     flow=_new(result,'web-execution' if web else 'manual-guide',summary)
-    flow['context']='미션과제 · '+result['title'].removesuffix(' · SQL 가이드')+' · '+result['variant']
+    flow['context']=('' if creative else '미션과제 · ')+result['title'].removesuffix(' · SQL 가이드')+' · '+result['variant']
     label=' '.join(str(trigger_label).split())[:80] or result['title']
     _ui(flow,op,label,trigger_id,page,mission=True)
     if op in ('import','prediction-import'):
@@ -544,23 +545,28 @@ def mission_flow(result,*,trigger_id='',trigger_label='',page=''):
             _add(flow,'sql',_whole('sql/custom/mission/02_procedure.sql','로컬 RUN 정의 · DB 적용 여부 확인','이 파일을 DB에 적용한 경우에만 실행 정의와 일치합니다. 선택 미션 생성본은 아래 별도 항목입니다.'))
         _add(flow,'sql',_generated(result['script'],'선택 미션 · 직접 실행용 SQL',result['script_path'],'선택 미션 컬럼·소유자를 반영한 생성 예제입니다. 웹이 실행한 SQL 기록이 아닙니다.'))
     else:
-        _add(flow,'event',_around('static/js/execution-dialog.js',"const button=event.target.closest('[data-code],[data-execution]')",'코딩 도움말 클릭 이벤트',before=1,after=1),
+        _add(flow,'event',_around('static/js/execution-dialog.js',"const button=event.target.closest('[data-code],[data-execution],[data-manual-action]')",'코딩 도움말 클릭 이벤트',before=1,after=1),
              _js_function('static/js/execution-dialog.js','openExecution'),_js_function('static/js/main.js','api'))
         _add(flow,'api',_python('app.py','coding_help','선택 미션 도움말 GET'))
-        _add(flow,'service',_python('backend/mission_guide.py','generate','선택 미션 SQL 생성'))
+        _add(flow,'service',_python('backend/mission_guide.py','creative_manual' if creative else 'generate','직접 수행 SQL 생성'))
         generator='csv_load_sql' if op in ('import','prediction-import') else 'procedure_sql' if op in ('setup','initialize') else 'reset_sql' if op in ('clear-training','clear-prediction','clear-prepared','drop-objects') else '_direct'
         if op in ('preview','prediction-preview'):generator='procedure_sql'
         _add(flow,'service',_python('backend/mission_guide.py',generator))
-        if generator not in ('procedure_sql','reset_sql'):
+        if not creative and generator not in ('procedure_sql','reset_sql'):
             _add(flow,'service',_python('backend/mission_guide.py','procedure_sql','선택 미션의 전체 RUN 정의 생성','generate가 공통으로 읽는 템플릿에 선택 미션 컬럼·라벨·소유자를 반영합니다.'))
         flow['stages'][4]['summary']='웹 DB 연결 없음 · SQL Developer에서 직접 실행'
-        _add(flow,'sql',_generated(result['script'],result['code_title'],result['script_path'],'직접 실행용 생성 SQL입니다. 가이드 조회·복사는 DB를 변경하지 않습니다.'))
+        _add(flow,'sql',_generated(result['script'],result.get('code_title','직접 실행 SQL'),result['script_path'],'직접 실행용 생성 SQL입니다. 가이드 조회·복사는 DB를 변경하지 않습니다.'))
+    if creative:
+        flow['summary']='본인 RUN의 호출·고정 객체 정리만 안내합니다. 구현·실행은 SQL Developer에서 직접 수행하세요.'
+        _add(flow,'sql',_whole('sql/custom/creative/02_procedure.sql','본인이 작성하는 RUN 파일'))
+        return _file_flow(flow,result)
     if op not in ('preview','prediction-preview','clear-training','clear-prediction','clear-prepared','drop-objects'):
         if result['script']!=result['procedure_sql']:
             _add(flow,'sql',_generated(result['procedure_sql'],'선택 미션 전체 RUN 정의','sql/custom/mission/02_procedure.sql','선택 미션을 반영한 생성본입니다. 이 경로에 저장하고 발급 계정에서 F5 적용하세요. 기존 파일 원문과 구분합니다.'))
         _add(flow,'sql',_whole('sql/custom/mission/guide_procedure.sql','미션 RUN 생성 템플릿 원문','생성 서비스가 실제 읽는 템플릿입니다. {{...}} 값은 선택 미션의 컬럼·분류값·소유자로 치환되며 템플릿 자체를 실행하지 않습니다.'))
     _confirmation(flow)
     return _file_flow(flow,result)
+
 
 @_file_snapshot
 def lifecycle_flow(result,*,trigger_id='',trigger_label='',page=''):

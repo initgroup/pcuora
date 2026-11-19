@@ -8,7 +8,7 @@
 :root { --size:16px; --ink:#213747; --muted:#637684; --line:#dce5eb; --teal:#147967; --navy:#192f42; font-size:var(--size); color-scheme:light; }
 * { box-sizing:border-box; }
 html { scroll-behavior:smooth; scroll-padding-top:5rem; }
-body { margin:0; color:var(--ink); background:#f3f6f9; font:1rem/1.6 'Segoe UI','Malgun Gothic',sans-serif; }
+body { margin:0; color:var(--ink); background:#f3f6f9; font:1rem/1.6 'Segoe UI','Malgun Gothic',sans-serif; overflow-wrap:anywhere; }
 main { max-width:1180px; margin:auto; padding:1.5rem 1.5rem 3rem; }
 h1,h2,h3,p { margin:0; }
 h1 { font-size:2rem; letter-spacing:-.05em; line-height:1.35; }
@@ -111,13 +111,25 @@ summary { padding:.7rem .9rem; cursor:pointer; color:var(--ink); font-size:.9rem
 .deadline { color:var(--teal); font-size:1.3rem; }
 footer { margin-top:2rem; padding-top:1rem; border-top:1px solid var(--line); color:var(--muted); font-size:.8rem; display:flex; justify-content:space-between; gap:1rem; }
 @media(max-width:760px) { #student-env-fields table,#student-env-fields tbody,#student-env-fields tr,#student-env-fields th,#student-env-fields td { display:block; width:auto; } #student-env-fields thead { display:none; } #student-env-fields th { border-bottom:0; background:#eaf0f5; } main { padding:1rem .8rem 2rem; } .hero { padding:1.2rem; align-items:flex-start; flex-direction:column; gap:1rem; } .hero-side { border-left:0; border-top:1px solid #ffffff30; padding:1rem 0 0; width:100%; } h1 { font-size:1.65rem; } .step { grid-template-columns:1fr; gap:.6rem; padding:1rem; } .scores { gap:.45rem; } .score { padding:.7rem; display:block; } .score small { display:none; } .score b { display:block; font-size:1.4rem; } .command-grid,.two-col { grid-template-columns:1fr; } .reading { margin-left:auto; } th,td { padding:.65rem; } .source-table { min-width:570px; } }
+@media(max-width:760px) {
+  #submit table,#submit tbody,#submit tr,#submit th,#submit td { display:block; width:auto; }
+  #submit thead { display:none; }
+  #submit tbody th { background:#eaf0f5; border-bottom:0; }
+  #render-db-troubleshooting table,#render-db-troubleshooting tbody,#render-db-troubleshooting tr,#render-db-troubleshooting th,#render-db-troubleshooting td { display:block; width:auto; }
+  #render-db-troubleshooting thead { display:none; }
+  #render-db-troubleshooting tbody th { background:#eaf0f5; border-bottom:0; }
+  #render-db-troubleshooting td::before { display:block; font-weight:600; color:var(--teal); }
+  #render-db-troubleshooting td:nth-child(2)::before { content:'로컬 PC'; }
+  #render-db-troubleshooting td:nth-child(3)::before { content:'Render'; }
+  #render-db-troubleshooting td[colspan]::before { content:'공통'; }
+}
 @media print { .quick-nav,.copy { display:none; } body { background:white; font-size:10pt; } main { max-width:none; padding:0; } .hero,.command,.settings,.rubric tfoot { print-color-adjust:exact; } details:not([open])>.detail-body { display:block; } .table-shell { overflow:visible; } .rubric,.source-table { min-width:0; } tr,.step,.card { break-inside:avoid; } .command-grid { grid-template-columns:repeat(3,1fr); } }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
 </style>
 </head>
 <body><main>
 <p class="breadcrumb">배재대학교 &gt; 소프트웨어학 &gt; 빅데이터머신러닝 &gt; 2026년 2학기</p>
-<header class="hero"><div><p class="eyebrow">COM22417 · STUDENT GUIDE</p><h1>과제 설명 및 평가</h1><p>환경을 준비하고, 세 과제를 수행하고, 결과를 증명하세요.<br>OML = Oracle Machine Learning</p></div><div class="hero-side"><span>제출 마감 · KST</span><strong>2026.12.18 금요일 18:00</strong><span>소스 + PPT + 보고서</span></div></header>
+<header class="hero"><div><p class="eyebrow">COM22417 · STUDENT GUIDE</p><h1>과제 설명 및 평가</h1><p>환경을 준비하고, 세 과제를 수행하고, Render 사이트에서 결과를 확인하세요.<br>OML = Oracle Machine Learning</p></div><div class="hero-side"><span>제출 마감 · KST</span><strong>2026.12.18 금요일 18:00</strong><span>Render 사이트 주소 → LMS 과제</span></div></header>
 <nav class="quick-nav" aria-label="안내서 메뉴"><div class="links"><a href="#setup">01 개발환경 설정</a><a href="#run">02 과제 수행방법</a><a href="#assessment">03 과제 평가 기준</a><a href="#deployment">04 Git·Render 배포</a></div><div class="reading"><button id="font-minus" aria-label="글자 작게">가−</button><output id="font-size">16</output><button id="font-plus" aria-label="글자 크게">가+</button></div></nav>
 <div class="scores" aria-label="과제 배점"><a href="#basic-task" class="score"><div><strong>기본과제</strong><small>화면에서 실행하며 이해</small></div><b>50<span>점</span></b></a><a href="#mission-task" class="score"><div><strong>미션과제</strong><small>예시 SQL 적용·수정</small></div><b>30<span>점</span></b></a><a href="#creative-task" class="score"><div><strong>창의과제</strong><small>데이터·SQL 직접 설계</small></div><b>20<span>점</span></b></a></div>
 <section id="setup">
@@ -143,11 +155,11 @@ venv: True</pre></div><p class="note"><kbd>Ctrl+Shift+P</kbd> → Python: Select
 <details id="student-env-fields" open><summary>student.env · 항목별 입력 기준</summary><div class="detail-body"><div class="table-shell"><table><thead><tr><th>항목</th><th>수정 방법</th></tr></thead><tbody>
 <tr><th>DB_USER<br>DB_PASSWORD</th><td>첫 로컬 실행은 비워 둡니다. 웹에서 JSON의 계정과 입력한 DB 비밀번호로 접속에 성공하면 자동 저장됩니다.</td></tr>
 <tr><th>DB_DSN</th><td>제공 Wallet의 서비스 별칭. 예시 pcuora_low를 사용하고 변경 시 tnsnames.ora의 별칭과 맞춥니다.</td></tr>
-<tr><th>WALLET_PASSWORD</th><td>전달받은 Wallet 다운로드 암호로 변경합니다. DB 비밀번호와 다릅니다. 공백·# 등이 있으면 값 전체를 큰따옴표로 감싸세요.</td></tr>
+<tr><th>WALLET_PASSWORD</th><td>배포한 압축소스의 <code>security/student.env</code>에 포함된 값을 유지하세요. 아래 안내 문구로 덮어쓰지 않습니다. 개인 DB 로그인 비밀번호와 다르며 Wallet을 새로 발급받았다면 해당 Wallet의 다운로드 암호를 사용합니다.</td></tr>
 <tr><th>WALLET_ZIP</th><td>security/Wallet_PCUORA.zip 유지. 본인 프로젝트 security 안에 원본 ZIP이 있어야 합니다.</td></tr>
 <tr><th>ORACLE_CLIENT_LIB</th><td>기본 Thin 연결은 비워 둡니다.</td></tr>
 </tbody></table></div><p>없으면 setup.ps1이 student.env.example에서 생성합니다. 이 파일은 로컬 전용이며 Git에 올라가지 않습니다.</p></div></details>
-</div><div><div class="settings"><strong>security/student.env · 최초 설정 예시</strong><pre><code>DB_USER=
+</div><div><div class="settings"><strong>security/student.env · 설정 형식 예시 · 제공본 Wallet 값 유지</strong><pre><code>DB_USER=
 DB_PASSWORD=
 DB_DSN=pcuora_low
 WALLET_PASSWORD="본인의_Wallet_다운로드_암호"
@@ -162,7 +174,7 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <li><strong>department / grade</strong>: 본인 학과 / 숫자 학년. 두 항목은 선택입니다.</li></ul>
 <p>대괄호 안에 본인 한 행만 남깁니다. 문자열은 큰따옴표, 마지막 항목 뒤 쉼표·주석은 금지합니다. 비밀번호는 추가하지 않습니다. <strong>본인 Git에는 이 파일이 포함됩니다.</strong></p>
 </div></details></div></article>
-<article class="step"><div><h3><span class="step-number">5</span>로컬에서 시작하고 로그인하기</h3><p>오른쪽 명령 실행 → 출력된 주소 열기 → <strong>로그인</strong>을 누릅니다.</p><p>로그인 버튼을 누르면 팝업 대신 메인 본문에 입력란이 나옵니다. 학번·이름 → DB 비밀번호 → <strong>DB 연결 테스트</strong> → <strong>로그인</strong> 순서입니다.</p><p>로그인 후 <strong>메인 접속 카드</strong>에서 본인 정보·발급 DB 계정·실제 접속 위치·연결 테스트 결과를 확인하고 함께 캡처해 PPT에 넣으세요. 그다음 기본·미션·창의과제를 선택합니다.</p><p class="note">공용 PC에서는 ‘입력값 저장’을 선택하지 마세요. 선택하면 학번·이름·DB 비밀번호가 브라우저에 저장됩니다.</p></div><div><div class="command"><div class="command-head"><span>PowerShell · 서비스 시작</span></div><pre><code>.\scripts\start.ps1</code></pre></div><div class="expected"><strong>정상 출력 예시</strong><pre>OML Studio is ready: http://127.0.0.1:22417</pre><p>기본 주소: <a href="http://127.0.0.1:22417">http://127.0.0.1:22417</a></p></div><p class="note">22417이 사용 중이면 다른 포트를 선택합니다. <code>OML Studio is ready:</code> 또는 <code>Already running:</code> 뒤의 실제 주소로 접속하세요. 서버 재시작 후에는 다시 로그인합니다.</p></div></article>
+<article class="step"><div><h3><span class="step-number">5</span>로컬에서 시작하고 로그인하기</h3><p>오른쪽 명령 실행 → 출력된 주소 열기 → <strong>로그인</strong>을 누릅니다.</p><p>로그인 버튼을 누르면 팝업 대신 메인 본문에 입력란이 나옵니다. 학번·이름 → DB 비밀번호 → <strong>DB 연결 테스트</strong> → <strong>로그인</strong> 순서입니다.</p><p>로그인 후 <strong>메인 접속 카드</strong>에서 본인 정보·발급 DB 계정·실제 접속 위치·연결 테스트 결과를 확인합니다. 그다음 기본·미션·창의과제를 선택하고, 배포 후 Render 사이트에서도 같은 내용을 확인합니다.</p><p class="note">공용 PC에서는 ‘입력값 저장’을 선택하지 마세요. 선택하면 학번·이름·DB 비밀번호가 브라우저에 저장됩니다.</p></div><div><div class="command"><div class="command-head"><span>PowerShell · 서비스 시작</span></div><pre><code>.\scripts\start.ps1</code></pre></div><div class="expected"><strong>정상 출력 예시</strong><pre>OML Studio is ready: http://127.0.0.1:22417</pre><p>기본 주소: <a href="http://127.0.0.1:22417">http://127.0.0.1:22417</a></p></div><p class="note">22417이 사용 중이면 다른 포트를 선택합니다. <code>OML Studio is ready:</code> 또는 <code>Already running:</code> 뒤의 실제 주소로 접속하세요. 서버 재시작 후에는 다시 로그인합니다.</p></div></article>
 </div>
 <details id="settings-handoff"><summary>파일 수정 → 본인 Git → Render 연결 관계</summary><div class="detail-body"><div class="table-shell"><table><thead><tr><th>로컬 파일</th><th>본인 Git</th><th>Render 설정</th></tr></thead><tbody>
 <tr><th>security/student.env</th><td>제외</td><td>자동 전달되지 않습니다. DB_PASSWORD·DB_DSN·Wallet 암호를 Environment에 직접 입력합니다.</td></tr>
@@ -179,8 +191,13 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 </tbody></table></div><div class="command"><div class="command-head"><span>PowerShell · 현재 터미널 활성화</span></div><pre><code>. .\scripts\terminal-init.ps1</code></pre></div>
 <p>새 터미널은 <strong>＋ 옆 ▼ → OML (.venv)</strong>를 선택합니다. 항목이 없으면 Developer: Reload Window로 다시 읽습니다. 확장 자동 설치는 setup에 <code>-InstallExtensions</code>를 붙일 때만 실행합니다. 전역 PATH·사용자 설정은 바꾸지 않습니다.</p>
 <p>이전 배포본의 <code>python.defaultInterpreterPath</code> 경고가 남으면 프로젝트의 <code>.vscode/settings.json</code>에서 그 항목만 제거하고 .venv 실행기를 다시 선택합니다.</p></div></details>
+<details id="db-password-recovery"><summary>DB 비밀번호를 잊었을 때 · DBA 조회와 재설정</summary><div class="detail-body">
+<p>Oracle은 DB 인증에 비밀번호의 단방향 해시를 사용하므로 <strong>DBA 권한으로 기존 비밀번호 원문을 조회·복호화하는 기능은 제공하지 않습니다.</strong> DBA_USERS의 PASSWORD_VERSIONS는 해시 종류를 나타내며 비밀번호 원문이 아닙니다.</p>
+<ol><li>본인의 발급 기록이나 본인이 관리하는 Render Environment의 <code>DB_PASSWORD</code>, 개인 로컬 <code>security/student.env</code>에 저장한 값을 확인합니다. 저장된 값이 DB에서 변경한 최신 암호와 일치하는지는 실제 접속으로 확인해야 합니다.</li><li>확인할 수 없으면 담당 관리자에게 새 암호 발급을 요청합니다. Autonomous Database의 ADMIN은 <code>ALTER USER</code>로 사용자 암호를 재설정할 수 있습니다. 이는 기존 암호를 알아내는 기능이 아닙니다.</li><li>암호가 재설정되면 본인 Render의 <code>DB_PASSWORD</code>도 새 값으로 맞추고 환경변수를 배포에 적용한 뒤 연결 테스트·로그인을 다시 확인합니다. 로컬에서 쓰는 개인 설정도 함께 확인합니다. Wallet 암호는 DB 사용자 암호와 별개입니다.</li></ol>
+<p class="note">DBA 권한이 있어도 DB에 저장된 인증 정보와 별도로 보관한 암호 기록은 구분해야 합니다. 암호 원문을 안내서·Git·LMS에 올리지 않습니다. <a href="https://docs.oracle.com/en/database/oracle/oracle-database/26/dbseg/database-authentication-users1.html" target="_blank" rel="noopener">Oracle 비밀번호 인증 원리</a> · <a href="https://docs.oracle.com/en/cloud/paas/autonomous-database/serverless/adbsb/manage-users-create.html" target="_blank" rel="noopener">Autonomous Database 사용자 암호 변경</a></p>
+</div></details>
 <details><summary>실제 DB 접속 실패 · 오류 코드별 확인</summary><div class="detail-body"><p><strong>로그인의 DB 연결 테스트부터 확인하세요.</strong> 접속은 되는데 미션·창의 객체가 없으면 아래 <a href="#mission-task">미션 수행 순서</a>를 진행합니다.</p><div class="table-shell"><table><thead><tr><th>오류</th><th>확인할 것</th></tr></thead><tbody>
-<tr><th>ORA-01017</th><td>students.json의 db_user, 발급 DB 비밀번호·대소문자</td></tr>
+<tr><th>ORA-01017</th><td>students.json의 db_user, 발급 DB 비밀번호·대소문자. 잊었다면 <a href="#db-password-recovery">비밀번호 확인·재설정 안내</a>를 확인합니다.</td></tr>
 <tr><th>ORA-28000 / 28001</th><td>계정 잠금·암호 만료. 담당자에게 해제·재발급 요청</td></tr>
 <tr><th>Wallet / ORA-12154</th><td>원본 Wallet ZIP·Wallet 암호·DB_DSN 서비스 별칭</td></tr>
 <tr><th>ORA-29024</th><td>최신 Wallet·PC 날짜·보안 프록시. 인증서 검증은 유지</td></tr>
@@ -206,7 +223,7 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <li><strong>학습데이터:</strong> 학습·TEST CSV 다운로드 → 파일 선택 → 최초 적재 → 원본 데이터 조회. RAW와 CLEAN을 각각 선택하여 <strong>전처리 실행·저장 → 저장값 조회</strong>를 수행합니다.</li>
 <li><strong>모델 생성·비교:</strong> RAW·CLEAN 각각 <strong>최초 학습</strong> 후 <strong>TEST 평가·새로고침</strong>으로 같은 TEST의 정확도·오분류를 비교합니다. 원하는 모델을 기본 예측 모델로 지정할 수 있습니다.</li>
 <li><strong>예측 실행:</strong> 예측 CSV 다운로드 → 파일 선택·적재 → 입력 조회 → RAW 또는 CLEAN 선택 → 예측 실행. 4단계에서도 모델을 바로 바꿀 수 있습니다.</li>
-<li><strong>현황:</strong> 최종 현황 확인 → 네 단계의 세부 작업 확인 → <strong>기본과제 성공</strong> 도장과 본인 정보를 PPT에 캡처합니다.</li></ol>
+<li><strong>현황:</strong> 최종 현황 확인 → 네 단계의 세부 작업 확인 → <strong>기본과제 성공</strong> 도장과 본인 정보를 확인합니다.</li></ol>
 <p class="note">기본과제는 SQL 수정 없이 수행할 수 있습니다. 코딩도움말로 실행 흐름을 확인하고 데이터·전처리·평가 결과를 본인의 말로 설명하세요.</p></article>
 <article class="card" id="mission-task"><h3>미션과제 · 예시를 선택하고 SQL로 구현하기</h3>
 <ol><li><strong>미션 선택:</strong> 12종의 <strong>스키마 조회 → 데이터 조회</strong>로 목적·활용 사례·설명변수의 의미와 유효값을 확인하고 <strong>이 미션 선택</strong>을 누릅니다. 선택은 계정별로 저장됩니다.</li>
@@ -215,16 +232,16 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <li><strong>원본 적재:</strong> 선택 미션의 학습·TEST CSV 다운로드 → 학습데이터 탭에서 파일 선택 → <strong>CSV 교체 적재</strong> → 원본 데이터 조회.</li>
 <li><strong>전처리:</strong> 코딩도움말의 선택 미션 SQL로 RAW·CLEAN PREPARE를 각각 직접 실행·COMMIT합니다. <strong>SQL 실행 결과 연계 → 저장값 조회</strong>로 FIT_YN·EXCLUDE_REASON·TRAIN·TEST를 확인합니다.</li>
 <li><strong>모델·평가:</strong> RAW·CLEAN INIT(최초 생성) 또는 RETRAIN(전체 다시 학습)을 직접 실행합니다. <strong>SQL 실행 결과 연계</strong> 후 화면에서 두 모델을 각각 선택하여 <strong>선택 모델 TEST 평가</strong>를 수행합니다.</li>
-<li><strong>예측·증적:</strong> 예측 CSV를 화면에서 적재 → 모델 선택·예측 실행 → 현황 최종 확인 → <strong>미션과제 성공</strong> 캡처. 수정한 SQL과 수정 이유도 보고서에 남깁니다.</li></ol>
+<li><strong>예측·완료:</strong> 예측 CSV를 화면에서 적재 → 모델 선택·예측 실행 → 현황 최종 확인 → <strong>미션과제 성공</strong> 확인. 수정한 SQL과 수정 이유는 본인의 작업 기록으로 정리하고 배포 사이트의 결과를 설명할 수 있어야 합니다.</li></ol>
 <p class="note">테이블 생성 SQL은 해당 테이블이 있으면 삭제한 뒤 다시 만듭니다. 기존 행이 삭제되므로 최초 생성 또는 구조 교체 때만 실행하세요. 미션 변경은 객체 구조·RUN·CSV·전처리·모델을 새 주제에 맞추는 작업까지 필요합니다.</p></article>
 <article class="card" id="creative-task"><h3>창의과제 · 본인 데이터와 SQL로 해결하기</h3>
 <ol><li><strong>설계:</strong> 해결할 문제·활용 상황, 데이터 출처, 식별키·설명변수·타깃, TRAIN/TEST 분할과 별도 예측 입력을 정합니다.</li>
 <li><strong>직접 구현:</strong> <code>sql/custom/creative/01_tables.sql</code>·<code>02_procedure.sql</code>의 이름·입출력 규약을 읽고 테이블·프로시저 SQL을 직접 작성해 DB에 적용합니다. 웹은 생성 SQL·실행 답안을 제공하지 않습니다.</li>
 <li><strong>적재·전처리:</strong> 웹의 <strong>SQL 실행 결과 연계</strong>로 객체를 확인하고 본인 CSV를 업로드·적재합니다. 원본 조회 → 직접 RAW/CLEAN 전처리 → COMMIT → 다시 연계 → 저장값 조회 순서로 확인합니다.</li>
 <li><strong>모델·검증:</strong> 직접 두 모델 생성 → 웹 연계 → RAW/CLEAN TEST 평가 → 예측 CSV 적재 → 모델 선택·예측 실행을 수행합니다.</li>
-<li><strong>완료:</strong> 현황의 세부 작업을 모두 확인하고 <strong>창의과제 성공</strong>을 캡처합니다. 설계 이유·실제 활용 방법·한계까지 설명합니다.</li></ol>
+<li><strong>완료:</strong> 현황의 세부 작업과 <strong>창의과제 성공</strong>을 확인합니다. 설계 이유·실제 활용 방법·한계까지 설명합니다.</li></ol>
 <p class="note">창의 원본은 TRAIN·TEST·별도 예측 합계 <strong>10,000건 이하</strong>입니다. 직접 SQL 생성·누적 적재도 포함하며 RAW/CLEAN 준비행을 원본 사례로 다시 세지 않습니다.</p></article>
-<article class="card" id="evidence"><h3>완료 여부와 PPT 증적 확인</h3>
+<article class="card" id="evidence"><h3>배포 사이트에서 완료 여부 확인</h3>
 <div class="table-shell"><table><thead><tr><th>현황의 성공 표시</th><th>확인할 내용</th></tr></thead><tbody>
 <tr><th>오브젝트 생성 성공</th><td>테이블 3개와 실행 프로시저의 존재·유효 상태·입출력 규약</td></tr>
 <tr><th>학습자료 적재 성공</th><td>원본과 RAW/CLEAN 전처리·학습 제공/TEST 행 및 웹 연계 기록</td></tr>
@@ -232,7 +249,7 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <tr><th>모델예측 실행 성공</th><td>현재 모델·현재 예측 입력으로 실제 예측 실행 성공</td></tr>
 </tbody></table></div>
 <p><strong>2/4 완료</strong>처럼 일부만 끝났으면 해당 상태를 클릭하세요. 레이어에 성공한 작업과 남은 작업이 표시됩니다. 미션·창의에서 전처리 행이 조회되어도 미완료이면 직접 SQL 수행 후 <strong>SQL 실행 결과 연계</strong>를 누르세요.</p>
-<p>네 단계가 성공하면 과제별 성공 도장이 표시됩니다. <strong>본인 정보·선택 미션·확인 시각·성공표가 함께 나오도록 캡처해 PPT에 넣으세요.</strong> 원본·SQL·모델·예측 입력을 바꾼 뒤에는 다시 확인합니다. 성공 표시는 기능 수행 증적이며 점수나 정확도 합격 판정은 아닙니다.</p></article>
+<p>네 단계가 성공하면 과제별 성공 도장이 표시됩니다. <strong>Render 사이트에서 본인 정보·선택 미션·확인 시각·성공표와 각 단계의 실제 결과를 확인하세요.</strong> 원본·SQL·모델·예측 입력을 바꾼 뒤에는 다시 확인합니다. 평가자는 LMS에 제출한 사이트 주소로 접속해 확인합니다. 성공 표시는 기능 수행 증적이며 점수나 정확도 합격 판정은 아닙니다.</p></article>
 <details id="source-and-db"><summary>SQL 파일 적용·수정과 객체 이름</summary><div class="detail-body">
 <p><strong>발급 DB 계정이 객체 소유자입니다.</strong> 학번과 구분하고 <code>STUDENT00.OML_MISSION_DATA</code>, <code>STUDENT00.OML_MISSION_RUN</code>처럼 본인 계정을 붙이세요. STUDENT00은 예시입니다. 접속 계정과 CURRENT_SCHEMA도 본인 계정이어야 합니다.</p>
 <div class="table-shell"><table><thead><tr><th>과제</th><th>테이블 파일</th><th>실행 프로시저 파일</th></tr></thead><tbody>
@@ -255,6 +272,7 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 </ul></div></details>
 <details><summary>코딩도움말과 예측 결과 읽기</summary><div class="detail-body">
 <p><strong>화면 → 이벤트 → API → 서비스 → DB 연결 → 실행 SQL</strong> 순서로 실제 파일을 추적합니다. 왼쪽 파일·구간을 선택하면 오른쪽 파일 전체에서 해당 위치로 이동합니다.</p>
+<p>미션·창의의 직접 수행 버튼은 준비 상태에 따라 활성화되며 실행 SQL 첫 항목을 엽니다. 구문을 복사해 발급 계정의 SQL Developer에서 F5 실행 후 <strong>SQL 실행 결과 연계</strong>를 누르세요. ?는 화면 FLOW부터 엽니다. 창의는 본인 RUN 호출·고정 객체 정리만 제공하며 구현 답안은 제공하지 않습니다.</p>
 <p>기본·미션의 실행 SQL에는 원본과 현재 선택값을 적용한 <strong>실행용 런타임 SQL</strong>이 함께 나옵니다. 생성 미리보기와 성공한 실제 조회 기록을 구분하며 도움말을 열어도 DB 작업은 실행되지 않습니다.</p>
 <p>식별키는 파랑, 설명변수는 초록, 타깃은 보라, 기타는 회색입니다. 색과 역할 배지를 함께 읽으세요. 예측은 학습과 같은 특성 이름·의미·단위·전처리를 사용합니다.</p>
 <p>예측 입력과 PREPARED 값은 DB에 저장됩니다. 기본·제공 미션 프로시저의 분류·확률은 조회 결과이고 화면 기록은 새로고침하면 지워집니다. 서버에는 최종 성공 확인용 요약이 남습니다. 창의 프로시저의 별도 결과 저장은 본인이 구현한 SQL에 따릅니다.</p>
@@ -262,7 +280,7 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 </div></details>
 </section>
 <section id="assessment">
-<div class="section-title"><h2>03. 과제 평가 기준 — 총 100점</h2><p>직접 실행하고 바꾼 이유를 설명하세요</p></div>
+<div class="section-title"><h2>03. 과제 평가 기준 — 총 100점</h2><p>LMS에 제출한 Render 사이트에서 실제 수행 결과를 확인합니다</p></div>
 <div class="table-shell"><table class="rubric"><thead><tr><th>과제</th><th>할 일</th><th>배점</th></tr></thead><tbody>
 <tr><th>기본<strong>50점</strong></th><td>제공 예제를 실행하고 전처리 전후·같은 TEST·예측 결과를 설명합니다.</td><td>수행·이해 40 / 데이터 5 / 검증 3 / 재현·제출 2</td></tr>
 <tr><th>미션<strong>30점</strong></th><td>12종 중 하나 선택 → 가이드 SQL로 객체 생성 → 화면 CSV 적재 → 직접 전처리·학습 → SQL 실행 결과 연계 → TEST 평가·예측. 수정한 이유와 결과를 설명합니다.</td><td>문제·목적 5 / 구현 20 / 제약 준수 5</td></tr>
@@ -273,25 +291,30 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <li>수행·이해 40: 직접 실행 10 / 정답·TRAIN·TEST 구분과 평가 정보가 학습에 섞이지 않는 이유 10 / 웹→프로시저→Oracle 흐름 10 / 입력 변경·오류 해결·결과 해석 10.</li>
 <li>데이터 5: 사례·출처·정답 근거 2 / 빈 값·중복·이상치 처리 2 / 학습·평가 분리 1.</li>
 <li>검증 3: 기준 모델과 비교 1 / 정밀도·재현율·오분류 확인 1 / 한계·개선 1.</li>
-<li>재현·제출 2: 소스·SQL·설치/실행 안내·패키지 목록·PPT·보고서·작업 기록과 비밀 파일 제외.</li></ul>
+<li>재현·제출 2: Render 사이트 접속·로그인·DB 연결과 과제 결과 확인, LMS에 올바른 사이트 주소 제출, 공개 화면·소스의 개인 비밀번호·키 제외.</li></ul>
 <p>이해도 40점은 전체 실행·설명을 확인하되 기본과제에 한 번만 포함합니다. 정확도·화면 장식·기능 수·AI 미사용만으로 별도 가산하지 않습니다.</p>
 <p>기본 데이터는 UCI의 2011년 주식 시세에 연습용 결함을 추가한 자료입니다. BUY/SELL을 분류하며 투자 수익을 보장하지 않습니다. 미션은 TRAIN 1,200 / TEST 300 / 예측 30행의 합성 데이터입니다. TRAIN 오류행의 학습 제외 기준과 사유는 PREPARED의 FIT_YN·EXCLUDE_REASON으로 확인·설명하고 TEST 전체는 보존합니다.</p></div></details>
 <div id="submit">
-<div class="section-title"><h2>제출 — 소스 + PPT + 보고서</h2><p>제출처는 별도 수업 공지 · 웹 접수 기능 없음</p></div>
-<div class="table-shell"><table><thead><tr><th>준비할 것</th><th>위치·내용</th></tr></thead><tbody>
-<tr><th>실행 소스</th><td>Python·웹·CSV와 DDL·프로시저 SQL. 직접 추가한 파일 포함.</td></tr>
-<tr><th>PPT 원본</th><td><code>submission/presentation.pptx</code> 또는 <code>presentation.ppt</code></td></tr>
-<tr><th>직접 작성한 보고서</th><td><code>submission/report.pdf</code>·<code>report.html</code>·<code>report.txt</code> 중 하나</td></tr>
-<tr><th>실행 증거</th><td><code>submission/evidence/</code> · 작업 기록 최소 3건</td></tr></tbody></table></div>
-<div class="two-col"><article class="card"><h3>PPT·보고서에 담을 내용</h3><ul><li>메인의 본인 로그인 정보·DB 연결 테스트 결과 캡처</li><li>학번·이름, 문제·정답·입력 특성·출처</li><li>수정한 SQL과 변경 이유</li><li>전처리 전후·같은 TEST·예측 결과 비교</li><li>기본과제 성공·미션과제 성공·창의과제 성공 현황 캡처와 각 단계의 세부 결과</li><li>오류 해결·AI 도움 범위·검증·한계</li></ul></article><article class="card"><h3 class="deadline">2026.12.18(금) 18:00 KST</h3><div class="command"><div class="command-head"><span>PowerShell · 본인학번으로 변경</span></div><pre><code>.\scripts\submit.ps1 -StudentId 본인학번</code></pre></div><p><code>COM22417_2026H2_본인학번.zip</code><br>source/ = 소스 · report/ = PPT·보고서·증거</p></article></div>
-<p class="note">ZIP을 열어 필수 파일을 확인한 뒤 공지된 제출처에 제출하세요. PPT·보고서·필수 소스가 없으면 압축을 중단합니다. 작업 기록의 충실도는 직접 확인합니다. 비밀번호·개인 .env·Wallet·.venv·설치파일·로그는 제외합니다.</p>
+<div class="section-title"><h2>제출 — Render 사이트 주소를 LMS 과제에 등록</h2><p>평가는 제출한 사이트에 접속해 진행합니다</p></div>
+<div class="flow" aria-label="과제 제출 순서"><b>본인 Git 소스 반영</b>→<b>Render 배포</b>→<b>로그인·DB·과제 결과 확인</b>→<b>LMS에 사이트 주소 제출</b></div>
+<div class="table-shell"><table><thead><tr><th>제출 항목</th><th>방법·확인할 내용</th></tr></thead><tbody>
+<tr><th>제출물</th><td>본인이 Render에 배포한 사이트의 <strong>HTTPS 메인 주소</strong>. 예: <code>https://your-service.onrender.com</code>의 your-service를 본인 서비스명으로 바꿉니다.</td></tr>
+<tr><th>제출처</th><td><strong>LMS의 해당 과제 제출란</strong>에 Render 사이트 주소를 붙여 넣고 제출 완료를 확인합니다.</td></tr>
+<tr><th>평가 대상</th><td>제출한 사이트의 메인 접속 정보·DB 연결과 기본·미션·창의과제의 실제 현황, 전처리·모델 비교·TEST 평가·예측 결과를 확인합니다.</td></tr>
+<tr><th>제출 마감</th><td><strong class="deadline">2026.12.18(금) 18:00 KST</strong></td></tr>
+</tbody></table></div>
+<ol id="lms-submission-steps"><li><a href="#deployment">04. Git·Render 배포</a> 순서에 따라 본인 소스를 Git에 반영하고 Render의 배포 완료를 확인합니다.</li><li>Render 사이트 주소를 새 창에서 열어 <strong>학번·이름·DB 비밀번호 → DB 연결 테스트 → 로그인</strong>을 확인합니다. 본인 계정과 기본·미션·창의과제의 최종 현황 및 각 단계의 결과를 점검합니다.</li><li>LMS의 해당 과제 제출란에 <strong>실제 접속 가능한 Render 사이트의 HTTPS 메인 주소</strong>를 등록합니다.</li><li>LMS에서 제출 완료를 확인하고 등록한 링크를 다시 열어 본인 사이트로 연결되는지 확인합니다. 평가 시 접속할 수 있도록 사이트와 DB 연결을 유지하세요.</li></ol>
+<div class="two-col"><article class="card"><h3>배포 사이트에서 확인할 내용</h3><ul><li>본인 로그인 정보·발급 계정·실제 DB 연결 성공</li><li>기본·미션·창의과제의 최종 현황과 남은 작업</li><li>RAW/CLEAN 전처리와 같은 TEST의 모델 비교·평가</li><li>현재 모델·예측 입력으로 실행한 결과</li><li>수정한 SQL·설계 이유·활용·오류 해결·AI 도움 범위·검증·한계를 설명할 수 있는지 확인</li></ul></article><article class="card"><h3>LMS 제출란 입력 예시</h3><div class="settings" id="lms-submission-example"><strong>본인 정보와 실제 Render 주소로 변경</strong><pre><code>학번: 20260001
+이름: 본인 이름
+Render 사이트 주소: https://your-service.onrender.com</code></pre></div><p>예시 주소를 본인 주소로 바꾸세요. LMS에서 등록한 링크를 다시 열어 확인합니다.</p></article></div>
+<p class="note" id="submission-checks">제출할 주소는 Render에서 운영 중인 사이트의 메인 주소입니다. localhost·127.0.0.1·로컬 파일·GitHub 저장소·Render 관리 화면·/healthz 주소를 제출하지 마세요. LMS 제출 내용이나 공개 화면·소스에 DB 비밀번호·SECRET_KEY·Wallet 내용을 넣지 않습니다.</p>
 </div>
 
 </section>
 <section id="deployment">
-<div class="section-title"><h2>04. Git·Render 배포</h2><p>선택 실습 · 본인 저장소 · 본인 DB 계정</p></div>
+<div class="section-title"><h2>04. Git·Render 배포</h2><p>평가 사이트 배포 · 본인 저장소 · 본인 DB 계정</p></div>
 <div class="flow" aria-label="배포 순서"><b>Git 업로드</b>→<b>Render 연결</b>→<b>환경변수·Secret Files</b>→<b>배포·DB 확인</b></div>
-<p class="note">서비스별 본인 DB 계정·프로세스 하나를 사용합니다. 배포와 과제 제출은 별개입니다.</p>
+<p class="note">서비스별 본인 DB 계정·프로세스 하나를 사용합니다. 배포 완료 후 <a href="#submit">Render 사이트 주소를 LMS 과제에 제출</a>해야 합니다.</p>
 <details id="github"><summary>1. 본인 GitHub에 소스 배포하기</summary><div class="detail-body">
 
 <ol><li>GitHub에서 본인 <strong>빈 저장소</strong>를 만듭니다. README 자동 추가를 끄고 Code → HTTPS 주소를 복사하세요.</li><li><code>git --version</code>을 확인하고 없으면 Git for Windows를 설치합니다.</li><li>아래 주소를 본인 값으로 바꿔 미리보기합니다. 아직 접속·업로드하지 않습니다.</li></ol>
@@ -320,15 +343,15 @@ scripts/render-build.sh · scripts/render-start.sh</code></pre></div>
 </div></details>
 <details id="render-environment" open><summary>3. Environment 키와 Secret Files 등록하기</summary><div class="detail-body">
 <p><strong>Environment → Add Environment Variable</strong>에서 추가하거나 <strong>Add from .env</strong>에 아래 예시를 붙입니다. 중괄호 부분은 본인 값으로 바꾸고 실제 비밀번호·키는 Render에만 입력하세요.</p>
-<div class="command"><div class="command-head"><span>Render Environment · 값 변경 후 입력</span></div><pre><code>DB_DSN=pcuora_high
+<div class="command"><div class="command-head"><span>Render Environment · 값 변경 후 입력</span></div><pre><code>DB_DSN=pcuora_low
 DB_PASSWORD={본인_DB_비밀번호}
 PYTHON_VERSION=3.12.10
 PYTHONUNBUFFERED=1
 SECRET_KEY={새로_생성한_64자리_난수}
 WALLET_DIR=/etc/secrets
-WALLET_PASSWORD={Wallet_다운로드_당시_비밀번호}
+WALLET_PASSWORD="본인의_Wallet_다운로드_암호"
 ORACLE_CLIENT_LIB=</code></pre></div>
-<p class="note">DB 계정은 JSON에서 찾습니다. DB_PASSWORD는 로그인 비교·DB 접속 암호, DB_DSN은 Wallet 별칭입니다. SECRET_KEY는 32자 이상 난수입니다. WALLET_PASSWORD는 Wallet 다운로드 암호이며 ORACLE_CLIENT_LIB는 비웁니다.</p>
+<p class="note">DB 계정은 JSON에서 찾습니다. DB_PASSWORD는 본인의 로그인 비교·DB 접속 암호이며 Wallet 암호와 다릅니다. DB_DSN은 Wallet 별칭입니다. SECRET_KEY는 32자 이상 난수입니다. WALLET_PASSWORD에는 배포한 압축소스의 security/student.env에 포함된 실제 값을 복사하고 ORACLE_CLIENT_LIB는 비웁니다. 안내 문구 자체를 암호로 입력하지 마세요.</p>
 <div class="command"><div class="command-head"><span>로컬 PowerShell · SECRET_KEY 생성</span></div><pre><code>.venv\Scripts\python.exe -c "import secrets; print(secrets.token_hex(32))"</code></pre></div>
 <p class="note">PORT·RENDER_EXTERNAL_HOSTNAME은 Render가 제공합니다. 명단은 Git 파일이 OML_ROSTER_FILE보다 우선합니다. 추가 도메인은 OML_ALLOWED_HOSTS에 호스트명으로 등록합니다.</p>
 <p><strong>Environment → Secret Files → Add Secret File</strong>에서 다음 이름과 내용을 등록합니다. Wallet ZIP을 로컬에서 풀어 파일 원문을 붙이세요.</p>
@@ -337,14 +360,31 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <tr><th>ewallet.pem</th><td>제공된 Wallet의 원문</td></tr>
 </tbody></table></div>
 <p>명단은 <a href="#student-roster">앞에서 수정한 security/students.json</a>을 Git으로 전달합니다. Secret Files에 다시 등록하지 않습니다.</p>
-<p><strong>Save, rebuild, and deploy</strong>로 저장합니다. Save only는 다음 배포 때 적용됩니다. <a href="https://render.com/docs/configure-environment-variables" target="_blank" rel="noopener">환경변수·Secret Files 안내</a> · <a href="https://render.com/docs/python-version" target="_blank" rel="noopener">Python 버전 안내</a></p>
+<p>환경변수는 <strong>Save and deploy</strong>로 기존 빌드에 적용하거나 <strong>Save, rebuild, and deploy</strong>로 다시 빌드·배포합니다. <strong>Save only</strong>는 다음 배포 때 적용됩니다. Secret Files는 <strong>Save Changes</strong>를 누르면 파일을 반영하는 배포가 자동 시작됩니다. <a href="https://render.com/docs/configure-environment-variables" target="_blank" rel="noopener">환경변수·Secret Files 공식 안내</a> · <a href="https://render.com/docs/python-version" target="_blank" rel="noopener">Python 버전 안내</a></p>
+</div></details>
+<details id="render-db-troubleshooting" open><summary>최근 Render DB 접속 실패 사례 · 원인과 해결 순서</summary><div class="detail-body">
+<p><strong>확인한 원인: WALLET_DIR=/etc/secrets는 설정했지만 Secret Files에 Wallet 파일이 없었습니다.</strong> 로컬은 ZIP에서 Wallet을 읽어 접속할 수 있었지만 Render는 지정된 폴더의 파일을 찾지 못했습니다. 폴더 경로를 입력하는 것만으로 Wallet이 업로드되거나 로컬 파일이 복사되지는 않습니다.</p>
+<div class="table-shell"><table><thead><tr><th>비교 항목</th><th>로컬 PC</th><th>Render</th></tr></thead><tbody>
+<tr><th>DB 계정</th><td colspan="2">security/students.json에서 학번·이름에 연결된 db_user를 찾습니다. 학번과 DB 계정은 서로 다를 수 있습니다.</td></tr>
+<tr><th>DB_PASSWORD</th><td>로그인 입력값으로 실제 DB 인증 후 student.env에 저장</td><td>화면 입력값과 서버 Environment의 값을 먼저 비교하고, 일치하면 서버 설정으로 실제 DB 인증</td></tr>
+<tr><th>Wallet 위치</th><td>WALLET_DIR를 비워 두고 WALLET_ZIP=security/Wallet_PCUORA.zip 사용</td><td>WALLET_DIR=/etc/secrets 사용. 로컬 ZIP·student.env는 자동 전달되지 않음</td></tr>
+<tr><th>필수 파일</th><td>제공 ZIP 안의 tnsnames.ora·ewallet.pem</td><td>Secret Files에 두 파일을 각각 같은 이름으로 등록</td></tr>
+<tr><th>Wallet 암호</th><td colspan="2">제공 Wallet은 배포한 압축소스의 security/student.env에 포함된 WALLET_PASSWORD 값을 사용합니다. 개인 DB_PASSWORD와 구분합니다.</td></tr>
+<tr><th>DB_DSN</th><td colspan="2">tnsnames.ora 안의 서비스 별칭과 일치해야 합니다. 기본 예시는 pcuora_low이며 pcuora_high도 제공 Wallet에 등록된 별칭입니다.</td></tr>
+</tbody></table></div>
+<ol><li><strong>같은 원본 Wallet 준비:</strong> 학생 ZIP의 security/Wallet_PCUORA.zip을 임시 폴더에 풉니다. 서로 다른 Wallet의 파일을 섞지 않습니다.</li>
+<li><strong>Secret Files 등록:</strong> Render → 해당 Web Service → Environment → Secret Files → Add Secret File. Filename에 <code>tnsnames.ora</code>, Contents에 해당 파일의 전체 원문을 붙입니다. 같은 방법으로 <code>ewallet.pem</code>도 등록합니다. ZIP 파일 자체나 파일 경로를 Contents에 넣지 않습니다. PEM의 BEGIN/END 줄과 중간 줄바꿈을 보존합니다.</li>
+<li><strong>경로·값 확인:</strong> WALLET_DIR는 <code>/etc/secrets</code> 폴더이며 ZIP 경로나 파일 경로가 아닙니다. 앱이 읽는 파일은 <code>/etc/secrets/tnsnames.ora</code>와 <code>/etc/secrets/ewallet.pem</code>입니다. WALLET_DIR가 있으면 WALLET_ZIP보다 우선합니다. WALLET_PASSWORD는 배포한 압축소스의 security/student.env 값을 사용하고 ORACLE_CLIENT_LIB는 빈 값으로 Thin 연결을 사용합니다.</li>
+<li><strong>저장과 적용:</strong> Secret Files의 Save Changes가 시작한 자동 배포가 Live가 될 때까지 기다립니다. Wallet 파일만 추가한 경우 Git 수정·push나 별도의 수동 배포를 다시 할 필요가 없습니다. 환경변수를 Save only로 저장했다면 다음 배포 전까지 실행 중 서비스의 값은 바뀌지 않습니다.</li>
+<li><strong>DB 연결 재검사:</strong> Render 메인에서 학번·이름·본인의 DB 비밀번호 → DB 연결 테스트 → 로그인 순서로 확인합니다. DB 비밀번호가 서버 설정과 다르면 ‘DB 비밀번호가 일치하지 않습니다’가 나오며 DB 접속을 시도하지 않습니다. 일치하더라도 Wallet·서비스·네트워크·실제 DB 인증이 실패하면 로그인되지 않습니다. /healthz의 정상 응답만으로 DB 접속 성공을 판단하지 않습니다.</li></ol>
+<p class="note"><strong>DB-CONNECTION 해석:</strong> 이번 파일 누락은 Oracle 접속 전 파일 읽기 단계에서 발생하여 ORA-/DPY- 코드 없이 공통 DB-CONNECTION으로 표시됐습니다. 네트워크 장애로 단정하지 말고 위 파일 목록부터 확인하세요. Render 화면에 나온 student.env 안내는 공통 로컬용 문구이며 Render에서는 Environment와 Secret Files를 확인합니다. 두 파일이 있는데도 실패하면 DB_DSN·Wallet 암호·원본 파일 일치·DB 사용 상태를 순서대로 확인하세요.</p>
 </div></details>
 <details id="render-check" open><summary>4. 배포 확인과 다음 수정 반영</summary><div class="detail-body">
 <ol><li><strong>Deploys / Events</strong>에서 Git 최신 커밋과 배포 커밋을 비교하고 Live 상태를 확인합니다. 자동 배포가 꺼져 있으면 <strong>Manual Deploy → Deploy latest commit</strong>을 실행합니다.</li>
 <li>표시된 HTTPS 주소의 <code>/healthz</code>를 열어 <code>{"status":"ok"}</code>를 확인합니다. 이는 웹 프로세스 응답이며 DB 연결 성공을 뜻하지 않습니다.</li>
 <li>Render 메인에서 <strong>학번·이름·DB 비밀번호 → 연결 테스트 → 로그인</strong>합니다. 서버 DB_PASSWORD와 일치하고 DB 접속에 성공해야 로그인됩니다. 입력값 저장은 학번·이름만 저장하며 비밀번호는 브라우저 저장소·student.env에 쓰지 않습니다.</li>
 <li>수정 후 본인 Git에 다시 -Push합니다. Render의 On Commit 배포와 최신 커밋을 확인한 뒤 새로고침합니다. 재배포·재시작 후에는 다시 로그인합니다.</li></ol>
-<div class="hint"><strong>PPT 증적</strong> · Git 커밋 → Render Live → /healthz → 메인 접속 정보·DB 연결 성공을 캡처하세요. 환경변수의 비밀번호·SECRET_KEY·Wallet 내용은 캡처하지 않습니다.</div>
+<div class="hint"><strong>LMS 제출 전 최종 확인</strong> · Git 최신 커밋 → Render 배포 완료 → /healthz → 메인 로그인·DB 연결 성공 → 세 과제의 실제 결과 순서로 확인한 뒤 <a href="#submit">사이트의 메인 주소를 LMS에 등록</a>하세요. 환경변수의 비밀번호·SECRET_KEY·Wallet 내용은 공개하지 않습니다.</div>
 
 <p class="note"><a href="https://render.com/docs/deploys" target="_blank" rel="noopener">자동·수동 배포 안내</a> · <a href="https://render.com/docs/health-checks" target="_blank" rel="noopener">상태 확인 안내</a></p>
 </div></details>

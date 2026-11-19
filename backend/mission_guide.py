@@ -186,12 +186,12 @@ def csv_load_sql(item, prediction=False, *, schema=''):
             '-- 기존 행 교체와 모든 묶음이 성공한 뒤 한 번 COMMIT, 실패 시 전체 ROLLBACK.\n' + sql + '\n')
 
 
-def _direct(action, variant, schema):
+def _direct(action, variant, schema, assignment='mission'):
     return (_script_guard(schema, check=False) + "ALTER SESSION SET NLS_NUMERIC_CHARACTERS = '.,'\n;\n"
             '-- 같은 계정의 SQL Developer에서 전체 F5 실행합니다.\n'
             '-- PREPARE/PREDICT는 준비행을 저장하고, 모델 생성·삭제는 DDL 자동 커밋을 포함합니다.\n'
             'VARIABLE result REFCURSOR\nVARIABLE executed_sql CLOB\nBEGIN\n'
-            + _guard(schema) + "  " + _object('OML_MISSION_RUN', schema) + "('" + action + "', '" + variant + "', :result, :executed_sql);\n"
+            + _guard(schema) + "  " + _object('OML_'+assignment.upper()+'_RUN', schema) + "('" + action + "', '" + variant + "', :result, :executed_sql);\n"
             'END;\n/\nPRINT result\nPRINT executed_sql\n')
 
 
@@ -199,16 +199,17 @@ def _direct(action, variant, schema):
 RESET_ACTIONS = {'clear-training','clear-prediction','clear-prepared','drop-objects'}
 
 
-def reset_sql(operation, variant, schema):
+def reset_sql(operation, variant, schema, assignment='mission'):
     """미션 전용 고정 객체만 정리하는 직접 실행 SQL. 조회 과정에서는 실행하지 않습니다."""
     from .sql_files import read_sql
     if operation not in RESET_ACTIONS or variant not in ('RAW','CLEAN'):
         raise ValueError('지원하는 초기화 종류를 선택하세요.')
-    prefix='OML_MISSION'
+    if assignment not in ('mission','creative'):raise ValueError('과제를 확인하세요.')
+    prefix='OML_'+assignment.upper()
     if operation=='drop-objects':
-        body=read_sql('reset_basic_objects.sql').replace('OML_BASIC','OML_MISSION').replace('기본과제','미션과제')
+        body=read_sql('reset_basic_objects.sql').replace('OML_BASIC',prefix).replace('기본과제', '미션과제' if assignment=='mission' else '창의과제')
         body=body.replace(':owner',_literal(schema))
-        body=re.sub(r'(?<=DROP TABLE )OML_MISSION_[A-Z]+|(?<=DROP PROCEDURE )OML_MISSION_RUN',
+        body=re.sub(r'(?<=DROP TABLE )'+prefix+r'_[A-Z]+|(?<=DROP PROCEDURE )'+prefix+'_RUN',
                     lambda match:_object(match.group(0),schema),body)
         return _script_guard(schema)+body+'\n'
     data=_object(prefix+'_DATA',schema);predict=_object(prefix+'_PREDICT',schema);prepared=_object(prefix+'_PREPARED',schema)
@@ -325,6 +326,25 @@ def generate(item, operation='prepare', variant='RAW', source_kind='ALL', *, sch
             details=[{'title':'적재 후 다음 단계','text':'학습 CSV를 바꾸면 PREPARE·재학습을 직접 실행하세요. 예측 CSV는 준비된 모델로 PREDICT를 실행합니다. 웹에서 결과를 확인할 수 있습니다.'}])
         result['steps'] = result['application']['steps']
         result['notice'] = result['application']['caution']
+    from .coding_flow import mission_flow
+    result['flow']=mission_flow(result,trigger_id=trigger_id,trigger_label=trigger_label,page=page)
+    return result
+
+
+def creative_manual(operation, variant, *, schema, trigger_id='', trigger_label='', page=''):
+    """본인 RUN의 규약 호출·고정 객체 정리만 표시하며 창의 구현 답안은 만들지 않습니다."""
+    schema=_schema(schema)
+    allowed={'prepare','initial-train','retrain','delete-model',*RESET_ACTIONS}
+    if operation not in allowed or variant not in ('RAW','CLEAN'):
+        from fastapi import HTTPException
+        raise HTTPException(404,'창의과제는 직접 수행 버튼의 호출 SQL만 제공합니다.')
+    script=reset_sql(operation,variant,schema,'creative') if operation in RESET_ACTIONS else _direct(ACTIONS[operation],variant,schema,'creative')
+    result={'title':'창의과제 · 직접 수행','operation':operation,'assignment':'creative','schema':schema,'variant':variant,
+            'script':script,'script_path':'창의과제 · SQL Developer 실행 SQL',
+            'application':{'owner':schema,'summary':'본인이 구현한 RUN과 대상 객체를 확인한 뒤 직접 실행하세요.',
+                           'step_titles':['대상 확인','직접 실행','웹 연계'],
+                           'steps':[schema+' · '+variant,'구문 전체 복사 → SQL Developer F5','SQL 실행 결과 연계'],
+                           'caution':'본인 데이터·모델이 변경됩니다. 실행 전 대상과 작업 범위를 확인하세요.'}}
     from .coding_flow import mission_flow
     result['flow']=mission_flow(result,trigger_id=trigger_id,trigger_label=trigger_label,page=page)
     return result

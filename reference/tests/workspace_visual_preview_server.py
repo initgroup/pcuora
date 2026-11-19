@@ -207,7 +207,10 @@ async def fixture(request,next_call):
         if q.get('assignment')=='mission':
             item=next(item for item in CATALOG if item['key']==selection['key'])
             return JSONResponse(generate(item,q.get('operation','setup'),schema=OWNER,**kwargs))
-        if q.get('assignment')=='creative':return JSONResponse({'error':'Creative has no SQL guide'},status_code=404)
+        if q.get('assignment')=='creative':
+            from backend.mission_guide import creative_manual
+            kwargs.pop('source_kind')
+            return JSONResponse(creative_manual(q.get('operation','prepare'),schema=OWNER,**kwargs))
         return JSONResponse(describe(q.get('operation','data'),user=OWNER,use_yn=q.get('use_yn','ALL'),split=q.get('split','ALL'),**kwargs))
     if path=='/api/status':return JSONResponse(dict(status(),practice=proof_result('basic')) if qa.get('evidence') and q.get('include_evidence') else status())
     if qa.get('simulate_execution') and request.method=='POST' and path in ('/api/initialize','/api/data/prepare','/api/models/train','/api/models/confirm','/api/predictions/import','/api/assignments/mission/link'):
@@ -247,7 +250,7 @@ async def fixture(request,next_call):
                 qa['mutations'].append(path);qa.setdefault('linked_preparations',{})[key]=True
                 return JSONResponse({'message':'Synthetic linkage saved','preparation':linked_preparations(key)})
             if action=='status':
-                response={'ready':True,'config':ASSIGNMENTS[key],'objects':objects(key),'missing':[],'issues':[],'models':models(key),'preparation':prep()}
+                response={'ready':True,'config':ASSIGNMENTS[key],'objects':objects(key),'missing':[],'issues':[],'models':models(key),'preparation':prep(),'state':{'total_rows':1500},'prediction_storage':{'rows':30}}
                 if qa.get('preparation_linking'):response['preparation']=linked_preparations(key)
                 if qa.get('evidence') and q.get('include_evidence'):response['practice']=proof_result(key)
                 return JSONResponse(response)

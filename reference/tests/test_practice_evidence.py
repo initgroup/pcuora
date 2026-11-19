@@ -162,3 +162,13 @@ class EvidenceTests(unittest.TestCase):
         state=dict(ready=False,config=ASSIGNMENTS['creative'],objects=[dict(object_name='OML_CREATIVE_DATA',object_type='TABLE',status='VALID')])
         with patch.object(evidence,'execute',side_effect=RuntimeError('COUNT failed')):
             with self.assertRaisesRegex(RuntimeError,'COUNT failed'):evidence.collect(self.conn,'creative',state=state)
+
+    def test_status_input_counts_are_reused_without_another_count(self):
+        from backend.assignment_templates import ASSIGNMENTS
+        self.conn.username='STUDENT23';self.saved={}
+        state=dict(ready=False,config=ASSIGNMENTS['creative'],objects=[],state={'total_rows':17},prediction_storage={'rows':4})
+        with patch.object(evidence,'execute') as execute,patch.object(evidence,'query') as query:
+            result=evidence.collect(self.conn,'creative',state=state)
+            execute.assert_not_called();query.assert_not_called()
+            self.assertTrue(result['steps'][1]['checks'][0]['success'])
+            self.assertTrue(result['steps'][3]['checks'][1]['success'])

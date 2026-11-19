@@ -22,6 +22,44 @@ let ws;
  const login=async(id,name)=>{await fill(id,name);await until('Boolean(document.getElementById("login-db-user").value)&&!document.getElementById("login-submit").disabled');await click('#login-submit');await until('document.body.dataset.auth==="ready"&&!document.getElementById("main-account").hidden&&document.getElementById("main-account").dataset.connection==="success"')};
  await call('Page.enable');await call('Runtime.enable');await call('Network.enable');await call('Emulation.setFocusEmulationEnabled',{enabled:true});
  await size(1440);const base=await basePromise;
+ if(process.argv.includes('--guide-file-only')){
+   const guide=path.join(root,'downloads','COM22417_과제설명및평가.html');
+   await call('Page.navigate',{url:require('node:url').pathToFileURL(guide).href});
+   await until('Boolean(document.getElementById("render-db-troubleshooting"))');
+   const walletPlaceholder='WALLET_PASSWORD="본인의_Wallet_다운로드_암호"';
+   assert.ok(!fs.readFileSync(guide,'utf8').includes('Pcuora2026'));
+   for(const selector of ['#personal-settings pre','#render-environment pre'])assert.ok(await ev('document.querySelector('+JSON.stringify(selector)+').textContent.includes('+JSON.stringify(walletPlaceholder)+')'));
+   const layouts=[];
+   for(const width of [1440,768,390,320])for(const font of [16,22]){
+     await size(width);await ev('document.documentElement.style.setProperty("--size","'+font+'px");document.documentElement.style.scrollBehavior="auto";document.getElementById("render-db-troubleshooting").scrollIntoView()');
+     await ev('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+     await ev('document.getElementById("render-db-troubleshooting").scrollIntoView()');
+     await ev('window.scrollTo(0,scrollY)');
+     const layout=await ev('({requested:'+width+',font:'+font+',width:innerWidth,client:document.documentElement.clientWidth,x:scrollX,scroll:document.documentElement.scrollWidth,steps:document.querySelectorAll("#render-db-troubleshooting ol>li").length,overflow:[...document.querySelectorAll("body *")].filter(e=>!e.closest(".table-shell")&&e.getBoundingClientRect().right>'+width+'+1).slice(0,8).map(e=>({tag:e.tagName,cls:e.className,text:e.textContent.slice(0,70),right:e.getBoundingClientRect().right}))})');
+     if(layout.scroll>width+1)layout.textOverflow=await ev('(()=>{const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT),out=[];let n;while(n=walker.nextNode()){if(n.parentElement.closest(".table-shell,script,style"))continue;const r=document.createRange();r.selectNodeContents(n);if([...r.getClientRects()].some(b=>b.right>'+width+'+1))out.push({text:n.textContent.slice(0,160),tag:n.parentElement.tagName,cls:n.parentElement.className});}return out.slice(0,8)})()');
+     assert.ok(layout.scroll<=width+1,JSON.stringify(layout));assert.equal(layout.steps,5);layouts.push({font,...layout});
+     if(width===1440||width===320)await shot('render-db-guide-'+width+'-'+font);
+   }
+   assert.doesNotMatch(fs.readFileSync(guide,'utf8'),/ppt|powerpoint|보고서|submit\.ps1|submission\//i);
+   assert.ok(await ev('document.querySelector("#lms-submission-example pre").textContent.includes("https://your-service.onrender.com")'));
+   assert.ok(await ev('document.querySelector("#submit h2").textContent.includes("LMS")'));
+   assert.equal(await ev('document.querySelectorAll("#lms-submission-steps>li").length'),4);
+   assert.ok(await ev('document.getElementById("submission-checks").textContent.includes("메인 주소")'));
+   assert.ok(await ev('document.querySelector("#deployment .section-title").textContent.includes("평가 사이트 배포")'));
+   for(const width of [1440,768,390,320])for(const font of [16,22]){
+     await size(width);await ev('document.documentElement.style.setProperty("--size","'+font+'px");document.getElementById("submit").scrollIntoView()');
+     await ev('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+     await ev('document.getElementById("submit").scrollIntoView()');
+     const layout=await ev('({section:"submit",requested:'+width+',font:'+font+',width:innerWidth,scroll:document.documentElement.scrollWidth})');
+     assert.ok(layout.scroll<=width+1,JSON.stringify(layout));layouts.push(layout);
+     assert.ok(await ev('document.querySelector("#submit h2").getBoundingClientRect().top>=document.querySelector(".quick-nav").getBoundingClientRect().bottom-1'));
+     if(width<760)assert.ok(await ev('document.querySelector("#submit tbody th").getBoundingClientRect().width>innerWidth*.7'));
+     if(width===1440||width===320)await shot('submission-guide-'+width+'-'+font);
+   }
+   assert.deepEqual(errors,[]);
+   const report={ok:true,standalone_guide:true,layouts,wallet_password_placeholder:true,wallet_password_value_absent:true,render_url_submission_to_lms:true,presentation_and_file_submission_removed:true,real_database_access:false,screenshots:out};
+   fs.writeFileSync(path.join(root,'runtime/assignment-guide-render-verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));return;
+ }
  await call('Page.navigate',{url:base+'/'});await until('typeof csrf!=="undefined"&&csrf&&document.body.dataset.auth==="locked"');
  if(process.argv.includes('--hosted-login')){
    await click('#gate-login');await until('!document.getElementById("main-login").hidden');
