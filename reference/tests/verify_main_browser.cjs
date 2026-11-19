@@ -77,7 +77,7 @@ let ws;
            await command('Emulation.setDeviceMetricsOverride',{width,height:1000,deviceScaleFactor:1,mobile:width<600});
            await evaluate('document.documentElement.style.setProperty("--size","'+font+'px");document.documentElement.style.scrollBehavior="auto"');
            assert.ok(await evaluate('document.documentElement.scrollWidth<=innerWidth+1'),'Guide page overflow '+width+' '+font);
-           for(const section of ['setup','run','assessment','deployment','render-environment']){
+           for(const section of ['setup','personal-settings','settings-handoff','run','assessment','deployment','render-environment']){
              await evaluate('document.getElementById('+JSON.stringify(section)+').scrollIntoView()');
              const capture=await command('Page.captureScreenshot',{format:'png'});
              fs.writeFileSync(path.join(out,'guide-'+section+'-'+width+'-'+font+'.png'),Buffer.from(capture.data,'base64'));

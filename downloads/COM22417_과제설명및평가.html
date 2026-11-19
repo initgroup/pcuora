@@ -94,6 +94,7 @@ summary { padding:.7rem .9rem; cursor:pointer; color:var(--ink); font-size:.9rem
 .command-grid .command { margin-bottom:0; }
 .flow { display:flex; flex-wrap:wrap; align-items:center; gap:.5rem; color:#93a4b1; margin:0 0 .8rem; }
 .flow b { padding:.3rem .6rem; background:#e5ecf5; border-radius:.3rem; font-size:.85rem; color:#415d79; font-weight:500; }
+#student-env-fields th { width:36%; }
 .rubric { min-width:670px; }
 .rubric tbody th { width:15%; }
 .rubric th strong { display:block; font-size:1.35rem; color:var(--teal); margin-top:.2rem; }
@@ -109,7 +110,7 @@ summary { padding:.7rem .9rem; cursor:pointer; color:var(--ink); font-size:.9rem
 .card ul { padding-left:1.1rem; font-size:.9rem; margin:.5rem 0 0; }
 .deadline { color:var(--teal); font-size:1.3rem; }
 footer { margin-top:2rem; padding-top:1rem; border-top:1px solid var(--line); color:var(--muted); font-size:.8rem; display:flex; justify-content:space-between; gap:1rem; }
-@media(max-width:760px) { main { padding:1rem .8rem 2rem; } .hero { padding:1.2rem; align-items:flex-start; flex-direction:column; gap:1rem; } .hero-side { border-left:0; border-top:1px solid #ffffff30; padding:1rem 0 0; width:100%; } h1 { font-size:1.65rem; } .step { grid-template-columns:1fr; gap:.6rem; padding:1rem; } .scores { gap:.45rem; } .score { padding:.7rem; display:block; } .score small { display:none; } .score b { display:block; font-size:1.4rem; } .command-grid,.two-col { grid-template-columns:1fr; } .reading { margin-left:auto; } th,td { padding:.65rem; } .source-table { min-width:570px; } }
+@media(max-width:760px) { #student-env-fields table,#student-env-fields tbody,#student-env-fields tr,#student-env-fields th,#student-env-fields td { display:block; width:auto; } #student-env-fields thead { display:none; } #student-env-fields th { border-bottom:0; background:#eaf0f5; } main { padding:1rem .8rem 2rem; } .hero { padding:1.2rem; align-items:flex-start; flex-direction:column; gap:1rem; } .hero-side { border-left:0; border-top:1px solid #ffffff30; padding:1rem 0 0; width:100%; } h1 { font-size:1.65rem; } .step { grid-template-columns:1fr; gap:.6rem; padding:1rem; } .scores { gap:.45rem; } .score { padding:.7rem; display:block; } .score small { display:none; } .score b { display:block; font-size:1.4rem; } .command-grid,.two-col { grid-template-columns:1fr; } .reading { margin-left:auto; } th,td { padding:.65rem; } .source-table { min-width:570px; } }
 @media print { .quick-nav,.copy { display:none; } body { background:white; font-size:10pt; } main { max-width:none; padding:0; } .hero,.command,.settings,.rubric tfoot { print-color-adjust:exact; } details:not([open])>.detail-body { display:block; } .table-shell { overflow:visible; } .rubric,.source-table { min-width:0; } tr,.step,.card { break-inside:avoid; } .command-grid { grid-template-columns:repeat(3,1fr); } }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } }
 </style>
@@ -137,16 +138,37 @@ Ready. …
 OML project environment is active.
 Python: …\.venv\Scripts\python.exe
 venv: True</pre></div><p class="note"><kbd>Ctrl+Shift+P</kbd> → Python: Select Interpreter → Enter interpreter path… → Find… → 본인 폴더의 <code>.venv\Scripts\python.exe</code>를 선택합니다.</p></div></article>
-<article class="step"><div><h3><span class="step-number">4</span>본인 정보·Wallet 암호 넣기</h3><p><code>security/student.env</code>의 <strong>WALLET_PASSWORD</strong>에 전달받은 Wallet 암호를 입력합니다. DB 비밀번호와 구분하세요.</p><p><code>security/students.json</code>에는 본인 학번·이름·발급 DB 계정을 등록합니다. DB_USER·DB_PASSWORD는 로그인 성공 후 자동 저장됩니다.</p></div><div><div class="settings"><strong>security/student.env · 설정값</strong><pre><code>DB_USER=
+<article class="step" id="personal-settings"><div><h3><span class="step-number">4</span>2개 설정 파일을 본인 정보로 수정</h3>
+<p>압축을 푼 <strong>본인 학번 폴더</strong>에서 VS Code 탐색기 → <strong>security</strong>를 펼칩니다. 아래 두 파일을 수정하고 각각 <kbd>Ctrl+S</kbd>로 저장하세요. 파일명 뒤에 .txt를 붙이지 않습니다.</p>
+<details id="student-env-fields" open><summary>student.env · 항목별 입력 기준</summary><div class="detail-body"><div class="table-shell"><table><thead><tr><th>항목</th><th>수정 방법</th></tr></thead><tbody>
+<tr><th>DB_USER<br>DB_PASSWORD</th><td>첫 로컬 실행은 비워 둡니다. 웹에서 JSON의 계정과 입력한 DB 비밀번호로 접속에 성공하면 자동 저장됩니다.</td></tr>
+<tr><th>DB_DSN</th><td>제공 Wallet의 서비스 별칭. 예시 pcuora_low를 사용하고 변경 시 tnsnames.ora의 별칭과 맞춥니다.</td></tr>
+<tr><th>WALLET_PASSWORD</th><td>전달받은 Wallet 다운로드 암호로 변경합니다. DB 비밀번호와 다릅니다. 공백·# 등이 있으면 값 전체를 큰따옴표로 감싸세요.</td></tr>
+<tr><th>WALLET_ZIP</th><td>security/Wallet_PCUORA.zip 유지. 본인 프로젝트 security 안에 원본 ZIP이 있어야 합니다.</td></tr>
+<tr><th>ORACLE_CLIENT_LIB</th><td>기본 Thin 연결은 비워 둡니다.</td></tr>
+</tbody></table></div><p>없으면 setup.ps1이 student.env.example에서 생성합니다. 이 파일은 로컬 전용이며 Git에 올라가지 않습니다.</p></div></details>
+</div><div><div class="settings"><strong>security/student.env · 최초 설정 예시</strong><pre><code>DB_USER=
 DB_PASSWORD=
 DB_DSN=pcuora_low
-WALLET_PASSWORD=전달받은Wallet비밀번호
+WALLET_PASSWORD="본인의_Wallet_다운로드_암호"
 WALLET_ZIP=security/Wallet_PCUORA.zip
-ORACLE_CLIENT_LIB=</code></pre><p>기본 Thin 연결은 Oracle Client 설치가 필요 없습니다.</p></div><details id="student-roster" open><summary>security/students.json · 본인 한 명으로 변경</summary><div class="detail-body"><pre><code>[
-  {"student_id":"EXAMPLE01","name":"예시학생","department":"예시학과","grade":4,"db_user":"STUDENT01"}
-]</code></pre><p>위 내용은 가상 예시입니다. 본인 정보로 바꾸고 비밀번호는 넣지 마세요. 실제 명단·개인 환경파일·Wallet은 공유하지 않습니다.</p></div></details></div></article>
-<article class="step"><div><h3><span class="step-number">5</span>시작하고 로그인하기</h3><p>오른쪽 명령 실행 → 출력된 주소 열기 → <strong>로그인</strong>을 누릅니다.</p><p>로그인 버튼을 누르면 팝업 대신 메인 본문에 입력란이 나옵니다. 학번·이름 → DB 비밀번호 → <strong>DB 연결 테스트</strong> → <strong>로그인</strong> 순서입니다.</p><p>로그인 후 <strong>메인 접속 카드</strong>에서 본인 정보·발급 DB 계정·실제 접속 위치·연결 테스트 결과를 확인하고 함께 캡처해 PPT에 넣으세요. 그다음 기본·미션·창의과제를 선택합니다.</p><p class="note">공용 PC에서는 ‘입력값 저장’을 선택하지 마세요. 선택하면 학번·이름·DB 비밀번호가 브라우저에 저장됩니다.</p></div><div><div class="command"><div class="command-head"><span>PowerShell · 서비스 시작</span></div><pre><code>.\scripts\start.ps1</code></pre></div><div class="expected"><strong>정상 출력 예시</strong><pre>OML Studio is ready: http://127.0.0.1:22417</pre><p>기본 주소: <a href="http://127.0.0.1:22417">http://127.0.0.1:22417</a></p></div><p class="note">22417이 사용 중이면 다른 포트를 선택합니다. <code>OML Studio is ready:</code> 또는 <code>Already running:</code> 뒤의 실제 주소로 접속하세요. 서버 재시작 후에는 다시 로그인합니다.</p></div></article>
+ORACLE_CLIENT_LIB=</code></pre></div>
+<details id="student-roster" open><summary>students.json · 본인 한 명으로 변경</summary><div class="detail-body"><pre><code>[
+  {"student_id":"20260001","name":"홍길동","department":"소프트웨어학과","grade":4,"db_user":"STUDENT00"}
+]</code></pre>
+<ul><li><strong>student_id</strong>: 본인 학번을 문자열로 입력합니다. 예시 학번을 그대로 사용하지 마세요.</li>
+<li><strong>name</strong>: 로그인할 때 입력할 본인 이름. 글자·공백이 일치해야 합니다.</li>
+<li><strong>db_user</strong>: 발급받은 Oracle 계정의 대문자 ID. 학번과 다르며 STUDENT00은 예시입니다.</li>
+<li><strong>department / grade</strong>: 본인 학과 / 숫자 학년. 두 항목은 선택입니다.</li></ul>
+<p>대괄호 안에 본인 한 행만 남깁니다. 문자열은 큰따옴표, 마지막 항목 뒤 쉼표·주석은 금지합니다. 비밀번호는 추가하지 않습니다. <strong>본인 Git에는 이 파일이 포함됩니다.</strong></p>
+</div></details></div></article>
+<article class="step"><div><h3><span class="step-number">5</span>로컬에서 시작하고 로그인하기</h3><p>오른쪽 명령 실행 → 출력된 주소 열기 → <strong>로그인</strong>을 누릅니다.</p><p>로그인 버튼을 누르면 팝업 대신 메인 본문에 입력란이 나옵니다. 학번·이름 → DB 비밀번호 → <strong>DB 연결 테스트</strong> → <strong>로그인</strong> 순서입니다.</p><p>로그인 후 <strong>메인 접속 카드</strong>에서 본인 정보·발급 DB 계정·실제 접속 위치·연결 테스트 결과를 확인하고 함께 캡처해 PPT에 넣으세요. 그다음 기본·미션·창의과제를 선택합니다.</p><p class="note">공용 PC에서는 ‘입력값 저장’을 선택하지 마세요. 선택하면 학번·이름·DB 비밀번호가 브라우저에 저장됩니다.</p></div><div><div class="command"><div class="command-head"><span>PowerShell · 서비스 시작</span></div><pre><code>.\scripts\start.ps1</code></pre></div><div class="expected"><strong>정상 출력 예시</strong><pre>OML Studio is ready: http://127.0.0.1:22417</pre><p>기본 주소: <a href="http://127.0.0.1:22417">http://127.0.0.1:22417</a></p></div><p class="note">22417이 사용 중이면 다른 포트를 선택합니다. <code>OML Studio is ready:</code> 또는 <code>Already running:</code> 뒤의 실제 주소로 접속하세요. 서버 재시작 후에는 다시 로그인합니다.</p></div></article>
 </div>
+<details id="settings-handoff"><summary>파일 수정 → 본인 Git → Render 연결 관계</summary><div class="detail-body"><div class="table-shell"><table><thead><tr><th>로컬 파일</th><th>본인 Git</th><th>Render 설정</th></tr></thead><tbody>
+<tr><th>security/student.env</th><td>제외</td><td>자동 전달되지 않습니다. DB_PASSWORD·DB_DSN·Wallet 암호를 Environment에 직접 입력합니다.</td></tr>
+<tr><th>security/students.json</th><td>본인 한 행 포함</td><td>Git의 파일로 학번·이름 확인 → db_user 자동 설정</td></tr>
+<tr><th>Wallet_PCUORA.zip</th><td>제외</td><td>tnsnames.ora·ewallet.pem만 Secret Files에 등록</td></tr>
+</tbody></table></div><p>로컬은 DB 비밀번호를 입력하고, Render는 Environment의 DB_PASSWORD를 사용합니다. <a href="#github">본인 Git 배포</a> 후 <a href="#render-settings">Render 등록</a>으로 진행하세요.</p></div></details>
 <details><summary>설치·터미널이 잘 안 될 때</summary><div class="detail-body"><div class="table-shell"><table><thead><tr><th>상황</th><th>할 일</th></tr></thead><tbody>
 <tr><th>(.venv)가 안 보임</th><td>아래 활성화 명령 실행 → 본인 폴더의 .venv 경로와 <code>venv: True</code> 확인.</td></tr>
 <tr><th>설치 상태 확인</th><td><code>.\scripts\check-environment.ps1</code> 실행. Python 3.12~3.14 / 64비트 / venv: True / No broken requirements found. 확인.</td></tr>
@@ -276,7 +298,7 @@ ORACLE_CLIENT_LIB=</code></pre><p>기본 Thin 연결은 Oracle Client 설치가 
 <div class="command"><div class="command-head"><span>PowerShell · 주소 변경 후 미리보기</span></div><pre><code>.\scripts\deploy-github.ps1 -Repository "https://github.com/YOUR_GITHUB_ID/YOUR_REPOSITORY.git"</code></pre></div>
 <p>목록 확인 후 본인 정보와 <code>-Push</code>로 업로드합니다.</p>
 <div class="command"><div class="command-head"><span>PowerShell · 본인 주소·정보로 변경 후 업로드</span></div><pre><code>.\scripts\deploy-github.ps1 -Repository "https://github.com/YOUR_GITHUB_ID/YOUR_REPOSITORY.git" -AuthorName "본인 Git 표시 이름" -AuthorEmail "본인 GitHub 커밋 이메일" -Push</code></pre></div>
-<p>GitHub에서 최신 커밋과 app.py를 확인하세요. 수정 후에도 미리보기 → -Push 순서입니다. -Prepare는 업로드 없이 로컬 준비만 합니다.</p>
+<p>GitHub main에서 최신 커밋·app.py·security/students.json을 확인하세요. 본인 JSON 한 행이 보이고 student.env·Wallet은 없어야 합니다. 수정 후에도 미리보기 → -Push 순서입니다. -Prepare는 업로드 없이 로컬 준비만 합니다.</p>
 <p>본인 한 명의 security/students.json은 포함하고, 개인 환경·전체 명단·Wallet은 제외합니다. 비밀번호를 코드·URL에 넣지 마세요. 인증 실패는 저장소 권한, 작성자 오류는 AuthorName·AuthorEmail을 확인합니다. 강사용 주소와 강제 push는 사용하지 않습니다.</p>
 <p><a href="https://docs.github.com/en/get-started/git-basics/set-up-git" target="_blank" rel="noopener">Git·인증 공식 안내</a></p>
 </div></details>
@@ -316,10 +338,8 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <tr><th>tnsnames.ora</th><td>제공된 Wallet의 원문</td></tr>
 <tr><th>ewallet.pem</th><td>제공된 Wallet의 원문</td></tr>
 </tbody></table></div>
-<div class="settings"><strong>security/students.json · 본인 Git에 포함</strong><pre><code>[
-  {"student_id":"20260001","name":"홍길동","department":"소프트웨어학과","grade":4,"db_user":"STUDENT00"}
-]</code></pre></div>
-<p>학생 Git에는 본인 한 명의 security/students.json을 올립니다. 학번·이름 일치 시 db_user를 자동 설정하고 Render의 DB_PASSWORD로 접속합니다. 비밀번호는 JSON에 넣지 않습니다. 전체 명단·Wallet·security/student.env는 제외합니다.</p>
+<p>명단은 <a href="#student-roster">앞에서 수정한 security/students.json</a>을 Git으로 전달합니다. Secret Files에 다시 등록하지 않습니다.</p>
+<p>학번·이름 일치 시 Git 명단의 db_user와 Render의 DB_PASSWORD로 접속합니다. student.env의 값은 Render로 복사되지 않습니다.</p>
 <p><strong>Save, rebuild, and deploy</strong>로 저장합니다. Save only는 다음 배포 때 적용됩니다. <a href="https://render.com/docs/configure-environment-variables" target="_blank" rel="noopener">환경변수·Secret Files 안내</a> · <a href="https://render.com/docs/python-version" target="_blank" rel="noopener">Python 버전 안내</a></p>
 </div></details>
 <details id="render-check" open><summary>4. 배포 확인과 다음 수정 반영</summary><div class="detail-body">

@@ -327,3 +327,5 @@ Oracle 명령은 단일 프로시저 안의 create_raw_model/create_clean_model,
 강사 운영·검증 파일 허용 목록은 reference/distribution/public-files.json으로 분리하며 학생 실행 허용 목록은 scripts/source_files.py에 둡니다. 참조 목록은 학생 ZIP/Git에 포함하지 않습니다. 학생 Git에는 ZIP 루트의 통합 안내 HTML을 포함하여 Render에서도 안내 메뉴를 제공합니다.
 
 학생 Git은 본인 한 행의 security/students.json만 검증하여 명시적으로 포함합니다. 강사 전체 명단은 강사 Git·공통 학생 ZIP에서 제외하며 학생.env·Wallet·비밀번호는 학생 Git에도 포함하지 않습니다. Render는 Git의 security/students.json을 우선 읽습니다. OML_ROSTER_FILE은 Git 명단이 없는 기존 강사 운영의 대체 경로입니다.
+
+통합 안내의 개발환경 설정 4단계는 student.env 항목별 입력값과 students.json 필드·JSON 문법을 설명합니다. ‘파일 수정 → 본인 Git → Render 연결 관계’에서 로컬 환경파일 제외·본인 JSON 포함·운영 환경변수 재입력과 Wallet Secret Files를 구분합니다. GitHub main의 JSON 확인 후 Render 등록 순서를 따릅니다.
