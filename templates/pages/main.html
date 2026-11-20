@@ -12,7 +12,7 @@
         <div class="login-fields">
           <label for="login-id">학번<input id="login-id" required autocomplete="username" autocapitalize="none" spellcheck="false"></label>
           <label for="login-name">이름<input id="login-name" required autocomplete="name"></label>
-          <label for="login-db-user">발급 DB 계정<input id="login-db-user" readonly placeholder="학번·이름 확인 후 표시" aria-live="polite"></label>
+          <label for="login-db-user">발급 DB 계정<input id="login-db-user" readonly tabindex="-1" placeholder="학번·이름 확인 후 표시" aria-live="polite"></label>
           <label for="login-password">DB 비밀번호<input id="login-password" type="password" required autocomplete="current-password"{% if environment_db_password %} data-remember-password="false"{% endif %}></label>
         </div>
         <div class="main-login-remember"><label class="remember-input"><input id="remember-identity" type="checkbox"><span>입력값 저장</span></label><p class="remember-note">{% if environment_db_password %}선택하면 학번·이름만 이 브라우저에 저장합니다.{% else %}선택하면 학번·이름·DB 비밀번호를 이 브라우저에 저장합니다.{% endif %}</p></div>

@@ -1,5 +1,7 @@
 # OML 교육 프로젝트 지침
 
+- 로그인의 발급 DB 계정은 readonly·tabindex=-1로 유지한다. Tab은 학번 → 이름 → 비밀번호, Shift+Tab은 역순으로 이동하며 명단 확인 응답이 초점을 강제로 바꾸지 않는다.
+
 - 최신 UI 요청: 세 과제의 RAW/CLEAN 라디오는 ① RAW → ② CLEAN 작업 카드로 교체한다. 전처리·모델 생성·TEST 평가는 두 방식 모두 수행하며 카드의 완료 상태는 현재 검증 checks를 사용한다. 카드 전환은 실행 대상만 바꾸고 기존 확인·실행 권한·SQL 모드·현재 예측 판정을 유지한다. 작업번호는 기존 버튼 가장자리의 절대 위치 표식이며 본문 높이를 늘리는 박스를 만들지 않는다. 성공은 짙은 파란색, 대기는 주황색, hover/focus는 흰 글자다. 기존 top-layer 툴팁과 상세 레이어를 재사용하고 새 조회·폴링은 추가하지 않는다. --task-markers-only 및 --manual-actions-only/--selection-only로 상태·모드·키보드·모바일을 격리 검증한다.
 
 - 최신 요청: 진행 검증·전처리/모델 최신성·선택 모델·평가/예측 영수증·미션 선택은 backend/progress_store.py와 발급 계정의 OML_WEB_STATE에 저장한다. 같은 DB/계정이면 서버 루트·DSN 별칭과 무관하게 공유하며 runtime JSON은 1회 이관 때만 읽는다. 로그인 인증 후 없는 관리 테이블만 준비하고 조회·연결 테스트에서 DDL을 하지 않는다. DB 실패 시 로컬 파일로 fallback하지 않는다. SESSION_USER/CURRENT_SCHEMA/발급 계정·JSON 크기·CAS 버전을 검사하며 기록 저장은 자율 트랜잭션으로 실습 COMMIT/ROLLBACK과 분리한다. 기존 DB 기록이 있으면 파일 이관으로 덮어쓰지 않는다. 기본 오브젝트 삭제는 기본 검증만 해제하고 미션·창의·선택 기록과 관리 테이블을 보존한다. source_files.py 배포 목록과 코딩도움말의 저장 호출/SQL을 유지한다. 격리 test_progress_store 및 실제 OML_QA 전용 verify_progress_store_db.py를 사용하며 실습 데이터·모델은 검사 편의로 변경하지 않는다.

@@ -194,6 +194,7 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 </div></details></div></article>
 <article class="step"><div><h3><span class="step-number">5</span>로컬에서 시작하고 로그인하기</h3><p>오른쪽 명령 실행 → 출력된 주소 열기 → <strong>로그인</strong>을 누릅니다.</p><p>로그인 버튼을 누르면 팝업 대신 메인 본문에 입력란이 나옵니다. 학번·이름 → DB 비밀번호 → <strong>DB 연결 테스트</strong> → <strong>로그인</strong> 순서입니다.</p><p>로그인 후 <strong>메인 접속 카드</strong>에서 본인 정보·발급 DB 계정·실제 접속 위치·연결 테스트 결과를 확인합니다. 그다음 기본·미션·창의과제를 선택하고, 배포 후 Render 사이트에서도 같은 내용을 확인합니다.</p><p class="note">공용 PC에서는 ‘입력값 저장’을 선택하지 마세요. 선택하면 학번·이름·DB 비밀번호가 브라우저에 저장됩니다.</p></div><div><div class="command"><div class="command-head"><span>PowerShell · 서비스 시작</span></div><pre><code>.\scripts\start.ps1</code></pre></div><div class="expected"><strong>정상 출력 예시</strong><pre>OML Studio is ready: http://127.0.0.1:22417</pre><p>기본 주소: <a href="http://127.0.0.1:22417">http://127.0.0.1:22417</a></p></div><p class="note">22417이 사용 중이면 다른 포트를 선택합니다. <code>OML Studio is ready:</code> 또는 <code>Already running:</code> 뒤의 실제 주소로 접속하세요. 서버 재시작 후에는 다시 로그인합니다.</p></div></article>
 </div>
+<p>로그인에서 Tab은 학번 → 이름 → 비밀번호 순서입니다. 읽기 전용 DB 계정은 건너뛰며 Shift+Tab은 역순입니다.</p>
 <details id="settings-handoff"><summary>파일 수정 → 본인 Git → Render 연결 관계</summary><div class="detail-body"><div class="table-shell"><table><thead><tr><th>로컬 파일</th><th>본인 Git</th><th>Render 설정</th></tr></thead><tbody>
 <tr><th>security/student.env</th><td>제외</td><td>자동 전달되지 않습니다. DB_PASSWORD·DB_DSN·Wallet 암호를 Environment에 직접 입력합니다.</td></tr>
 <tr><th>security/students.json</th><td>본인 한 행 포함</td><td>Git의 파일로 학번·이름 확인 → db_user 자동 설정</td></tr>
