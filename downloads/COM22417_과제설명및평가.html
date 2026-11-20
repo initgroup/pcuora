@@ -247,7 +247,7 @@ ORACLE_CLIENT_LIB=</code></pre></div>
 <p class="note">기본과제는 SQL 수정 없이 수행할 수 있습니다. 코딩도움말로 실행 흐름을 확인하고 데이터·전처리·평가 결과를 본인의 말로 설명하세요.</p></article>
 <article class="card" id="mission-task"><h3>미션과제 · 예시를 선택하고 SQL로 구현하기</h3>
 <ol><li><strong>미션 선택:</strong> 12종의 <strong>스키마 조회 → 데이터 조회</strong>로 목적·활용 사례·설명변수의 의미와 유효값을 확인하고 <strong>이 미션 선택</strong>을 누릅니다. 선택은 계정별로 저장됩니다.</li>
-<li><strong>객체 생성:</strong> 스키마 조회의 <strong>① DATA → ② PREPARED → ③ PREDICT → ④ RUN</strong> 순서로 SQL을 확인합니다. 테이블 SQL은 <code>sql/custom/mission/01_tables.sql</code>, 프로시저 SQL은 <code>sql/custom/mission/02_procedure.sql</code>에 저장합니다.</li>
+<li><strong>객체 생성:</strong> 선택된 미션의 <strong>스키마 조회</strong> 버튼 가장자리에 객체 4개의 작업번호·성공/대기가 표시됩니다. 마우스·키보드 초점으로 실행 위치를 확인하세요. 팝업의 생성 SQL은 상단에 펼쳐져 있습니다. <strong>① DATA → ② PREPARED → ③ PREDICT → ④ RUN</strong> 각 탭에서 <strong>생성 SQL 전체 복사 → 같은 발급 계정의 SQL Developer 새 워크시트 → 선택 해제 후 F5 실행</strong>을 진행하세요. 테이블 SQL은 <code>sql/custom/mission/01_tables.sql</code>, 프로시저 SQL은 <code>sql/custom/mission/02_procedure.sql</code>에 저장합니다. 네 객체 적용 후 웹에서 <strong>SQL 실행 결과 연계</strong>로 확인하세요. 조회·복사는 DB를 변경하지 않습니다.</li>
 <li><strong>DB 적용:</strong> SQL Developer에서 본인 발급 계정으로 접속하여 테이블 SQL 전체, RUN SQL 전체를 차례로 <strong>F5</strong> 실행합니다. 웹에서 <strong>SQL 실행 결과 연계</strong>를 누릅니다.</li>
 <li><strong>원본 적재:</strong> 선택 미션의 학습·TEST CSV 다운로드 → 학습데이터 탭에서 파일 선택 → <strong>CSV 교체 적재</strong> → 원본 데이터 조회.</li>
 <li><strong>전처리:</strong> 코딩도움말의 선택 미션 SQL로 RAW·CLEAN PREPARE를 각각 직접 실행·COMMIT합니다. <strong>SQL 실행 결과 연계 → 저장값 조회</strong>로 FIT_YN·EXCLUDE_REASON·TRAIN·TEST를 확인합니다.</li>

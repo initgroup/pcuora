@@ -36,7 +36,10 @@ function practiceDependency(stage,destination,label){
 }
 function practiceTaskTarget(step,check){
  const custom=!basicWorkspace,button=(basic,other)=>$(custom?other:basic);
- if(step.id==='home')return custom?{node:$('assignment-check'),hint:'직접 SQL 생성·수정 후 SQL 실행 결과 연계'}:check.label.includes('테이블')?{node:$('initialize-basic'),hint:'테이블 생성으로 확인'}:{node:$('register-basic')?.closest('.actions'),group:true,hint:'프로시저 최초 등록 또는 다시 등록으로 확인'};
+ if(step.id==='home'){
+  if(custom&&assignmentKey==='mission')return {node:document.querySelector('[data-mission-schema="'+missionSelectionCurrent+'"]'),hint:'스키마 조회 → DATA·PREPARED·PREDICT·RUN 각 탭의 생성 SQL 전체 복사 → SQL Developer에서 F5 직접 실행 → SQL 실행 결과 연계'};
+  return custom?{node:$('assignment-check'),hint:'직접 SQL 생성·수정 후 SQL 실행 결과 연계'}:check.label.includes('테이블')?{node:$('initialize-basic'),hint:'테이블 생성으로 확인'}:{node:$('register-basic')?.closest('.actions'),group:true,hint:'프로시저 최초 등록 또는 다시 등록으로 확인'};
+ }
  if(step.id==='data'){
   if(check.label==='학습 CSV 원본 적재')return {node:button('import-submit','assignment-import'),hint:'CSV 최초/교체 적재 후 원본 행 확인'};
   if(check.label==='객체·연결 준비')return {node:practiceDependency('data','home','객체·연결 준비 확인'),hint:'현황에서 테이블 3개와 RUN 준비'};

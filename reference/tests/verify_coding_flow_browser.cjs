@@ -466,11 +466,21 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    console.log(JSON.stringify({ok:true,assignments:2,layout_checks:views.length,screenshots:out}));return;
  }
  if(schemaOnly){
+   await fetch(base+'/qa/evidence');
    await call('Page.navigate',{url:base+'/mission'});
-   await until('typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!activeTasks');
+   await until('typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!activeTasks&&practiceEvidenceResult');
+   assert.ok(await ev('document.querySelector("[data-mission-schema="+missionSelectionCurrent+"]").closest(".mission-schema-action").querySelectorAll(".practice-task-marker[data-proof-step=home]").length===4&&!document.getElementById("assignment-check").closest(".assignment-link-panel").querySelector(".practice-task-marker")'));
+   assert.equal(await ev('[...document.querySelectorAll(".mission-schema-action")].filter(e=>e.querySelector(".practice-task-marker")).length'),1);
    await ev('Object.defineProperty(navigator,"clipboard",{configurable:true,value:{writeText:async text=>{window.qaCopied=text}}});window.qaCopied=""');
    const select=async key=>{
      await click('[data-mission-schema='+key+']');await until('document.getElementById("mission-schema-dialog").open&&missionSchemaSql.includes("CREATE TABLE")');
+     assert.ok(await ev('document.getElementById("mission-schema-ddl").open&&!!(document.getElementById("mission-schema-ddl").compareDocumentPosition(document.getElementById("mission-schema-columns"))&Node.DOCUMENT_POSITION_FOLLOWING)&&document.querySelector(".mission-schema-start").textContent.includes("F5")'));
+     for(const kind of ['training','prepared','prediction']){
+       await click('[data-mission-schema-kind='+kind+']');await until('missionSchemaKind==='+JSON.stringify(kind)+'&&missionSchemaSql.includes("CREATE TABLE")&&!document.getElementById("copy-mission-schema").disabled');
+       const table=await(await fetch(base+'/api/assignments/mission/schema?mission='+key+'&kind='+kind)).json();
+       assert.equal(await ev('missionSchemaSql'),table.sql);assert.equal(await ev('document.getElementById("mission-schema-ddl").open'),true);
+       await click('#copy-mission-schema');assert.equal(await ev('qaCopied'),table.sql);
+     }
      assert.deepEqual(await ev('[...document.querySelectorAll("[data-mission-schema-kind]")].map(e=>e.dataset.missionSchemaKind)'),['training','prepared','prediction','procedure']);
      await click('[data-mission-schema-kind=procedure]');await until('missionSchemaSql.includes("CREATE OR REPLACE PROCEDURE")&&!document.getElementById("copy-mission-schema").disabled');
      const expected=await(await fetch(base+'/api/assignments/mission/schema?mission='+key+'&kind=procedure')).json();
@@ -487,6 +497,18 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      const layout=await ev('(()=>{const d=document.getElementById("mission-schema-dialog");return {page:document.documentElement.scrollWidth,width:innerWidth,scroll:d.scrollWidth,client:d.clientWidth}})()');
      assert.ok(layout.page<=layout.width+1&&layout.scroll<=layout.client+1,JSON.stringify(layout));
      views.push({width,...layout});if(width===1440||width===320)await shot('mission-run-schema-'+width);
+     await ev('HelpWindow.close(document.getElementById("mission-schema-dialog"))');
+     const cards=await ev('[...document.querySelectorAll(".mission-card-buttons")].map(row=>[...row.querySelectorAll("button:not(.practice-task-marker)")].map(b=>b.getBoundingClientRect().top))');
+     assert.ok(cards.every(row=>row.length===3&&Math.max(...row)-Math.min(...row)<1),'Card actions remain on one row: '+JSON.stringify({width,cards}));
+     await ev('document.querySelector("[data-mission-card="+missionSelectionCurrent+"]").scrollIntoView({block:"center",behavior:"instant"})');
+     await ev('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+     assert.ok(await ev('[...document.querySelectorAll(".mission-schema-action .practice-task-marker")].every(marker=>{const r=marker.getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&marker.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height/2))})'),'All four schema status markers must be visible and clickable');
+     await ev('document.activeElement?.blur();document.querySelector(".mission-schema-action .practice-task-marker").focus({preventScroll:true})');
+     await until('document.querySelector(".practice-task-tooltip:popover-open")');
+     assert.ok(await ev('document.querySelector(".practice-task-tooltip:popover-open").textContent.includes("SQL Developer")'));
+     if(width===1440||width===320)await shot('mission-schema-entry-'+width);
+     await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape'});
+     await ev('HelpWindow.open(document.getElementById("mission-schema-dialog"))');
    }
    await size(1440);await ev('fontSize(16)');
    await click('#close-mission-schema');result=await select('festival');

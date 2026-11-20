@@ -11,11 +11,11 @@ async function renderMissionSchema(){
   missionSchemaSql='';$('copy-mission-schema').disabled=true;
   const procedure=kind==='procedure';
   text('mission-schema-object-label',procedure?'프로시저명':'테이블명');
-  text('mission-schema-sql-title',procedure?'CREATE OR REPLACE PROCEDURE · RUN 생성 SQL':'CREATE TABLE·컬럼 설명 SQL 예시');
+  text('mission-schema-sql-title',procedure?'CREATE OR REPLACE PROCEDURE · RUN 생성 SQL · 직접 실행':'CREATE TABLE·컬럼 설명 SQL 예시 · 직접 실행');
   $('mission-schema-columns').hidden=procedure;$('mission-schema-constraints').hidden=procedure;
   $('mission-schema-table-guide').hidden=procedure;$('mission-schema-check-guide').hidden=procedure;
   $('mission-schema-procedure-guide').hidden=!procedure;
-  if(procedure)$('mission-schema-ddl').open=true;
+  $('mission-schema-ddl').open=true;
   text('mission-schema-title',item.title+' · 스키마 안내');
   text('mission-schema-table','');text('mission-schema-description','로그인한 발급 DB 계정의 스키마 안내를 읽고 있습니다.');
   text('mission-schema-constraints','');text('mission-schema-copy-status','');
@@ -39,7 +39,7 @@ async function renderMissionSchema(){
 function openMissionSchema(key){
   if(!missionDatasets.some(item=>item.key===key))return;
   renderMissionContext('mission-schema-learning',missionDatasets.find(item=>item.key===key));
-  missionSchemaKey=key;missionSchemaKind='training';renderMissionSchema();$('mission-schema-ddl').open=false;
+  missionSchemaKey=key;missionSchemaKind='training';renderMissionSchema();
   HelpWindow.open($('mission-schema-dialog'),{reset:true});$('mission-schema-dialog').scrollTop=0;
 }
 on('close-mission-schema','click',()=>HelpWindow.close($('mission-schema-dialog')));
