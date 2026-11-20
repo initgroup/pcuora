@@ -520,6 +520,10 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      }
      assert.ok(await ev('practiceEvidenceResult.steps.every(step=>step.checks.every((check,index)=>{const marker=[...document.querySelectorAll(".practice-task-marker")].find(marker=>marker.dataset.proofStep===step.id&&Number(marker.dataset.proofCheck)===index);return marker.querySelector("span").textContent===check.label}))'));
      assert.ok(await ev('[...document.querySelectorAll(".mode-choice:not([data-mode-stage=predictions])")].every(group=>[...group.querySelectorAll(".mode-option")].every(button=>{const checks=practiceEvidenceResult.steps.find(step=>step.id===group.dataset.modeStage).checks.filter(check=>check.label.startsWith(button.value+" "));return (button.dataset.state==="success")===checks.every(check=>check.success)}))'));
+     const contrast=await ev('(()=>{const lum=color=>color.match(/[\\d.]+/g).slice(0,3).map(Number).map(x=>{x/=255;return x<=.04045?x/12.92:((x+.055)/1.055)**2.4}).reduce((s,x,i)=>s+x*[.2126,.7152,.0722][i],0);return [...document.querySelectorAll(".practice-task-marker")].map(button=>{const ink=getComputedStyle(button.querySelector("strong")),surface=getComputedStyle(button),a=lum(ink.color),b=lum(surface.backgroundColor);return {step:button.dataset.proofStep,index:button.dataset.proofCheck,state:button.dataset.state,color:ink.color,ratio:(Math.max(a,b)+.05)/(Math.min(a,b)+.05)}})})()');
+     assert.ok(contrast.every(item=>item.ratio>=4.5),'Actual marker text contrast: '+JSON.stringify(contrast.filter(item=>item.ratio<4.5)));
+     const overlaps=await ev('(()=>{const out=[];for(const host of document.querySelectorAll(".practice-task-markers")){if(!host.getClientRects().length)continue;const anchor=host.parentElement,markers=[...host.querySelectorAll("button")];for(const action of anchor.querySelectorAll("button:not(.practice-task-marker),a")){if(action.closest(".practice-task-markers"))continue;const walker=document.createTreeWalker(action,NodeFilter.SHOW_TEXT);let text;while(text=walker.nextNode()){const range=document.createRange();range.selectNodeContents(text);for(const box of range.getClientRects())for(const marker of markers){const r=marker.getBoundingClientRect();if(box.width&&r.left<box.right&&r.right>box.left&&r.top<box.bottom&&r.bottom>box.top)out.push({action:action.id,step:marker.dataset.proofStep,index:marker.dataset.proofCheck})}}}}return out})()');
+     assert.deepEqual(overlaps,[],'Markers must not cover action or help text');
      return steps;
    };
    for(const key of ['basic','mission','creative']){
@@ -527,6 +531,9 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      await call('Page.navigate',{url:base+'/'+key});
      await until(key==='basic'?'typeof statusPhase!=="undefined"&&statusPhase==="ready"&&!refreshing&&practiceEvidenceResult':'typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!activeTasks&&practiceEvidenceResult');
      let steps=await checkSnapshot();
+     if(key!=='basic'){
+       await ev('document.getElementById("assignment-check").scrollIntoView({block:"center",behavior:"instant"})');await shot('link-marker-contrast-'+key);
+     }
      assert.deepEqual(steps.find(step=>step.id==='data').markers.map(marker=>marker.state),['success','success','pending','pending']);
      assert.equal(steps.find(step=>step.id==='models').completed,0);
      assert.equal(steps.find(step=>step.id==='models').remaining,key==='basic'?6:5);
@@ -545,7 +552,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
        assert.ok(requests.slice(beforeMode).every(request=>request.method==='GET'||new URL(request.url).pathname.endsWith('/prepared-data')),'Mode cards only change the work target: '+JSON.stringify(requests.slice(beforeMode)));
        assert.ok(await ev('(()=>{const panel=document.getElementById('+JSON.stringify(key==='basic'?'basic-'+id:'assignment-panel-'+id)+'),before=panel.getBoundingClientRect().height,hosts=[...panel.querySelectorAll(".practice-task-markers")];const absolute=hosts.every(host=>getComputedStyle(host).position==="absolute");hosts.forEach(host=>host.hidden=true);const after=panel.getBoundingClientRect().height;hosts.forEach(host=>host.hidden=false);return absolute&&before===after})()'),'Task markers must occupy no layout height');
        for(const [width,font] of [[1440,16],[1280,22],[390,16],[320,22]]){
-         await size(width);await ev('fontSize('+font+')');await ev('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+         await size(width);await ev('fontSize('+font+')');await ev('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');await checkSnapshot();
          const box=await ev('(()=>{const panel=document.getElementById('+JSON.stringify(key==='basic'?'basic-'+id:'assignment-panel-'+id)+'),header=panel.querySelector("[data-practice-stage]").getBoundingClientRect();return {width:innerWidth,scroll:document.documentElement.scrollWidth,left:header.left,right:header.right,overflow:[...panel.querySelectorAll(".practice-task-marker")].some(marker=>marker.getBoundingClientRect().right>innerWidth+1)}})()');
          assert.ok(box.scroll<=width+1&&box.left>=-1&&box.right<=width+1&&!box.overflow,JSON.stringify({key,id,font,...box}));views.push({key,id,font,...box});
          if(width===1440||width===320){await ev('document.getElementById('+JSON.stringify(key==='basic'?'basic-'+id:'assignment-panel-'+id)+').scrollIntoView()');await shot('task-markers-'+key+'-'+id+'-'+width)}
