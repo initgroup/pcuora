@@ -88,6 +88,12 @@ def status():
         result['preparation']={mode:dict(ready=bool(n),rows=n,fit_rows=n,test_rows=0) for mode,n in life['prepared'].items()}
     return result
 proof_states={}
+
+def binding_fixture():
+    selected=next(i for i in CATALOG if i['key']==selection['key'])
+    detected=next(i for i in CATALOG if i['key']==qa['binding_db'])
+    can_link=selected['key']==detected['key'];ready=can_link and qa.get('binding_applied')==selected['key']
+    return dict(selected=selected['key'],selected_title=selected['title'],detected=detected['key'],detected_title=detected['title'],applied=qa.get('binding_applied',''),applied_title=qa.get('binding_applied','미확인'),ready=ready,can_link=can_link,reason='' if ready else '선택 미션과 DB가 다르거나 연계 확인이 필요합니다.',tables={kind:can_link for kind in ['training','prepared','prediction']})
 def proof_saved(key):
     if key not in proof_states:
         stamps={mode:dict(fingerprint=key+'-'+mode,created=NOW) for mode in ('RAW','CLEAN')}
@@ -118,6 +124,7 @@ def proof_result(key):
         state['models']=[dict(model,exists=0,is_current=0,is_confirmed=0) for model in state['models']]
     if qa.get('stale_proof'):
         state['models']=[dict(m,is_current=0) for m in state['models']]
+    if key=='mission' and qa.get('binding_db'):state['ready']=binding_fixture()['ready']
     topic=next(item for item in CATALOG if item['key']==selection['key']) if key=='mission' else None
     result=practice_evidence.summarize(key,state,proof_saved(key),inputs=proof_inputs(),mission=topic)
     return dict(result,title={'basic':'기본과제','mission':'미션과제','creative':'창의과제'}[key],
@@ -145,6 +152,17 @@ async def fixture(request,next_call):
     if path=='/qa/evidence':
         qa['evidence']=True
         return JSONResponse({'ok':True})
+    if path=='/qa/mission-binding':
+        selection['key']=CATALOG[2]['key'];qa.update(binding_db=selection['key'],binding_applied=selection['key'],evidence=True)
+        return JSONResponse({'ok':True})
+    if path=='/qa/mission-apply':
+        qa.update(binding_db=selection['key'],binding_applied='')
+        return JSONResponse({'ok':True})
+    if path=='/api/assignments/mission/link' and qa.get('binding_db'):
+        body=await request.json();info=binding_fixture()
+        if body.get('mission')!=selection['key'] or not info['can_link']:
+            qa['blocked'].append(path);return JSONResponse({'error':'미션 불일치'},status_code=400)
+        qa['binding_applied']=selection['key'];return JSONResponse({'message':'연계 완료'})
     if path=='/qa/evidence/change':
         qa[q.get('kind','input_version')]=int(q.get('value','2'))
         return JSONResponse({'ok':True})
@@ -255,6 +273,11 @@ async def fixture(request,next_call):
             if action=='status':
                 response={'ready':True,'config':ASSIGNMENTS[key],'objects':objects(key),'missing':[],'issues':[],'models':models(key),'preparation':prep(),'state':{'total_rows':1500},'prediction_storage':{'rows':30}}
                 if qa.get('preparation_linking'):response['preparation']=linked_preparations(key)
+                if key=='mission' and qa.get('binding_db'):
+                    response['mission']=binding_fixture();response['ready']=response['mission']['ready']
+                    if not response['ready']:
+                        response['models']=[dict(m,is_current=0) for m in response['models']]
+                        response['preparation']={m:dict(p,ready=False) for m,p in response['preparation'].items()}
                 if qa.get('evidence') and q.get('include_evidence'):response['practice']=proof_result(key)
                 return JSONResponse(response)
             if action=='data':return JSONResponse({'rows':source_rows(True)})

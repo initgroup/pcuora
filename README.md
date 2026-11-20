@@ -1,5 +1,9 @@
 # OML 분류모델 실습
 
+미션 선택값과 DB 적용 기록을 분리합니다. backend/mission_binding.py가 세 테이블의 컬럼·자료형·필수값, RUN 소스와 현재 객체 지문을 검사합니다. OML_WEB_STATE의 mission_binding은 명시적 연계 때만 저장하고 조회·선택에서는 바꾸지 않습니다. 불일치·미연계 상태는 성공을 표시하지 않고 평가·예측을 RUN 호출 전에 차단합니다. CSV는 대상 테이블 하나만 검증합니다. 모델 연계는 DATA·PREPARED·RUN DDL 이후 생성 여부와 실제 입력 속성을 검사하고 실행 때도 선택 미션 속성을 확인합니다. 요청의 미션 키를 DB 선택값과 비교해 오래된 탭을 차단합니다. 새 버전 적용 후 기존 미션도 한 번 연계해야 합니다. --mission-binding-only 및 test_mission_binding으로 격리 검증합니다.
+
+강사용 학생 ZIP 압축 도구는 reference/requirements-package.lock에 고정합니다. 다른 PC에서는 `.venv\Scripts\python.exe -m pip install --no-index --find-links reference/wheels-classifier-py312 -r reference/requirements-package.lock`으로 준비합니다. Zopfli는 표준 Deflate ZIP의 텍스트 압축에만 사용하며 원문을 바꾸지 않습니다. 학생 앱의 설치 의존성에는 추가하지 않으며 ZIP 용량 초과 시 기존 배포본을 보존하고 중단합니다.
+
 색상은 식별과 가독성을 우선합니다. 동작은 네이비·흰색, 결과 영역은 민트, 성공 표식은 짙은 파랑·흰색, 대기는 연한 주황·진한 갈색을 사용합니다. 글자 대비는 4.5:1 이상으로 확인하고 hover·focus·자식 글자까지 검사합니다. 작업 표식은 버튼 글자와 ?를 덮지 않아야 하며 좁은 화면·확대 상태에서도 검증합니다.
 
 성공·대기 상세 창은 공통 레이어에 있어 모든 단계에서 보입니다. 창을 닫거나 ESC를 누른 뒤 ? 코딩도움말을 계속 사용할 수 있습니다.

@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 from app import create_app
-from backend import assignment_templates as tasks, service
+from backend import assignment_templates as tasks, service, mission_binding
 
 
 class OmlLabTests(unittest.TestCase):
@@ -187,7 +187,8 @@ class OmlLabTests(unittest.TestCase):
             return models if path=='assignment_models.sql' else source if path=='procedure_source.sql' else []
         def execute(_conn,path,*_args,**_kwargs):
             return counts if path=='queries/prepared_count.sql' else original if path=='queries/custom_fingerprint_rows.sql' else []
-        with patch.object(tasks,'readiness',return_value={'ready':True,'config':cfg}),patch.object(tasks,'query',side_effect=query),patch.object(tasks,'execute',side_effect=execute),patch.object(service,'prepared_values',side_effect=lambda _conn,_table,mode:prepared[mode]),patch.object(service,'read_state',return_value=saved),patch.object(service,'write_state') as write:
+        mission=dict(can_link=True,selected='festival',stamp='fixture',model_after='')
+        with patch.object(mission_binding,'model_matches',return_value=True),patch.object(tasks,'readiness',return_value={'ready':True,'config':cfg,'mission':mission}),patch.object(tasks,'query',side_effect=query),patch.object(tasks,'execute',side_effect=execute),patch.object(service,'prepared_values',side_effect=lambda _conn,_table,mode:prepared[mode]),patch.object(service,'read_state',return_value=saved),patch.object(service,'write_state') as write:
             result=tasks.link_external(conn,'mission')
             self.assertTrue(all(model['is_current'] for model in result['models']))
             self.assertTrue(all(value['ready'] for value in result['preparation'].values()))

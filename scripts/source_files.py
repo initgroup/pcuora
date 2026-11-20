@@ -28,6 +28,7 @@ APP_FILES=(
     'backend/identity.py',
     'backend/model_dictionary.py',
     'backend/mission_guide.py',
+    'backend/mission_binding.py',
     'backend/operation_help.py',
     'backend/service.py',
     'backend/progress_store.py',

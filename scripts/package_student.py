@@ -9,6 +9,16 @@ import zipfile
 import zlib
 from source_files import ROOT,inventory,manifest,APP_FILES,STUDENT_SCRIPTS
 from distribution_guard import validate_files
+try:
+    from zopfli.zlib import compress as compact_deflate
+except ImportError:
+    compact_deflate=None
+
+
+class TextDeflate:
+    def __init__(self):self.raw=bytearray()
+    def compress(self,raw):self.raw.extend(raw);return b''
+    def flush(self):return compact_deflate(bytes(self.raw),numiterations=1)[2:-4]
 
 
 class StudentArchive(zipfile.ZipFile):
@@ -17,6 +27,8 @@ class StudentArchive(zipfile.ZipFile):
         stream=super()._open_to_write(zinfo,force_zip64)
         if zinfo.compress_type==zipfile.ZIP_DEFLATED and zinfo.filename.endswith('.csv'):
             stream._compressor=zlib.compressobj(9,zlib.DEFLATED,-15,7,zlib.Z_FILTERED)
+        elif zinfo.compress_type==zipfile.ZIP_DEFLATED and compact_deflate and zinfo.filename.endswith(('.py','.js','.css','.html','.json','.sql')):
+            stream._compressor=TextDeflate()
         return stream
 
 def student_roster(root, *, example=False):
@@ -94,6 +106,8 @@ def build(root=ROOT,*,student_id='학번',output=None,replace=False):
             archive.writestr('MANIFEST.sha256.json',manifest(packed))
         with zipfile.ZipFile(temporary) as archive:
             if archive.testzip(): raise ValueError('ZIP 검증 실패')
+        if temporary.stat().st_size>=1000000:
+            raise ValueError('학생 ZIP은 1,000,000바이트 미만이어야 합니다. reference/requirements-package.lock의 압축 도구와 크기 검사를 확인하세요.')
         # 같은 폴더에서 검증한 ZIP을 교체합니다. 압축·검증 실패 시 기존 ZIP은 남습니다.
         # 안내서도 ZIP에 넣은 바로 그 바이트를 따로 제공하므로 두 버전이 같습니다.
         # downloads의 통합 안내가 유일한 원본입니다. 기본 출력에서는 원본을 다시 쓰지 않습니다.

@@ -5,6 +5,7 @@
 {%- endmacro %}
 <p id="object-owner-note" class="execution-status">로그인 후 발급 DB 계정을 표시합니다.</p>
 <div class="assignment-workspace" data-assignment="{{ active }}">
+  {% if active=='mission' %}<aside id="mission-binding-status" class="assignment-link-panel" role="status" aria-live="polite" hidden><div><strong>선택 미션과 DB 적용 상태</strong><p id="mission-binding-summary"></p><p id="mission-binding-next"></p><button type="button" id="mission-binding-return" class="secondary" hidden>DB 미션으로 돌아가기</button></div></aside>{% endif %}
   <nav class="basic-tabs assignment-tabs" aria-label="과제 단계">
     {% set steps=[('home','현황'),('data','학습데이터'),('models','모델 생성·비교'),('predictions','예측 실행')] %}
     {% for key,label in steps %}

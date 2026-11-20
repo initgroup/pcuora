@@ -319,6 +319,12 @@ def create_app(config=None):
         if not item:raise ValueError('현황에서 미션을 먼저 선택하세요.')
         return item
 
+    def mission_context(request, conn, expected=None):
+        value=assignment_templates.mission_selection(conn,authorized(request),{item['key'] for item in dataset_catalog()})
+        if expected is not None and expected!=value:
+            raise ValueError('선택 미션이 바뀌었습니다. 현황을 다시 확인하세요.')
+        return value
+
     @app.get('/api/assignments/mission/guide')
     def mission_sql_guide(request: Request, operation: str='setup', variant: str='RAW', source_kind: str='ALL', mission: str='', trigger_id: str='', trigger_label: str='', page: str=''):
         from backend.mission_guide import generate
@@ -380,12 +386,13 @@ def create_app(config=None):
             return assignment_templates.table_schema(conn,key,kind)
 
     @app.post('/api/assignments/{key}/link')
-    def link_assignment(request: Request, key: str):
+    def link_assignment(request: Request, key: str, data: dict):
         assignment_templates.assignment(key)
         request.state.assignment_key=key
         request.state.assignment_action='status'
         with database(request) as conn:
-            return assignment_templates.link_external(conn,key)
+            mission=mission_context(request,conn,data.get('mission','')) if key=='mission' else None
+            return assignment_templates.link_external(conn,key,mission=mission)
 
     @app.post('/api/assignments/{key}/connection')
     def assignment_connection(request: Request, key: str, data: dict):
@@ -403,7 +410,8 @@ def create_app(config=None):
         request.state.assignment_action = action
         request.state.db_stage = assignment_templates.assignment(key)['title'] + ' · ' + action
         with database(request) as conn:
-            return assignment_templates.run(conn, key, action, mode=data.get('variant','RAW'), source_kind=data.get('source_kind','ALL'), mission_key=assignment_templates.mission_selection(conn,current_user(request),{item['key'] for item in dataset_catalog()}) if key=='mission' and action in ('evaluate','predict') else '')
+            mission=mission_context(request,conn,data.get('mission','') if action in ('evaluate','predict') else None) if key=='mission' else ''
+            return assignment_templates.run(conn, key, action, mode=data.get('variant','RAW'), source_kind=data.get('source_kind','ALL'), mission_key=mission)
 
     @app.get('/api/assignments/{key}/status')
     def assignment_status(request: Request, key: str, include_evidence: bool=False):
@@ -411,7 +419,7 @@ def create_app(config=None):
         request.state.assignment_key = key
         request.state.assignment_action = 'status'
         with database(request) as conn:
-            state = assignment_templates.readiness(conn, key)
+            state = assignment_templates.readiness(conn, key,mission=mission_context(request,conn) if key=='mission' else None)
             state.update(assignment_templates.input_state(conn,state))
             pending = next((action for action,item in state['actions'].items() if not item['ready']), None)
             result = {**state, 'preparation':assignment_templates.preparation_status(conn,key) if state['ready'] else {}, 'models':assignment_templates.model_state(conn,key,verify=state['ready']), 'diagnostic': assignment_templates.diagnostic(key, pending, state) if pending else None}
@@ -447,7 +455,7 @@ def create_app(config=None):
         with database(request) as conn:
             if key=='mission' and assignment_templates.mission_selection(conn,person,{item['key'] for item in dataset_catalog()})!=mission:
                 raise ValueError('선택 미션이 바뀌었습니다. 파일을 다시 선택하세요.')
-            return assignment_templates.import_csv(conn,key,values,person['db_user'],prediction=prediction)
+            return assignment_templates.import_csv(conn,key,values,person['db_user'],prediction=prediction,mission=item if key=='mission' else None)
 
     @app.post('/api/assignments/{key}/{action}/csv')
     async def assignment_csv(request: Request, key: str, action: str, file: UploadFile = File(...), variant: str = Form('RAW'), mission: str = Form('')):

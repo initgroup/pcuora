@@ -56,7 +56,7 @@ def save_config(user,key,data):
 class AssignmentNotReady(Exception):
     def __init__(self,diagnostic):self.diagnostic=diagnostic;super().__init__(diagnostic['title'])
 
-def readiness(conn,key):
+def readiness(conn,key,mission=None):
     cfg=configuration(conn.username,key)
     objects=query(conn,'objects.sql',**{field:cfg[field] for field in ('training_table','prediction_table','prepared_table','procedure_name')})
     issues=[]
@@ -76,8 +76,17 @@ def readiness(conn,key):
         issue('arguments',cfg['procedure_name'],'PROCEDURE','인자 불일치: P_ACTION VARCHAR2 IN, P_MODE VARCHAR2 IN, P_RESULT SYS_REFCURSOR OUT, P_SQL CLOB OUT')
     errors=query(conn,'procedure_errors.sql',procedure_name=cfg['procedure_name'])
     missing=[item['message'] for item in issues]
-    return {'connected':True,'issues':issues,'config':cfg,'objects':objects,'arguments':args,'errors':errors,'missing':missing,'ready':not missing,
+    result={'connected':True,'issues':issues,'config':cfg,'objects':objects,'arguments':args,'errors':errors,'missing':missing,'ready':not missing,
             'actions':{key:{'ready':not missing,'label':value['label'],'procedure':cfg['procedure_name']} for key,value in ACTIONS.items()}}
+    if key=='mission' and mission is not None:
+        from . import mission_binding
+        result['mission']=mission_binding.inspect(conn,mission,result)
+        result['ready']=result['ready'] and result['mission']['ready']
+        if not result['mission']['ready']:
+            issue('mission',cfg['procedure_name'],'PROCEDURE',result['mission']['reason'])
+            missing.append(result['mission']['reason'])
+        for action in result['actions'].values():action['ready']=result['ready']
+    return result
 
 def table_schema(conn,key,kind='training'):
     fields={'training':'training_table','prepared':'prepared_table','prediction':'prediction_table'}
@@ -166,12 +175,16 @@ def load_custom(conn,cfg,payload,prediction=False,*,append=False,mode='RAW',owne
         return loaded
     except Exception:conn.rollback();sql_trace.add('ROLLBACK',kind='TRANSACTION');raise
 
-def import_csv(conn,key,values,owner,*,prediction=False):
+def import_csv(conn,key,values,owner,*,prediction=False,mission=None):
     """선택 파일을 같은 계정의 고정 대상 1개에 교체합니다. DDL·전처리·학습은 실행하지 않습니다."""
     cfg=assignment(key)
     if not re.fullmatch(r'[A-Z][A-Z0-9_$#]{0,29}',owner) or conn.username.upper()!=owner:
         raise ValueError('발급 DB 계정과 실제 연결 계정이 다릅니다.')
     execute(conn,'queries/csv_owner.sql',{'owner':owner})
+    if key=='mission' and mission is not None:
+        from .mission_binding import table_issues
+        issues=table_issues(mission,'prediction' if prediction else 'training',query(conn,'schema_columns.sql',table_name=cfg['prediction_table' if prediction else 'training_table']))
+        if issues:raise ValueError('선택 미션과 적재 대상 테이블이 다릅니다: '+', '.join(issues))
     if key=='creative':
         other=cfg['training_table'] if prediction else cfg['prediction_table']
         count=query(conn,'columns.sql',table_name=other)
@@ -200,7 +213,7 @@ def run(conn,key,action,payload=None,mode='RAW',source_kind='ALL',mission_key=''
         target=cfg['training_table' if action=='data' else 'prediction_table']
         if not query(conn,'columns.sql',table_name=target):raise ValueError('본인 계정에 '+target+' 테이블을 먼저 생성하세요.')
         return {'rows':execute(conn,'queries/custom_rows.sql',replacements={'table':conn.username.upper()+'.'+target},fetch=True)}
-    state=readiness(conn,key)
+    state=readiness(conn,key,mission=mission_key if key=='mission' else None)
     if not state['ready']:raise AssignmentNotReady(diagnostic(key,action,state))
     if mode not in ('RAW','CLEAN'):raise ValueError('RAW 또는 CLEAN을 선택하세요.')
     if action=='prepared-data':return {'rows':service.get_prepared_data(conn,mode,source_kind,table=cfg['prepared_table'])}
@@ -208,6 +221,10 @@ def run(conn,key,action,payload=None,mode='RAW',source_kind='ALL',mission_key=''
     if action in ('evaluate','predict'):
         if not any(m['variant']==mode and m['is_current'] for m in model_state(conn,key)):
             raise ValueError('직접 SQL로 전처리·모델 생성을 완료한 뒤 현황의 객체·모델 연계 확인을 누르세요. 연계 후 원본이나 프로시저가 바뀌면 직접 재학습하고 다시 확인하세요.')
+        if key=='mission':
+            from .mission_binding import model_matches
+            if not model_matches(conn,'OML_MISSION_'+mode+'_MODEL',mission_key):
+                raise ValueError('모델 속성이 선택 미션과 다릅니다. 직접 재학습하고 다시 연계하세요.')
     from . import practice_evidence
     practice_evidence.begin(conn,key,action,mode)
     result=service.run_model(conn,actions[action],mode,
@@ -232,13 +249,18 @@ def input_state(conn,state):
     return {'state':{'total_rows':counts['training']},'prediction_storage':{'rows':counts['prediction']}}
 
 
-def link_external(conn,key):
-    state=readiness(conn,key)
-    if not state['ready']:raise AssignmentNotReady(diagnostic(key,'status',state))
+def link_external(conn,key,mission=None):
+    state=readiness(conn,key,mission=mission if key=='mission' else None)
+    if key=='mission':
+        from . import mission_binding
+        if 'mission' not in state:raise ValueError('연계할 미션을 먼저 선택하세요.')
+        mission_binding.require(state['mission'],linking=True)
+    elif not state['ready']:raise AssignmentNotReady(diagnostic(key,'status',state))
     cfg=state['config']
     counts={r['prep_mode']:r for r in execute(conn,'queries/prepared_count.sql',replacements={'table':cfg['prepared_table']},fetch=True)}
     source=training_fingerprint(conn,key)
     saved=service.read_state(conn)
+    if key=='mission':mission_binding.bind(saved,state['mission'])
     preparations=saved.setdefault('assignment_preparations',{}).setdefault(key,{})
     linked=saved.setdefault('assignments',{}).setdefault(key,{})
     for model in model_state(conn,key,verify=False):
@@ -246,7 +268,10 @@ def link_external(conn,key):
         if count.get('rows_count'):
             preparations[mode]={'source':source,'origin':'external'}
         else:preparations.pop(mode,None)
-        if model['exists'] and count.get('fit_rows',0)>0:
+        newer=key!='mission' or bool(model.get('trained_at') and str(model['trained_at'])>=state['mission']['model_after'])
+        if key=='mission' and model['exists'] and newer:
+            newer=mission_binding.model_matches(conn,model['model_name'],mission)
+        if model['exists'] and count.get('fit_rows',0)>0 and newer:
             linked[mode]={'fingerprint':training_fingerprint(conn,key,mode),'created':model['trained_at'],'origin':'external'}
         else:linked.pop(mode,None)
     service.write_state(conn,saved)

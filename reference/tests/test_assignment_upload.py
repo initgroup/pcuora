@@ -17,7 +17,7 @@ CATALOG=json.loads((ROOT/'data/catalog.json').read_text(encoding='utf-8'))
 ITEM=next(item for item in CATALOG if item['key']=='ott')
 
 def columns(names):
-    return [dict(column_name=name.upper(),nullable='N' if name in ('case_id','split') else 'Y',data_default=None) for name in names]
+    return [dict(column_name=name.upper(),data_type='NUMBER' if name=='case_id' else 'CHAR' if name=='use_yn' else 'VARCHAR2',char_length=100,nullable='N' if name in ('case_id','split','use_yn') else 'Y',data_default=None) for name in names]+[dict(column_name='UPDATED_AT',data_type='TIMESTAMP(6)',nullable='Y',data_default=None)]
 
 class AssignmentUploadTests(unittest.TestCase):
     @contextmanager

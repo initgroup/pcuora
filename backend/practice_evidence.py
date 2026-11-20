@@ -166,7 +166,12 @@ def summarize(key, state, saved, *, inputs=None, mission=None, mission_columns=T
     groups={'home':objects,'data':data_checks,'models':model_checks,'predictions':prediction_checks}
     steps=[]
     for i,label,ok,badge,detail in stages:
-        checks=groups[i];completed=sum(c['success'] for c in checks);total=len(checks)
+        checks=groups[i]
+        if key=='mission' and not ready:
+            for c in checks:
+                c['success']=False
+                c['detail']+=' · 선택 미션·DB 적용·연계 확인 필요'
+        completed=sum(c['success'] for c in checks);total=len(checks)
         steps.append(dict(id=i,label=label,success=bool(ok),badge=badge if ok else str(completed)+'/'+str(total)+' 완료',
                           detail=detail,checks=checks,completed=completed,total=total,remaining=total-completed))
     return {'assignment': key, 'checked_at': now(), 'complete': all(s['success'] for s in steps),
@@ -182,7 +187,7 @@ def collect(conn, key, mission=None, state=None):
     else:
         from . import assignment_templates as assignments
         if state is None:
-            state = assignments.readiness(conn, key)
+            state = assignments.readiness(conn, key,mission=(mission or {}).get('key','') if key=='mission' else None)
             state.update(models=assignments.model_state(conn, key, verify=state['ready']),
                          preparation=assignments.preparation_status(conn, key) if state['ready'] else {})
         cfg = state['config']

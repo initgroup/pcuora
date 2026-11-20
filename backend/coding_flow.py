@@ -492,7 +492,9 @@ def mission_flow(result,*,trigger_id='',trigger_label='',page=''):
         _add(flow,'service',_python('backend/csv_import.py','mission_rows','선택 미션 헤더·식별자·구분 검사'),
              _python('backend/assignment_templates.py','import_csv','현재 계정·스키마·고정 대상 검사'),
              _python('backend/assignment_templates.py','load_custom','실제 컬럼 검사 · 교체/묶음 적재/COMMIT·ROLLBACK'))
+        if not creative:_add(flow,'service',_python('backend/mission_binding.py','table_issues','선택 미션의 적재 대상 규약 검사'))
         _db(flow)
+        if not creative:_add(flow,'sql',_whole('sql/queries/schema_columns.sql','선택 미션과 대상 테이블 자료형 검사'))
         _add(flow,'sql',_whole('sql/queries/csv_owner.sql','발급 계정·스키마 확인'),
              _whole('sql/queries/columns.sql','대상 테이블의 실제 컬럼·필수값 확인'),
              _whole('sql/queries/custom_delete.sql','대상 테이블의 기존 행 교체'),
@@ -534,6 +536,13 @@ def mission_flow(result,*,trigger_id='',trigger_label='',page=''):
                 for name in ('begin','record','model_stamp'):_add(flow,'service',_python('backend/practice_evidence.py',name,'성공 증적 · '+name+'()'))
             paths=['sql/queries/prepared_rows.sql'] if op=='prepared-data' else ['sql/queries/call_classifier.sql'] if op in ('evaluate','predict') else ['sql/queries/custom_rows.sql']
         if op in ('connection','status','evaluate','predict'):
+            if not creative:
+                _add(flow,'service',_python('backend/mission_binding.py','inspect','선택·DB 적용 미션 일치 검사'),_python('backend/mission_binding.py','table_issues','세 테이블 규약 검사'))
+                _add(flow,'api',_python('app.py','mission_context','요청 미션과 DB 선택값 대조'))
+                if op in ('evaluate','predict') or not refresh_only:
+                    _add(flow,'service',_python('backend/mission_binding.py','model_matches','실제 모델의 선택 미션 속성 확인'))
+                if op in ('connection','status') and not refresh_only:
+                    _add(flow,'service',_python('backend/mission_binding.py','bind','일치 검증 후 적용 미션 기록'))
             _add(flow,'service',_python('backend/assignment_templates.py','training_fingerprint','검증 함수 · training_fingerprint()'),
                  _python('backend/service.py','prepared_values','검증 함수 · prepared_values()'))
         if op in ('connection','status') and not refresh_only:
@@ -543,9 +552,11 @@ def mission_flow(result,*,trigger_id='',trigger_label='',page=''):
         _db(flow,model=op in ('evaluate','predict'))
         for path in paths:_add(flow,'sql',_whole(path,path.rsplit('/',1)[-1],'검증된 미션 객체 이름과 선택값을 Python에서 바인드/치환합니다.'))
         checks=['objects.sql','columns.sql','procedure_arguments.sql','procedure_errors.sql']
+        if not creative and op in ('connection','status','evaluate','predict'):checks+=['schema_columns.sql']
         if op in ('connection','status','evaluate','predict'):
             checks+=['assignment_models.sql','custom_fingerprint_rows.sql','procedure_source.sql','prepared_fingerprint_rows.sql']
         if op in ('connection','status'):checks+=['prepared_count.sql']
+        if not creative and (op in ('evaluate','predict') or op in ('connection','status') and not refresh_only):checks+=['dictionary_attributes.sql']
         existing=set(paths)
         for filename in checks:
             path='sql/queries/'+filename

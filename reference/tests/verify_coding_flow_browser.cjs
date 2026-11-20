@@ -502,6 +502,28 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    fs.writeFileSync(path.join(root,'runtime/mission-schema-run-verification.json'),JSON.stringify({ok:true,synthetic_data_only:true,real_database_access:false,tab_order:4,full_sql_copy:true,mission_specific:true,stale_response_guard:true,views,screenshots:out},null,2));
    console.log(JSON.stringify({ok:true,procedure_tab:true,exact_full_sql_copy:true,read_only:true,mission_switch_and_stale_response:true,layouts:views.length,screenshots:out}));return;
  }
+ if(process.argv.includes('--mission-binding-only')){
+   await fetch(base+'/qa/mission-binding');await call('Page.navigate',{url:base+'/mission'});
+   await until('typeof assignmentState!=="undefined"&&assignmentState?.mission?.ready&&!activeTasks');
+   const keys=await ev('missionDatasets.map(i=>i.key)');
+   const choose=async key=>{await click('[data-mission-choice="'+key+'"]');await until('document.getElementById("confirm-dialog").open');await click('#accept-confirm');await until('!missionSelectionSaving&&!activeTasks&&assignmentState?.mission');};
+   await choose(keys[0]);
+   assert.equal(await ev('missionSelectionCurrent'),keys[0]);assert.equal(await ev('assignmentState.mission.detected'),keys[2]);
+   assert.ok(await ev('!assignmentState.ready&&document.getElementById("assignment-check").disabled&&document.getElementById("assignment-evaluate").disabled&&document.getElementById("assignment-predict").disabled&&practiceEvidenceResult.passed===0'));
+   for(const [width,font] of [[1440,16],[768,22],[390,16],[320,22]]){
+     await size(width);await ev('fontSize('+font+');document.getElementById("mission-binding-status").scrollIntoView({behavior:"instant",block:"center"})');
+     assert.ok(await ev('document.documentElement.scrollWidth<=innerWidth+1'));await shot('mission-binding-'+width);views.push({width,font});
+   }
+   await click('#mission-binding-return');await until('document.getElementById("confirm-dialog").open');await click('#accept-confirm');await until('!missionSelectionSaving&&!activeTasks&&assignmentState?.mission?.ready');
+   assert.equal(await ev('missionSelectionCurrent'),keys[2]);
+   await choose(keys[0]);await fetch(base+'/qa/mission-apply');await click('#refresh');await until('!activeTasks&&assignmentState?.mission?.can_link');
+   assert.ok(await ev('!assignmentState.ready&&!document.getElementById("assignment-check").disabled'));
+   await click('#assignment-check');await until('document.getElementById("confirm-dialog").open');await click('#accept-confirm');await until('!assignmentBusy&&!activeTasks&&assignmentState?.mission?.ready');
+   assert.equal(await ev('assignmentState.mission.applied'),keys[0]);
+   const qa=await(await fetch(base+'/qa/state')).json();assert.deepEqual(qa.blocked,[]);assert.deepEqual(errors,[]);
+   const report={ok:true,selection_only_blocks_old_db:true,return_restores:true,explicit_link_required:true,layouts:views.length,no_real_database:true,screenshots:out};
+   fs.writeFileSync(path.join(root,'runtime/mission-binding-browser-verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));return;
+ }
  if(taskMarkersOnly){
    await fetch(base+'/qa/evidence');
    const snapshots=[];

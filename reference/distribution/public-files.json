@@ -5,6 +5,8 @@
   "reference/requirements.in",
   "reference/requirements.lock",
   "reference/requirements-test.lock",
+  "reference/requirements-package.lock",
+  "reference/tests/test_mission_binding.py",
   "scripts/package.ps1",
   "scripts/package_student.py",
   "scripts/backup.ps1",

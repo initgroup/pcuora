@@ -68,8 +68,19 @@ function renderAssignmentControls(){
   }
   controlState('assignment-import',assignmentImportUnavailable(false),'선택 CSV로 학습·TEST 데이터를 교체합니다.','assignment-file-state');
   controlState('assignment-prediction-import',assignmentImportUnavailable(true),'선택 CSV로 예측 입력을 교체합니다.','assignment-prediction-file-state');
-
-
+  renderMissionBinding();
+}
+function renderMissionBinding(){
+  if(assignmentKey!=='mission')return;
+  const binding=assignmentState?.mission,panel=$('mission-binding-status');panel.hidden=!person||!binding;
+  if(!binding)return;
+  panel.dataset.state=binding.ready?'matched':binding.can_link?'unlinked':'mismatch';
+  text('mission-binding-summary','선택: '+binding.selected_title+' / DB 규약 확인: '+binding.detected_title+' / 마지막 연계: '+binding.applied_title);
+  text('mission-binding-next',binding.ready?'선택 미션과 DB 적용·연계가 일치합니다.':binding.reason+' '+(binding.can_link?'연계 버튼으로 확인·저장하세요.':'기존 DB 미션으로 돌아가거나 선택 미션의 세 테이블·RUN을 직접 적용 → CSV 적재 → 결과 연계를 진행하세요.')+(binding.problems?.length?' '+binding.problems.join(' · '):''));
+  $('mission-binding-return').hidden=!binding.detected||binding.detected===missionSelectionCurrent;
+  $('mission-binding-return').disabled=assignmentBusy||missionSelectionSaving;
+  const reason=!person?'로그인하세요.':assignmentBusy||missionSelectionSaving||assignmentPhase==='loading'?'상태 확인 중입니다.':!binding.can_link?binding.reason:'';
+  for(const id of ['assignment-check','assignment-prepared-link','assignment-model-link','assignment-prediction-link'])controlState(id,reason,'선택 미션과 실제 DB를 검증한 뒤 연계합니다.');
 }
 function assignmentTableUnavailable(prediction=false){
   if(!person)return '로그인 후 실행하세요.';
@@ -83,6 +94,7 @@ function assignmentTableUnavailable(prediction=false){
 function assignmentImportUnavailable(prediction=false){
   const reason=assignmentTableUnavailable(prediction);if(reason)return reason;
   if(assignmentKey==='mission'&&!missionSelectionCurrent)return '미션을 먼저 선택하세요.';
+  if(assignmentKey==='mission'&&assignmentState?.mission&&!assignmentState.mission.tables[prediction?'prediction':'training'])return '선택 미션에 맞는 적재 대상 테이블을 먼저 적용하세요.';
   const file=$(prediction?'assignment-prediction-file':'assignment-file')?.files[0];
   if(!file)return 'CSV 파일을 먼저 선택하세요.';
   if(!file.name.toLowerCase().endsWith('.csv'))return 'CSV 확장자 파일을 선택하세요.';
@@ -116,6 +128,7 @@ function assignmentUnavailable(){
   if(assignmentBusy)return 'DB 작업 중입니다. 완료 후 사용할 수 있습니다.';
   if(assignmentPhase==='error')return '준비 상태 조회 실패 · 현황에서 다시 확인하세요.';
   if(!assignmentState)return '준비 상태 확인 전 · 현황에서 테이블·프로시저를 확인하세요.';
+  if(assignmentKey==='mission'&&assignmentState.mission&&!assignmentState.mission.ready)return assignmentState.mission.reason;
   if(!assignmentState.ready)return '객체 생성·수정 필요 · 현황의 객체별 안내를 확인하세요.';
   return '';
 }
@@ -218,7 +231,7 @@ async function assignmentTask(button,action,file,variant=selectedMode(action==='
   else if(target)assignmentEmpty(target,'요청한 작업을 처리하고 있습니다.','처리 중');
   if(['prepare','train','initial-train','retrain','delete-model'].includes(action))clearAssignmentResults(['assignment-predictions']);
   try{await task(button,async()=>{
-    let body={variant},url=`/api/assignments/${assignmentKey}/${action}`;
+    let body={variant,...(assignmentKey==='mission'?{mission:missionSelectionCurrent}:{})},url=`/api/assignments/${assignmentKey}/${action}`;
     const sourceKind=$('assignment-prepared-source-kind')?.value||'TRAIN';if(action==='prepared-data')body.source_kind=sourceKind;
     if(file){body=upload(file);body.append('variant',variant);url+='/csv';}
     try{
@@ -240,10 +253,12 @@ async function assignmentTask(button,action,file,variant=selectedMode(action==='
 }
 async function confirmAssignmentLink(button){
   if(assignmentBusy||!person)return;
+  const mission=missionSelectionCurrent,owner=missionSelectionIdentity();
   if(!await askConfirmation('DB에 저장된 테이블·전처리·모델 상태를 검증하여 웹 연계 정보를 저장할까요? RAW/CLEAN 전처리 데이터와 현재 원본·프로시저를 대조합니다. 데이터 적재·전처리·학습을 다시 실행하지 않습니다.',{title:'SQL 실행 결과 연계',accept:'확인·연계 저장',opener:button}))return;
+  if(owner!==missionSelectionIdentity()||mission!==missionSelectionCurrent)return;
   assignmentBusy=true;renderAssignmentControls();
   try{
-    await task(button,async()=>{await api('/api/assignments/'+assignmentKey+'/link',{});await loadAssignmentReadiness(true);notice('SQL 실행 결과를 웹에 연계했습니다. 최종 현황도 갱신했습니다.');},{feedback:false});
+    await task(button,async()=>{await api('/api/assignments/'+assignmentKey+'/link',assignmentKey==='mission'?{mission}:{});await loadAssignmentReadiness(true);notice('SQL 실행 결과를 웹에 연계했습니다. 최종 현황도 갱신했습니다.');},{feedback:false});
   }finally{assignmentBusy=false;renderAssignmentControls();}
 }
 on('assignment-check','click',event=>confirmAssignmentLink(event.currentTarget));
@@ -284,7 +299,7 @@ function missionFieldRoles(item){
 }
 function selectMissionDataset(key){
     const previous=missionSelectionCurrent,item=missionDatasets.find(entry=>entry.key===key);missionSelectionCurrent=item?.key||'';
-    if(previous!==missionSelectionCurrent)clearAssignmentFiles();
+    if(previous!==missionSelectionCurrent){clearAssignmentFiles();if(typeof clearPracticeEvidence==='function')clearPracticeEvidence('선택 미션과 DB 적용 상태를 다시 확인하세요.');}
     if($('mission-dataset'))$('mission-dataset').value=item?.key||'';
     $('mission-preview-selected').hidden=!item;$('mission-variable-summary').hidden=!item;
     const roles=missionFieldRoles(item);text('mission-key-fields',roles.key);text('mission-feature-fields',roles.features);text('mission-target-fields',roles.target);
@@ -313,7 +328,7 @@ async function restoreMissionSelection(){
 }
 async function saveMissionSelection(key){
   if(!person||assignmentBusy||missionSelectionSaving||key===missionSelectionCurrent)return;
-  const owner=missionSelectionIdentity(),previous=missionSelectionCurrent,version=++missionSelectionVersion;
+  const owner=missionSelectionIdentity(),previous=missionSelectionCurrent,version=++missionSelectionVersion;let saved=false;
   missionSelectionSaving=true;selectMissionDataset(key);renderAssignmentControls();
   $('mission-dataset').disabled=true;
   try{
@@ -323,14 +338,17 @@ async function saveMissionSelection(key){
     if(!approved){selectMissionDataset(previous);return;}
     const result=await api('/api/assignments/mission/selection',{key});
     if(version!==missionSelectionVersion||owner!==missionSelectionIdentity())return;
-    missionSelectionOwner=owner;selectMissionDataset(result.key);
+    saved=true;missionSelectionOwner=owner;selectMissionDataset(result.key);
+    assignmentScores={};assignmentPreviousPrediction=null;clearAssignmentResults();renderAssignmentComparison();
+    await loadAssignmentReadiness(true);
   }catch(error){
-    if(version===missionSelectionVersion&&owner===missionSelectionIdentity()){selectMissionDataset(previous);notice('미션 선택을 저장하지 못했습니다. '+error.message,true);}
+    if(version===missionSelectionVersion&&owner===missionSelectionIdentity()){if(!saved)selectMissionDataset(previous);notice((saved?'선택은 저장됐습니다. 현황을 다시 확인하세요. ':'미션 선택을 저장하지 못했습니다. ')+error.message,true);}
   }finally{
     if(version===missionSelectionVersion){missionSelectionSaving=false;renderAssignmentControls();}
   }
 }
 on('clear-mission-selection','click',()=>saveMissionSelection(''));
+on('mission-binding-return','click',()=>saveMissionSelection(assignmentState?.mission?.detected||''));
 on('mission-dataset','change',()=>saveMissionSelection($('mission-dataset').value));
 document.addEventListener('click',event=>{const button=event.target.closest('[data-mission-choice]');if(button)saveMissionSelection(button.dataset.missionChoice);});
 let assignmentScores={},assignmentHistory=[],assignmentPreviousPrediction=null;
