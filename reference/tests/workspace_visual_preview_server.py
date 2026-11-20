@@ -92,7 +92,7 @@ proof_states={}
 def binding_fixture():
     selected=next(i for i in CATALOG if i['key']==selection['key'])
     detected=next(i for i in CATALOG if i['key']==qa['binding_db'])
-    can_link=selected['key']==detected['key'];ready=can_link and qa.get('binding_applied')==selected['key']
+    can_link=selected['key']==detected['key'] and qa.get('binding_object_count',4)==4;ready=can_link and qa.get('binding_applied')==selected['key']
     return dict(selected=selected['key'],selected_title=selected['title'],detected=detected['key'],detected_title=detected['title'],applied=qa.get('binding_applied',''),applied_title=qa.get('binding_applied','미확인'),ready=ready,can_link=can_link,reason='' if ready else '선택 미션과 DB가 다르거나 연계 확인이 필요합니다.',tables={kind:can_link for kind in ['training','prepared','prediction']})
 def proof_saved(key):
     if key not in proof_states:
@@ -274,6 +274,7 @@ async def fixture(request,next_call):
                 response={'ready':True,'config':ASSIGNMENTS[key],'objects':objects(key),'missing':[],'issues':[],'models':models(key),'preparation':prep(),'state':{'total_rows':1500},'prediction_storage':{'rows':30}}
                 if qa.get('preparation_linking'):response['preparation']=linked_preparations(key)
                 if key=='mission' and qa.get('binding_db'):
+                    response['objects']=response['objects'][:qa.get('binding_object_count',4)]
                     response['mission']=binding_fixture();response['ready']=response['mission']['ready']
                     if not response['ready']:
                         response['models']=[dict(m,is_current=0) for m in response['models']]

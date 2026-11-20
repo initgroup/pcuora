@@ -70,16 +70,19 @@ function renderAssignmentControls(){
   controlState('assignment-prediction-import',assignmentImportUnavailable(true),'선택 CSV로 예측 입력을 교체합니다.','assignment-prediction-file-state');
   renderMissionBinding();
 }
+function missionObjectsEmpty(){
+  return assignmentKey==='mission'&&Array.isArray(assignmentState?.objects)&&assignmentState.objects.length===0;
+}
 function renderMissionBinding(){
   if(assignmentKey!=='mission')return;
-  const binding=assignmentState?.mission,panel=$('mission-binding-status');panel.hidden=!person||!binding;
+  const binding=assignmentState?.mission,panel=$('mission-binding-status');panel.hidden=!person||!binding||missionObjectsEmpty();
   if(!binding)return;
   panel.dataset.state=binding.ready?'matched':binding.can_link?'unlinked':'mismatch';
   text('mission-binding-summary','선택: '+binding.selected_title+' / DB 규약 확인: '+binding.detected_title+' / 마지막 연계: '+binding.applied_title);
   text('mission-binding-next',binding.ready?'선택 미션과 DB 적용·연계가 일치합니다.':binding.reason+' '+(binding.can_link?'연계 버튼으로 확인·저장하세요.':'기존 DB 미션으로 돌아가거나 선택 미션의 세 테이블·RUN을 직접 적용 → CSV 적재 → 결과 연계를 진행하세요.')+(binding.problems?.length?' '+binding.problems.join(' · '):''));
   $('mission-binding-return').hidden=!binding.detected||binding.detected===missionSelectionCurrent;
   $('mission-binding-return').disabled=assignmentBusy||missionSelectionSaving;
-  const reason=!person?'로그인하세요.':assignmentBusy||missionSelectionSaving||assignmentPhase==='loading'?'상태 확인 중입니다.':!binding.can_link?binding.reason:'';
+  const reason=!person?'로그인하세요.':assignmentBusy||missionSelectionSaving||assignmentPhase==='loading'?'상태 확인 중입니다.':missionObjectsEmpty()?assignmentUnavailable():!binding.can_link?binding.reason:'';
   for(const id of ['assignment-check','assignment-prepared-link','assignment-model-link','assignment-prediction-link'])controlState(id,reason,'선택 미션과 실제 DB를 검증한 뒤 연계합니다.');
 }
 function assignmentTableUnavailable(prediction=false){
@@ -128,6 +131,7 @@ function assignmentUnavailable(){
   if(assignmentBusy)return 'DB 작업 중입니다. 완료 후 사용할 수 있습니다.';
   if(assignmentPhase==='error')return '준비 상태 조회 실패 · 현황에서 다시 확인하세요.';
   if(!assignmentState)return '준비 상태 확인 전 · 현황에서 테이블·프로시저를 확인하세요.';
+  if(missionObjectsEmpty())return '미션 실습 객체 생성 전 · 선택 미션의 DATA → PREPARED → PREDICT → RUN을 먼저 생성하세요.';
   if(assignmentKey==='mission'&&assignmentState.mission&&!assignmentState.mission.ready)return assignmentState.mission.reason;
   if(!assignmentState.ready)return '객체 생성·수정 필요 · 현황의 객체별 안내를 확인하세요.';
   return '';

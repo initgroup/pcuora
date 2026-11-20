@@ -1,5 +1,7 @@
 # OML 분류모델 실습
 
+미션 객체 4개가 모두 없는 초기화·최초 상태에서는 불일치 경고를 숨기고 생성 전 안내를 표시합니다. 실제 status 응답의 objects 배열로 판정하고, 일부 객체가 남은 경우에는 경고를 유지합니다. 연계·평가·예측 차단은 그대로 유지하며 마지막 연계 기록을 삭제하지 않습니다. 기본과제 초기화는 미션 객체를 삭제하지 않습니다. --mission-binding-only에서 전체 삭제와 부분 삭제 표시를 함께 검사합니다.
+
 미션 선택값과 DB 적용 기록을 분리합니다. backend/mission_binding.py가 세 테이블의 컬럼·자료형·필수값, RUN 소스와 현재 객체 지문을 검사합니다. OML_WEB_STATE의 mission_binding은 명시적 연계 때만 저장하고 조회·선택에서는 바꾸지 않습니다. 불일치·미연계 상태는 성공을 표시하지 않고 평가·예측을 RUN 호출 전에 차단합니다. CSV는 대상 테이블 하나만 검증합니다. 모델 연계는 DATA·PREPARED·RUN DDL 이후 생성 여부와 실제 입력 속성을 검사하고 실행 때도 선택 미션 속성을 확인합니다. 요청의 미션 키를 DB 선택값과 비교해 오래된 탭을 차단합니다. 새 버전 적용 후 기존 미션도 한 번 연계해야 합니다. --mission-binding-only 및 test_mission_binding으로 격리 검증합니다.
 
 강사용 학생 ZIP 압축 도구는 reference/requirements-package.lock에 고정합니다. 다른 PC에서는 `.venv\Scripts\python.exe -m pip install --no-index --find-links reference/wheels-classifier-py312 -r reference/requirements-package.lock`으로 준비합니다. Zopfli는 표준 Deflate ZIP의 텍스트 압축에만 사용하며 원문을 바꾸지 않습니다. 학생 앱의 설치 의존성에는 추가하지 않으며 ZIP 용량 초과 시 기존 배포본을 보존하고 중단합니다.

@@ -520,8 +520,15 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    assert.ok(await ev('!assignmentState.ready&&!document.getElementById("assignment-check").disabled'));
    await click('#assignment-check');await until('document.getElementById("confirm-dialog").open');await click('#accept-confirm');await until('!assignmentBusy&&!activeTasks&&assignmentState?.mission?.ready');
    assert.equal(await ev('assignmentState.mission.applied'),keys[0]);
+   await fetch(base+'/qa/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({binding_object_count:0})});
+   await click('#refresh');await until('!activeTasks&&assignmentState?.objects?.length===0');
+   assert.ok(await ev('document.getElementById("mission-binding-status").hidden&&document.getElementById("assignment-check").disabled&&document.getElementById("assignment-evaluate").disabled&&document.getElementById("assignment-predict").disabled&&assignmentUnavailable().includes("생성 전")'));
+   assert.equal(await ev('assignmentState.mission.applied'),keys[0],'Reset display must not erase the stored last linkage');
+   await fetch(base+'/qa/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({binding_object_count:1})});
+   await click('#refresh');await until('!activeTasks&&assignmentState?.objects?.length===1');
+   assert.ok(await ev('!document.getElementById("mission-binding-status").hidden&&document.getElementById("mission-binding-status").dataset.state==="mismatch"&&document.getElementById("assignment-check").disabled'));
    const qa=await(await fetch(base+'/qa/state')).json();assert.deepEqual(qa.blocked,[]);assert.deepEqual(errors,[]);
-   const report={ok:true,selection_only_blocks_old_db:true,return_restores:true,explicit_link_required:true,layouts:views.length,no_real_database:true,screenshots:out};
+   const report={ok:true,selection_only_blocks_old_db:true,return_restores:true,explicit_link_required:true,empty_objects_hide_warning:true,partial_objects_keep_warning:true,last_link_preserved:true,layouts:views.length,no_real_database:true,screenshots:out};
    fs.writeFileSync(path.join(root,'runtime/mission-binding-browser-verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));return;
  }
  if(taskMarkersOnly){
