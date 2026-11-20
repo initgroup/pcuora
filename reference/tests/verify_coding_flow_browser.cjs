@@ -568,6 +568,31 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      assert.equal(requests.length,before,'Clicking a criterion never executes or rereads DB work');
      assert.ok(await ev('document.querySelector("#practice-detail-groups li[data-focused=true]").textContent.includes("작업 4")&&document.querySelector("#practice-detail-groups li[data-focused=true]").textContent.includes("CLEAN")'));
      await click('#close-practice-detail');assert.ok(await ev('document.activeElement.matches('+JSON.stringify(marker)+')'));
+     const help=key==='basic'?'#prepare-data + .code-help':'#assignment-prepare + .code-help';
+     const helpRect=await ev('(()=>{const e=document.querySelector('+JSON.stringify(help)+');e.scrollIntoView({block:"center"});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()');
+     await call('Input.dispatchMouseEvent',{type:'mouseMoved',...helpRect});
+     await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...helpRect});
+     await call('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...helpRect});
+     await until('document.getElementById("execution-dialog").open&&executionStage');
+     await click('#close-execution');
+     await tab(key,'models');
+     const pointerClick=async selector=>{
+       await ev('document.documentElement.style.scrollBehavior="auto";document.querySelector('+JSON.stringify(selector)+').scrollIntoView({block:"center",behavior:"instant"})');
+       await ev('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
+       const box=await ev('(()=>{const e=document.querySelector('+JSON.stringify(selector)+');e.scrollIntoView({block:"center"});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()');
+       await call('Input.dispatchMouseEvent',{type:'mouseMoved',...box});
+       await call('Input.dispatchMouseEvent',{type:'mousePressed',button:'left',clickCount:1,...box});
+       await call('Input.dispatchMouseEvent',{type:'mouseReleased',button:'left',clickCount:1,...box});
+     };
+     for(const index of [0,2,4]){
+       await pointerClick('.practice-task-marker[data-proof-step=models][data-proof-check="'+index+'"]');
+       await until('document.getElementById("practice-detail-dialog").open');
+       if(index===2){await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape'});}else await pointerClick('#close-practice-detail');
+       const helpSelector=key==='basic'?'#model-initial + .code-help':'#assignment-initial + .code-help';
+       await pointerClick(helpSelector);
+       await until('document.getElementById("execution-dialog").open&&executionStage');
+       await pointerClick('#close-execution');
+     }
      await fetch(base+'/qa/evidence/change?kind=proof_work_pending&value=0');
      await click('#refresh');await until('!activeTasks&&!refreshing&&(typeof assignmentBusy==="undefined"||!assignmentBusy)&&practiceEvidenceResult');
      await tab(key,'models');
@@ -578,6 +603,12 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
        assert.ok(await ev('practiceEvidenceResult.steps.find(step=>step.id==="models").checks.find(check=>check.label==='+JSON.stringify(mode+' TEST 평가 성공')+').success'));
      }
      steps=await checkSnapshot();assert.equal(steps.find(step=>step.id==='models').remaining,0);
+     await pointerClick('.practice-task-marker[data-proof-step=models][data-proof-check="0"]');
+     await until('document.getElementById("practice-detail-dialog").open');
+     assert.ok(await ev('document.getElementById("close-practice-detail").getBoundingClientRect().width>0&&!document.getElementById("practice-detail-dialog").closest("[hidden]")'));
+     await pointerClick('#close-practice-detail');
+     await pointerClick(key==='basic'?'#model-initial + .code-help':'#assignment-initial + .code-help');
+     await until('document.getElementById("execution-dialog").open&&executionStage');await pointerClick('#close-execution');
      await call('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
      assert.ok(await ev('[...document.querySelectorAll(".practice-task-marker[data-state=success]")].every(marker=>getComputedStyle(marker).backgroundColor==="rgb(52, 88, 153)"&&getComputedStyle(marker).color==="rgb(255, 255, 255)")'),'Success markers are blue with white text on every surface');
      await tab(key,'predictions');await click(key==='basic'?'#run':'#assignment-predict');await until('document.getElementById("confirm-dialog").open');

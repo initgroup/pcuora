@@ -703,7 +703,7 @@ body[data-auth="locked"][data-entry="login"]>.workspace{margin-left:0}
 .practice-stage-status[data-state=unchecked] .practice-step-stamp{background:#f0f4f8;color:#566b7b;}
 .practice-action-slot{display:inline-flex;min-width:0;max-width:100%;vertical-align:middle;}
 .practice-task-anchor,.practice-action-slot{position:relative;}
-.practice-task-markers{position:absolute;top:-.6rem;left:.25rem;z-index:3;display:flex;gap:.15rem;width:max-content;max-width:100%;margin:0;}
+.practice-task-markers{position:absolute;top:-.6rem;left:.25rem;z-index:90;display:flex;gap:.15rem;width:max-content;max-width:100%;margin:0;}
 .practice-task-marker{display:inline-flex;align-items:center;justify-content:center;gap:.1rem;width:auto;min-width:1.9rem;min-height:1.5rem;padding:.1rem .3rem;border:1px solid #ae752a;border-radius:1rem;background:#fff1d7;color:#71420b;white-space:nowrap;font-size:.6875rem;line-height:1.2;box-shadow:0 1px 4px #14223530;}
 .model-workbench :is(.result-heading,.model-actions) .practice-task-marker:first-child{width:auto;min-height:1.5rem;padding:.1rem .3rem;font-size:.6875rem;}
 .model-actions th>.practice-task-anchor{display:inline-block;}

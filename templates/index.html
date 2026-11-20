@@ -5,7 +5,7 @@
 <meta name="color-scheme" content="light">
 <title>{{ title }} · OML Studio</title>
 <link rel="stylesheet" href="/static/css/style.css?v=20261120-concise-help-v1">
-<link rel="stylesheet" href="/static/css/studio.css?v=20261120-work-sequence-v2">
+<link rel="stylesheet" href="/static/css/studio.css?v=20261120-detail-layer-v1">
 <link rel="stylesheet" href="/static/css/intro.css?v=20261119-paichai-v1">
 <script src="/static/js/code-highlight.js?v=20261119-coding-flow-v1" defer></script>
 <script src="/static/js/help-window.js?v=20261119-workspace-design-v2" defer></script>
@@ -14,7 +14,7 @@
 <script src="/static/js/main.js?v=20261120-work-sequence-v1" defer></script>
 {% if active=='main' %}<link rel="stylesheet" href="/static/css/main-page.css?v=20261119-main-width-v1"><script src="/static/js/main-page.js?v=20261119-main-login-v1" defer></script>{% endif %}
 {% if is_basic %}<script src="/static/js/basic-dataset.js?v=20261119-csv-stable-view-v1" defer></script>{% endif %}
-{% if is_basic or is_assignment %}<script src="/static/js/practice-evidence.js?v=20261120-work-sequence-v1" defer></script>{% endif %}
+{% if is_basic or is_assignment %}<script src="/static/js/practice-evidence.js?v=20261120-detail-layer-v1" defer></script>{% endif %}
 <script src="/static/js/execution-dialog.js?v=20261120-work-sequence-v1" defer></script>
 {% if active=='mission' %}<script src="/static/js/mission-learning.js?v=20261119-missions12-v1" defer></script>{% endif %}
 {% if is_assignment %}<script src="/static/js/assignment-template.js?v=20261120-work-sequence-v1" defer></script>{% endif %}
@@ -64,6 +64,14 @@
     <pre id="source-code" tabindex="0" aria-label="공개 소스 코드"></pre>
   </section>
 </dialog>
+{% if is_basic or is_assignment %}
+<dialog id="practice-detail-dialog" class="practice-detail-dialog" data-movable-window aria-labelledby="practice-detail-title">
+  <div class="dialog-top execution-drag" data-window-drag tabindex="0" aria-label="실습 현황 상세 이동: 제목 드래그 또는 방향키">
+    <h2 id="practice-detail-title">실습 세부 작업</h2><button type="button" id="close-practice-detail" class="secondary dialog-close" aria-label="실습 세부 작업 닫기">×</button>
+  </div>
+  <div class="practice-detail-body"><p id="practice-detail-summary" class="practice-detail-summary" role="status"></p><div id="practice-detail-groups"></div><a id="practice-detail-go" class="button secondary" href="#" hidden>이 단계로 이동</a></div>
+</dialog>
+{% endif %}
 {% include "execution-dialog.html" %}
 <dialog id="message-dialog" data-movable-window aria-labelledby="message-title"><div class="dialog-top execution-drag" data-window-drag tabindex="0" aria-label="메시지 이동: 제목 드래그 또는 방향키"><h2 id="message-title">작업 안내</h2><button type="button" id="close-message" class="secondary dialog-close" aria-label="작업 안내 닫기">×</button></div><div id="notice" role="status" class="message-content" hidden></div></dialog>
 <dialog id="confirm-dialog" class="layer-message" data-movable-window aria-labelledby="confirm-title" aria-describedby="confirm-description">
