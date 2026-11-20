@@ -16,7 +16,7 @@ class StudentArchive(zipfile.ZipFile):
     def _open_to_write(self, zinfo, force_zip64=False):
         stream=super()._open_to_write(zinfo,force_zip64)
         if zinfo.compress_type==zipfile.ZIP_DEFLATED and zinfo.filename.endswith('.csv'):
-            stream._compressor=zlib.compressobj(9,zlib.DEFLATED,-15,zlib.DEF_MEM_LEVEL,zlib.Z_FILTERED)
+            stream._compressor=zlib.compressobj(9,zlib.DEFLATED,-15,7,zlib.Z_FILTERED)
         return stream
 
 def student_roster(root, *, example=False):

@@ -137,7 +137,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      await call('Page.navigate',{url:base+'/'+assignment});await until('typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!assignmentBusy');
      await click('.assignment-tabs [data-assignment-tab=models]');
      for(const mode of ['RAW','CLEAN']){
-       await ev('document.querySelector("#assignment-mode input[value='+mode+']").checked=true;assignmentState.models.find(m=>m.variant==="'+mode+'").exists=0;renderAssignmentControls()');
+       await ev('setWorkMode("assignment-mode","'+mode+'");assignmentState.models.find(m=>m.variant==="'+mode+'").exists=0;renderAssignmentControls()');
        assert.deepEqual(await ev('["initial","retrain","delete-model"].map(id=>document.getElementById("assignment-"+id).disabled)'),[false,true,true]);
        await click('#assignment-initial');await until('document.getElementById("execution-dialog").open&&executionStage?.id==="sql"');
        assert.ok(await ev('!document.getElementById("execution-manual-note").hidden&&document.getElementById("execution-manual-note").textContent.includes(person.db_user)'));
@@ -278,7 +278,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      assert.deepEqual(await ev('[...document.querySelectorAll(".assignment-link-panel>button")].map(e=>({id:e.id,label:e.textContent}))'),['assignment-check','assignment-prepared-link','assignment-model-link','assignment-prediction-link'].map(id=>({id,label:'SQL 실행 결과 연계'})));
      await click('[data-assignment-tab=data]');await until('!document.getElementById("assignment-panel-data").hidden&&!assignmentBusy');
      for(const mode of ['RAW','CLEAN']){
-       await ev('document.querySelector("#assignment-preparation-mode input[value='+mode+']").checked=true;renderAssignmentControls()');
+       await ev('setWorkMode("assignment-preparation-mode","'+mode+'");renderAssignmentControls()');
        const status=await ev('document.getElementById("assignment-prepared-status").textContent');
        assert.ok(status.includes('1,500행')&&status.includes('TEST 300행')&&status.includes('DB 데이터 있음')&&status.includes('웹 연계 확인 필요'),status);
        await click('#assignment-prepared-data');await until('!assignmentBusy&&!activeTasks');
@@ -401,7 +401,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      await until('!activeTasks');
      await ev('codingQueryTraces.clear();++codingTraceVersion;Object.defineProperty(navigator,"clipboard",{configurable:true,value:{writeText:async text=>{window.qaCopied=text}}});window.qaCopied=null');
      const group=assignment==='basic'?'preparation-mode':'assignment-preparation-mode',filter=assignment==='basic'?'prepared-source-kind':'assignment-prepared-source-kind';
-     await ev('document.querySelector("#'+group+' input[value=RAW]").checked=true;document.getElementById("'+filter+'").value="TRAIN"');
+     await ev('setWorkMode("'+group+'","RAW");document.getElementById("'+filter+'").value="TRAIN"');
      const open=async()=>{
        const start=requests.length;await click('[data-code=prepared-data]');await until('document.getElementById("execution-dialog").open&&executionFlow&&document.getElementById("execution-flow").querySelectorAll("[data-flow-stage]").length===6');
        assert.ok(requests.slice(start).every(r=>new URL(r.url).pathname==='/api/coding-help'&&r.method==='GET'),'Opening runtime help must never query/execute DB');
@@ -509,7 +509,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      await click(key==='basic'?'#basic-workflow [data-basic-tab="'+id+'"]':'.assignment-tabs [data-assignment-tab="'+id+'"]');
      await until(key==='basic'?'page==='+JSON.stringify(id)+'&&!refreshing&&!basicSwitching':'!document.getElementById("assignment-panel-'+id+'").hidden&&!assignmentBusy&&!activeTasks');
    };
-   const snapshot=()=>ev('practiceEvidenceResult.steps.map(step=>({id:step.id,success:step.success,completed:step.completed,total:step.total,remaining:step.remaining,overview:document.querySelector("#practice-proof-steps [data-proof-step="+step.id+"]").textContent,header:document.querySelector("[data-practice-stage="+step.id+"] button").textContent,markers:[...document.querySelectorAll(".practice-task-marker[data-proof-step="+step.id+"]")].map(marker=>({index:Number(marker.dataset.proofCheck),state:marker.dataset.state,label:marker.querySelector("span").textContent,slot:marker.closest(".practice-action-slot")?.querySelector("button:not(.code-help):not(.practice-task-marker),a")?.id||"group"}))}))');
+   const snapshot=()=>ev('practiceEvidenceResult.steps.map(step=>({id:step.id,success:step.success,completed:step.completed,total:step.total,remaining:step.remaining,overview:document.querySelector("#practice-proof-steps [data-proof-step="+step.id+"]").textContent,header:document.querySelector("[data-practice-stage="+step.id+"] button").textContent,markers:[...document.querySelectorAll(".practice-task-marker[data-proof-step="+step.id+"]")].map(marker=>({index:Number(marker.dataset.proofCheck),state:marker.dataset.state,label:marker.querySelector("span").textContent,slot:marker.closest(".practice-task-anchor")?.querySelector("button:not(.code-help):not(.practice-task-marker),a")?.id||"group"}))}))');
    const checkSnapshot=async()=>{
      const steps=await snapshot();
      for(const step of steps){
@@ -519,6 +519,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
        assert.equal(step.markers.filter(marker=>marker.state==='pending').length,step.remaining);
      }
      assert.ok(await ev('practiceEvidenceResult.steps.every(step=>step.checks.every((check,index)=>{const marker=[...document.querySelectorAll(".practice-task-marker")].find(marker=>marker.dataset.proofStep===step.id&&Number(marker.dataset.proofCheck)===index);return marker.querySelector("span").textContent===check.label}))'));
+     assert.ok(await ev('[...document.querySelectorAll(".mode-choice:not([data-mode-stage=predictions])")].every(group=>[...group.querySelectorAll(".mode-option")].every(button=>{const checks=practiceEvidenceResult.steps.find(step=>step.id===group.dataset.modeStage).checks.filter(check=>check.label.startsWith(button.value+" "));return (button.dataset.state==="success")===checks.every(check=>check.success)}))'));
      return steps;
    };
    for(const key of ['basic','mission','creative']){
@@ -533,11 +534,31 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      assert.equal(steps.find(step=>step.id==='data').markers.find(marker=>marker.index===0).slot,key==='basic'?'import-submit':'assignment-import');
      for(const id of ['data','models','predictions']){
        await tab(key,id);steps=await checkSnapshot();
+       const group=key==='basic'?{data:'preparation-mode',models:'model-lifecycle-mode',predictions:'prediction-model-select'}[id]:{data:'assignment-preparation-mode',models:'assignment-mode',predictions:'assignment-predict-mode'}[id];
+       assert.equal(await ev('document.querySelectorAll(".mode-choice input[type=radio]").length'),0);
+       const beforeMode=requests.length;
+       await click('#'+group+' .mode-option[value=CLEAN]');await until('!activeTasks');
+       assert.equal(await ev('selectedMode('+JSON.stringify(group)+')'),'CLEAN');
+       assert.equal(await ev('document.querySelectorAll("#'+group+' [aria-pressed=true]").length'),1);
+       if(id==='models')assert.ok((await ev('document.getElementById('+JSON.stringify(key==='basic'?'model-lifecycle-name':'assignment-model-name')+').textContent')).includes('CLEAN'));
+       await click('#'+group+' .mode-option[value=RAW]');await until('!activeTasks');
+       assert.ok(requests.slice(beforeMode).every(request=>request.method==='GET'||new URL(request.url).pathname.endsWith('/prepared-data')),'Mode cards only change the work target: '+JSON.stringify(requests.slice(beforeMode)));
+       assert.ok(await ev('(()=>{const panel=document.getElementById('+JSON.stringify(key==='basic'?'basic-'+id:'assignment-panel-'+id)+'),before=panel.getBoundingClientRect().height,hosts=[...panel.querySelectorAll(".practice-task-markers")];const absolute=hosts.every(host=>getComputedStyle(host).position==="absolute");hosts.forEach(host=>host.hidden=true);const after=panel.getBoundingClientRect().height;hosts.forEach(host=>host.hidden=false);return absolute&&before===after})()'),'Task markers must occupy no layout height');
        for(const [width,font] of [[1440,16],[1280,22],[390,16],[320,22]]){
          await size(width);await ev('fontSize('+font+')');await ev('new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))');
          const box=await ev('(()=>{const panel=document.getElementById('+JSON.stringify(key==='basic'?'basic-'+id:'assignment-panel-'+id)+'),header=panel.querySelector("[data-practice-stage]").getBoundingClientRect();return {width:innerWidth,scroll:document.documentElement.scrollWidth,left:header.left,right:header.right,overflow:[...panel.querySelectorAll(".practice-task-marker")].some(marker=>marker.getBoundingClientRect().right>innerWidth+1)}})()');
          assert.ok(box.scroll<=width+1&&box.left>=-1&&box.right<=width+1&&!box.overflow,JSON.stringify({key,id,font,...box}));views.push({key,id,font,...box});
          if(width===1440||width===320){await ev('document.getElementById('+JSON.stringify(key==='basic'?'basic-'+id:'assignment-panel-'+id)+').scrollIntoView()');await shot('task-markers-'+key+'-'+id+'-'+width)}
+         const target='.practice-task-marker[data-proof-step='+id+']';
+         if(id==='models')assert.ok(await ev('(()=>{for(const marker of document.querySelectorAll(".practice-task-marker[data-proof-step=models]")){marker.scrollIntoView({block:"center"});const r=marker.getBoundingClientRect(),hit=document.elementFromPoint(r.left+r.width/2,r.top+r.height/2);if(!marker.contains(hit))return false}return true})()'),'Every task marker must remain visible and clickable');
+         const rect=await ev('(()=>{const marker=document.querySelector('+JSON.stringify(target)+');marker.scrollIntoView({block:"center"});const r=marker.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()');
+         await call('Input.dispatchMouseEvent',{type:'mouseMoved',...rect});
+         await until('document.querySelector(".practice-task-tooltip:popover-open")');
+         const tip=await ev('(()=>{const marker=document.querySelector('+JSON.stringify(target)+'),tip=document.getElementById(marker.getAttribute("aria-describedby")),r=tip.getBoundingClientRect();return {color:getComputedStyle(marker).color,left:r.left,right:r.right,top:r.top,bottom:r.bottom,text:tip.textContent}})()');
+         assert.equal(tip.color,'rgb(255, 255, 255)');assert.ok(tip.left>=0&&tip.right<=width&&tip.top>=0&&tip.bottom<=900,JSON.stringify(tip));
+         if(width===320||width===1440)await shot('task-tooltip-'+key+'-'+id+'-'+width);
+         await call('Input.dispatchKeyEvent',{type:'keyDown',key:'Escape',code:'Escape'});await call('Input.dispatchKeyEvent',{type:'keyUp',key:'Escape',code:'Escape'});
+         assert.equal(await ev('document.querySelector(".practice-task-tooltip:popover-open")'),null);
        }
        await size(1440);await ev('fontSize(16)');
      }
@@ -552,11 +573,13 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      await tab(key,'models');
      if(key==='basic'){await click('#query-models');await until('!activeTasks&&practiceEvidenceResult');}
      else for(const mode of ['RAW','CLEAN']){
-       await ev('document.querySelector("#assignment-mode input[value='+mode+']").checked=true;renderAssignmentControls()');
+       await ev('setWorkMode("assignment-mode","'+mode+'");renderAssignmentControls()');
        await click('#assignment-evaluate');await until('!assignmentBusy&&!activeTasks&&practiceEvidenceResult');
        assert.ok(await ev('practiceEvidenceResult.steps.find(step=>step.id==="models").checks.find(check=>check.label==='+JSON.stringify(mode+' TEST 평가 성공')+').success'));
      }
      steps=await checkSnapshot();assert.equal(steps.find(step=>step.id==='models').remaining,0);
+     await call('Input.dispatchMouseEvent',{type:'mouseMoved',x:0,y:0});
+     assert.ok(await ev('[...document.querySelectorAll(".practice-task-marker[data-state=success]")].every(marker=>getComputedStyle(marker).backgroundColor==="rgb(52, 88, 153)"&&getComputedStyle(marker).color==="rgb(255, 255, 255)")'),'Success markers are blue with white text on every surface');
      await tab(key,'predictions');await click(key==='basic'?'#run':'#assignment-predict');await until('document.getElementById("confirm-dialog").open');
      await click('#accept-confirm');await until('!activeTasks&&!predictionRunning&&(typeof assignmentBusy==="undefined"||!assignmentBusy)&&practiceEvidenceResult');
      steps=await checkSnapshot();assert.equal(steps.find(step=>step.id==='predictions').remaining,0,'Prediction criteria update in the active tab without a home visit');
@@ -590,7 +613,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      await tab(key,'models');
      if(key!=='basic'){
        for(const mode of ['RAW','CLEAN']){
-         await ev('document.querySelector("#assignment-mode input[value='+mode+']").checked=true;renderAssignmentControls()');
+         await ev('setWorkMode("assignment-mode","'+mode+'");renderAssignmentControls()');
          await click('#assignment-evaluate');await until('!assignmentBusy&&!activeTasks');
        }
      }
@@ -650,7 +673,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    await until('typeof statusPhase!=="undefined"&&statusPhase==="ready"&&!refreshing&&page==="predictions"');
    const tab=async name=>{await click('#basic-workflow [data-basic-tab="'+name+'"]');await until('page==='+JSON.stringify(name)+'&&!refreshing&&!basicSwitching')};
    const qa=async()=>await(await fetch(base+'/qa/state')).json();
-   const choose=async mode=>ev('document.querySelector("#prediction-model-select input[value='+mode+']").checked=true;document.getElementById("prediction-model-select").dispatchEvent(new Event("change",{bubbles:true}))');
+   const choose=async mode=>ev('setWorkMode("prediction-model-select","'+mode+'");document.getElementById("prediction-model-select").dispatchEvent(new Event("change",{bubbles:true}))');
    const accept=async selector=>{await click(selector);await until('document.getElementById("confirm-dialog").open');await click('#accept-confirm');await until('!activeTasks&&!activeMutations&&!refreshing&&!modelBusy&&!predictionRunning')};
    const help=async mode=>{
      await ev('window.qaHelpUrl="";window.qaOriginalApi=api;api=async(...args)=>{if(args[0].startsWith("/api/coding-help"))window.qaHelpUrl=args[0];return qaOriginalApi(...args)}');
@@ -658,7 +681,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      assert.equal(await ev('new URL(qaHelpUrl,location.origin).searchParams.get("variant")'),mode);
      await click('#close-execution');await ev('api=qaOriginalApi');
    };
-   assert.equal(await ev('document.querySelectorAll("#prediction-model-select input").length'),2);
+   assert.equal(await ev('document.querySelectorAll("#prediction-model-select .mode-option").length'),2);
    assert.equal(await ev('document.querySelectorAll("#confirm-prediction-model,#unconfirm-prediction").length'),0);
    assert.equal(await ev('selectedMode("prediction-model-select")'),'CLEAN','Uses the saved model initially');
    assert.equal(await ev('document.getElementById("run").disabled'),false);
@@ -686,7 +709,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    await accept('#run');assert.equal(await ev('confirmedPredictionModel().variant'),'CLEAN');
    await choose('RAW');await ev('models.find(m=>m.variant==="RAW").is_current=0;renderPredictionStorage()');
    assert.equal(await ev('document.getElementById("run").disabled'),true);
-   assert.equal(await ev('document.querySelector("#prediction-model-select input[value=RAW]").disabled'),true);
+   assert.equal(await ev('document.querySelector("#prediction-model-select .mode-option[value=RAW]").disabled'),true);
    await choose('CLEAN');assert.equal(await ev('document.getElementById("run").disabled'),false);
    await ev('predictionStorage.rows=0;renderPredictionStorage()');assert.equal(await ev('document.getElementById("run").disabled'),true);
    await ev('predictionStorage.rows=30;renderPredictionStorage()');
@@ -809,9 +832,9 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    await fetch(base+'/qa/lifecycle');await ev('refresh()');await until('!refreshing');
    await tab('models');await accept('#unconfirm-model');assert.equal(await ev('state.confirmed_current'),0);
    await tab('data');
-   await ev('document.querySelector("#preparation-mode input[value=CLEAN]").checked=true;renderPreparation()');
+   await ev('setWorkMode("preparation-mode","CLEAN");renderPreparation()');
    await click('#clear-prepared');await until('document.getElementById("confirm-dialog").open');
-   await ev('document.querySelector("#preparation-mode input[value=RAW]").checked=true');
+   await ev('setWorkMode("preparation-mode","RAW")');
    await ev('document.getElementById("accept-confirm").click()');await until('!activeTasks&&!activeMutations');
    const last=(await(await fetch(base+'/qa/state')).json()).mutations.at(-1);assert.equal(last.variant,'CLEAN','Mode frozen before confirmation');
    await tab('models');await accept('#model-delete');

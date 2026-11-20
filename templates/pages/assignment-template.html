@@ -126,7 +126,7 @@
         <div class="workflow-query-bar"><span class="muted">PREDICT · RAW/CLEAN 공통 입력</span>{{ action_button('assignment-prediction-data','예측 입력 조회','prediction-data',true) }}</div>
         <div id="assignment-input-rows" class="table-wrap empty">예측 입력 조회를 누르세요.</div>
       </details>
-      <section class="learning-workstep prediction-model-panel" data-prediction-stage="predict">{{ step_heading(3,'모델 선택·예측 실행','RAW 또는 CLEAN을 선택해 예측합니다.') }}
+      <section class="learning-workstep prediction-model-panel" data-prediction-stage="predict">{{ step_heading(3,'두 모델 예측·비교','RAW 예측 후 CLEAN으로 전환해 같은 입력의 결과를 비교합니다.') }}
       {{ sql_result_link('assignment-prediction-link') }}
       {{ mode_choice('assignment-predict-mode','assignment-predict-mode','OML_' + active|upper,true) }}
       <div class="execution-toolbar">{{ action_button('assignment-predict','선택한 모델로 예측','predict') }}{% if active!='creative' %}<code id="assignment-predict-call">{{ assignments[active].procedure_name }}('PREDICT', 'RAW', …)</code>{% endif %}</div>

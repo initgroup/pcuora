@@ -79,15 +79,16 @@ function positionHelpTooltip(){
   if(!helpTooltipButton)return;
   const anchor=helpTooltipButton.getBoundingClientRect(),box=helpTooltip.getBoundingClientRect(),gap=8;
   if(anchor.bottom<0||anchor.top>innerHeight||anchor.right<0||anchor.left>innerWidth){hideHelpTooltip();return;}
-  helpTooltip.style.left=Math.max(gap,Math.min(anchor.right-box.width,innerWidth-box.width-gap))+'px';
+  helpTooltip.style.left=Math.max(gap,Math.min(helpTooltipButton.matches('.practice-task-marker')?anchor.left:anchor.right-box.width,innerWidth-box.width-gap))+'px';
   const below=anchor.bottom+gap,above=anchor.top-box.height-gap;
   helpTooltip.style.top=Math.max(gap,Math.min(below+box.height<=innerHeight-gap?below:above,innerHeight-box.height-gap))+'px';
 }
-document.addEventListener('pointerover',event=>{const button=event.target.closest('.code-help');if(button)showHelpTooltip(button);});
+document.addEventListener('pointerover',event=>{const button=event.target.closest('.code-help,.practice-task-marker');if(button)showHelpTooltip(button);});
 document.addEventListener('pointerout',event=>{if(helpTooltipButton?.contains(event.target)&&!helpTooltipButton.contains(event.relatedTarget)&&!helpTooltipButton.matches(':focus-visible'))hideHelpTooltip();});
-document.addEventListener('focusin',event=>{if(event.target.matches('.code-help'))showHelpTooltip(event.target);});
+document.addEventListener('focusin',event=>{if(event.target.matches('.code-help,.practice-task-marker'))showHelpTooltip(event.target);});
 document.addEventListener('focusout',event=>{if(event.target===helpTooltipButton&&!helpTooltipButton.matches(':hover'))hideHelpTooltip();});
 document.addEventListener('keydown',event=>{if(event.key==='Escape')hideHelpTooltip();});
+document.addEventListener('click',event=>{if(event.target.closest('[data-basic-tab],[data-assignment-tab],.mode-option'))hideHelpTooltip();});
 document.addEventListener('scroll',positionHelpTooltip,true);
 window.addEventListener('resize',hideHelpTooltip);
 function resetCodingFlow(){

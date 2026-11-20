@@ -1,8 +1,9 @@
 {% from 'workflow-sections.html' import step_heading, sql_result_link %}
 {% macro mode_choice(id, name, prefix='', prediction=false, legend='') -%}
-<fieldset id="{{ id }}" class="mode-choice"><legend>{{ legend or ('예측에 사용할 모델' if prediction else '학습할 모델 하나 선택') }}</legend>
+<fieldset id="{{ id }}" class="mode-choice" data-mode-stage="{{ 'predictions' if prediction else 'data' if 'preparation' in id else 'models' }}" aria-describedby="{{ id }}-guide"><legend>{{ '두 모델 순서대로 예측·비교' if prediction else '두 방식 모두 완료 · ' + (legend or '모델 생성·TEST 평가') }}</legend>
+  <p id="{{ id }}-guide" class="mode-guide">① RAW → ② CLEAN 순서로 {{ '같은 입력의 예측 결과를 비교하세요.' if prediction else '각 작업을 완료하세요.' }} 작업 카드를 누르면 아래 실행 대상이 바뀝니다.</p>
   {% for mode,label,rule in [('RAW','정제 미적용','범위 밖 숫자 유지'),('CLEAN','정제 적용','범위 밖 숫자 → NULL')] %}
-  <label class="mode-option"><input type="radio" name="{{ name }}" value="{{ mode }}"{% if loop.first %} checked{% endif %}><span><b>{{ mode }} · {{ label }}</b>{% if prediction %}<code>{{ prefix }}_{{ mode }}_MODEL</code>{% else %}<small>{{ '본인이 작성한 전처리 규칙' if prefix=='OML_CREATIVE' else rule }}</small>{% endif %}</span></label>
+  <button type="button" class="mode-option" value="{{ mode }}" aria-pressed="{{ 'true' if loop.first else 'false' }}"><span class="mode-order" aria-hidden="true">{{ loop.index }}</span><span class="mode-body"><b>{{ mode }} · {{ label }}</b>{% if prediction %}<code{% if id=='prediction-model-select' %} id="prediction-choice-name-{{ mode }}"{% endif %}>{{ prefix }}_{{ mode }}_MODEL</code>{% else %}<small>{{ '본인이 작성한 전처리 규칙' if prefix=='OML_CREATIVE' else rule }}</small>{% endif %}<small class="mode-progress"{% if id=='prediction-model-select' %} id="prediction-choice-state-{{ mode }}"{% endif %}>{{ '현재 모델로 실행 결과 확인' if prediction else '완료 상태 확인 전' }}</small></span><span class="mode-current">{{ '현재 작업' if loop.first else '작업 열기' }}</span></button>
   {% endfor %}
 </fieldset>
 {%- endmacro %}

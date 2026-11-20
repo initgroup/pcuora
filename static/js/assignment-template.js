@@ -338,7 +338,7 @@ function renderAssignmentModel(){
   if(!assignmentKey||!$('assignment-mode'))return;
   const mode=selectedMode('assignment-mode'),m=assignmentState?.models?.find(x=>x.variant===mode),p=assignmentState?.preparation?.[mode],reason=assignmentUnavailable();
   text('assignment-model-name',m?.model_name||`OML_${assignmentKey.toUpperCase()}_${mode}_MODEL`);
-  text('assignment-model-label',`${mode} · 선택한 모델 하나`);
+  text('assignment-model-label',`${mode} · 현재 작업`);
   text('assignment-mode-effect',`제공 예제: ${mode} 전처리 저장값 → ${mode} 모델 · 실제 조건은 본인 프로시저`);
   text('assignment-training-condition',`PREP_MODE = '${mode}' AND SOURCE_KIND = 'TRAIN' AND FIT_YN = 'Y'`);
   text('assignment-model-training-count',p?.ready?'FIT_YN=Y '+number(p.fit_rows)+'행 · TEST '+number(p.test_rows)+'행':'직접 전처리 후 연계 확인 필요');

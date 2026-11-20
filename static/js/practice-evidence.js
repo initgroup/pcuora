@@ -56,22 +56,34 @@ function practiceTaskTarget(step,check){
 }
 function practiceTaskHost(target){
  const node=target.node;if(!node)return null;
- if(target.group||target.inside){
-  let host=target.inside?node.querySelector(':scope>.practice-task-markers'):node.nextElementSibling;
-  if(!host?.classList.contains('practice-task-markers')){
-   host=proofNode('div','practice-task-markers');if(target.inside)node.append(host);else node.after(host);
+ let anchor=target.group||target.inside?node:node.closest('.action-with-help');
+ if(target.inside){
+  anchor=node.querySelector(':scope>.practice-task-anchor');
+  if(!anchor){anchor=proofNode('span','practice-task-anchor');anchor.append(...node.childNodes);node.append(anchor);}
+ }
+ if(!anchor){
+  anchor=node.closest('.practice-action-slot');
+  if(!anchor){anchor=proofNode('span','practice-action-slot');node.before(anchor);anchor.append(node);}
+ }
+ anchor.classList.add('practice-task-anchor');
+ let host=anchor.querySelector(':scope>.practice-task-markers');
+ if(!host){host=proofNode('span','practice-task-markers');host.setAttribute('aria-label','작업 상태');anchor.append(host);}
+ return host;
+}
+function renderModeProgress(result){
+ for(const group of document.querySelectorAll('.mode-choice[data-mode-stage]')){
+  if(group.dataset.modeStage==='predictions')continue;
+  const step=result?.steps.find(item=>item.id===group.dataset.modeStage);
+  for(const button of group.querySelectorAll('.mode-option')){
+   const checks=step?.checks.filter(check=>check.label.startsWith(button.value+' ')),done=checks?.filter(check=>check.success).length;
+   button.dataset.state=checks?.length?(done===checks.length?'success':'pending'):'unchecked';
+   button.querySelector('.mode-progress').textContent=checks?.length?(done===checks.length?'✓ 작업 완료':'성공 '+done+' · 대기 '+(checks.length-done)):'완료 상태 확인 전';
   }
-  return host;
  }
- const action=node.closest('.action-with-help')||node;
- let slot=action.parentElement;
- if(!slot.classList.contains('practice-action-slot')){
-  slot=proofNode('div','practice-action-slot');action.before(slot);slot.append(action,proofNode('div','practice-task-markers'));
- }
- return slot.querySelector(':scope>.practice-task-markers');
 }
 function renderPracticeWork(result=null){
  initializePracticeWork();
+ if(typeof hideHelpTooltip==='function')hideHelpTooltip();renderModeProgress(result);
  document.querySelectorAll('.practice-task-markers').forEach(host=>{host.replaceChildren();host.hidden=true;});
  for(const box of document.querySelectorAll('[data-practice-stage]')){
   const step=result?.steps.find(item=>item.id===box.dataset.practiceStage),button=box.querySelector('button'),count=box.querySelector('small');
@@ -81,12 +93,14 @@ function renderPracticeWork(result=null){
   if(!step)continue;
   for(const [index,check] of (step.checks||[]).entries()){
    const target=practiceTaskTarget(step,check),host=practiceTaskHost(target);if(!host)continue;
-   const marker=proofNode('button','practice-task-marker'),label=proofNode('strong','','작업 '+(index+1)+' · '+(check.success?'✓ 성공':'○ 대기'));
+   const status='작업 '+(index+1)+' · '+(check.success?'✓ 성공':'○ 대기');
+   const marker=proofNode('button','practice-task-marker'),label=proofNode('strong','',(index+1)+' '+(check.success?'✓':'○'));
    marker.type='button';marker.dataset.proofStep=step.id;marker.dataset.proofCheck=String(index);marker.dataset.state=check.success?'success':'pending';
    marker.setAttribute('aria-haspopup','dialog');marker.setAttribute('aria-controls','practice-detail-dialog');
-   marker.setAttribute('aria-label',step.label+' · '+label.textContent+' · '+check.label+' · 성공 기준 보기');
-   marker.title=target.hint+(check.detail?' · '+check.detail:'');
-   marker.append(label,proofNode('span','',check.label));host.append(marker);host.hidden=false;
+   marker.setAttribute('aria-label',step.label+' · '+status+' · '+check.label+' · 성공 기준 보기');
+   const tip=proofNode('span','code-help-tooltip practice-task-tooltip',status+' · '+check.label+'\n'+target.hint+(check.detail?' · '+check.detail:''));
+   tip.id='practice-tip-'+step.id+'-'+index;tip.setAttribute('role','tooltip');marker.setAttribute('aria-describedby',tip.id);
+   marker.append(label,proofNode('span','',check.label));host.append(marker,tip);host.hidden=false;
   }
  }
 }
@@ -173,7 +187,7 @@ function closePracticeDetail(restore=true){
 function openPracticeDetail(id='',focusCheck=null){
  const result=practiceEvidenceResult;
  if(!result||!person||result.student.student_id!==person.student_id||result.student.db_user!==person.db_user)return;
- const steps=id?result.steps.filter(step=>step.id===id):result.steps;if(!steps.length)return;
+ const steps=id?result.steps.filter(step=>step.id===id):result.steps;if(!steps.length)return;hideHelpTooltip();
  const checks=steps.flatMap(step=>step.checks||[]),completed=checks.filter(check=>check.success).length;
  text('practice-detail-title',id?steps[0].label+' · 세부 작업':'전체 실습 · 세부 작업');
  text('practice-detail-summary',checks.length?completed+'/'+checks.length+' 완료 · '+(checks.length-completed)+'개 남음':'현재 확인 결과');

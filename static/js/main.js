@@ -3,8 +3,19 @@
 // 웹은 결과를 표시합니다. 전처리·모델 수정은 sql/의 독립 파일에서 합니다.
 const $ = id => document.getElementById(id);
 const on = (id, event, fn) => $(id)?.addEventListener(event, fn);
-// 기본·미션·창의 화면에서 선택한 RAW/CLEAN 라디오 값을 읽습니다.
-const selectedMode = id => $(id)?.querySelector('input[type="radio"]:checked')?.value || 'RAW';
+// 두 작업 중 현재 열어 둔 실행 대상을 읽습니다. 전환만으로 실행하지 않습니다.
+const selectedMode = id => $(id)?.querySelector('.mode-option[aria-pressed="true"]')?.value || 'RAW';
+function setWorkMode(id,mode){
+  for(const button of $(id)?.querySelectorAll('.mode-option')||[]){
+    const active=button.value===mode;button.setAttribute('aria-pressed',String(active));
+    button.querySelector('.mode-current').textContent=active?'현재 작업':'작업 열기';
+  }
+}
+document.addEventListener('click',event=>{
+  const button=event.target.closest('.mode-option');if(!button||button.matches(':disabled'))return;
+  const group=button.closest('.mode-choice');if(selectedMode(group.id)===button.value)return;
+  setWorkMode(group.id,button.value);group.dispatchEvent(new Event('change',{bubbles:true}));
+});
 let page = document.body.dataset.page;
 const basicWorkspace=document.body.dataset.basic==='true';
 const mainWorkspace=page==='main';
@@ -617,11 +628,12 @@ function renderPredictionModel(){
   const reason=basicUnavailable()||(modelBusy||predictionImporting||predictionRunning?'DB 작업 중입니다. 완료 후 사용할 수 있습니다.':'');
   if(predictionChoice===null&&statusPhase==='ready')predictionChoice=state.confirmed_variant||models.find(m=>m.is_current===1)?.variant||'RAW';
   group.disabled=Boolean(reason);
-  for(const radio of group.querySelectorAll('input')){
-    const m=models.find(m=>m.variant===radio.value);
-    radio.checked=radio.value===predictionChoice;radio.disabled=Boolean(reason)||m?.is_current!==1;
-    text('prediction-choice-name-'+radio.value,objectDisplay(m?.model_name||'OML_BASIC_'+radio.value+'_MODEL'));
-    text('prediction-choice-state-'+radio.value,!m?.exists?'모델 없음':m.is_current!==1?'재학습 필요':m.is_confirmed?'사용 모델 · 선택 가능':'최신 모델 · 선택 가능');
+  setWorkMode(group.id,predictionChoice);
+  for(const button of group.querySelectorAll('.mode-option')){
+    const m=models.find(m=>m.variant===button.value);
+    button.disabled=Boolean(reason)||m?.is_current!==1;
+    text('prediction-choice-name-'+button.value,objectDisplay(m?.model_name||'OML_BASIC_'+button.value+'_MODEL'));
+    text('prediction-choice-state-'+button.value,!m?.exists?'모델 없음':m.is_current!==1?'재학습 필요':m.is_confirmed?'사용 모델 · 실행 가능':'최신 모델 · 실행 가능');
   }
   const current=selectedPredictionModel(),mode=selectedMode('prediction-model-select');
   text('prediction-model',current?objectDisplay(current.model_name):'선택 모델 확인 필요');
