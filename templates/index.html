@@ -15,9 +15,9 @@
 {% if active=='main' %}<link rel="stylesheet" href="/static/css/main-page.css?v=20261119-main-width-v1"><script src="/static/js/main-page.js?v=20261119-main-login-v1" defer></script>{% endif %}
 {% if is_basic %}<script src="/static/js/basic-dataset.js?v=20261119-csv-stable-view-v1" defer></script>{% endif %}
 {% if is_basic or is_assignment %}<script src="/static/js/practice-evidence.js?v=20261120-practice-task-markers-v1" defer></script>{% endif %}
-<script src="/static/js/execution-dialog.js?v=20261119-runtime-sql-v1" defer></script>
+<script src="/static/js/execution-dialog.js?v=20261120-db-progress-v1" defer></script>
 {% if active=='mission' %}<script src="/static/js/mission-learning.js?v=20261119-missions12-v1" defer></script>{% endif %}
-{% if is_assignment %}<script src="/static/js/assignment-template.js?v=20261120-practice-task-markers-v1" defer></script>{% endif %}
+{% if is_assignment %}<script src="/static/js/assignment-template.js?v=20261120-db-progress-v1" defer></script>{% endif %}
 {% if active=='mission' %}<script src="/static/js/mission-schema.js?v=20261119-missions12-v1" defer></script>{% endif %}
 </head>
 <body data-ui="research-desk" data-auth="checking" data-page="{{ active }}" data-basic="{{ 'true' if is_basic else 'false' }}">

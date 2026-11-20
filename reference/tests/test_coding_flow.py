@@ -107,13 +107,14 @@ class CodingFlowTests(unittest.TestCase):
             # Every operation, both modes; all ten topics additionally exercise generated model SQL.
             for topic_index, topic in enumerate(catalog):
                 fixture.select(client, headers, topic['key'])
+                connect.reset_mock()
                 operations = MISSION_OPERATIONS if topic_index == 0 else ('prepare', 'initial-train', 'predict')
                 for operation in operations:
                     for variant in ('RAW', 'CLEAN'):
                         with self.subTest(topic=topic['key'], operation=operation, variant=variant):
                             response = client.get('/api/coding-help', params={
                                 'operation': operation, 'assignment': 'mission',
-                                'variant': variant, 'source_kind': 'TRAIN'})
+                                'variant': variant, 'source_kind': 'TRAIN', 'mission':topic['key']})
                             self.assertEqual(response.status_code, 200, response.text)
                             result = response.json()
                             stages = self.assert_flow(result, operation, 'mission')

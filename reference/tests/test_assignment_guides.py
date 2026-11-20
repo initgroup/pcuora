@@ -61,6 +61,15 @@ class AssignmentGuideTests(unittest.TestCase):
                           'operation=prepared-data&mission=festival&source_kind=BROKEN'):
                 response = client.get('/api/assignments/mission/guide?' + query)
                 self.assertIn(response.status_code, (400, 404), response.text)
+            connect.return_value.__enter__.return_value.cursor.assert_not_called()
+
+    def test_explicit_mission_help_never_borrows_a_database_connection(self):
+        with self.client() as (client,headers,connect):
+            for path in ('/api/coding-help?assignment=mission&operation=prepare&mission=festival',
+                         '/api/assignments/mission/schema?kind=training&mission=festival',
+                         '/api/assignments/mission/guide/download?file=procedure&mission=festival'):
+                response=client.get(path)
+                self.assertEqual(response.status_code,200,response.text)
             connect.assert_not_called()
 
     def test_mission_switch_changes_guides_downloads_and_legacy_help_together(self):
@@ -105,7 +114,7 @@ class AssignmentGuideTests(unittest.TestCase):
                 self.assertEqual(response.status_code, 200, response.text)
                 self.assertIn(feature, str(response.json()))
                 self.assertNotIn(absent, str(response.json()))
-            connect.assert_not_called()
+            connect.return_value.__enter__.return_value.cursor.assert_not_called()
 
     def test_creative_has_no_query_help_and_requires_manual_mutation(self):
         with self.client() as (client, headers, connect):
@@ -191,7 +200,7 @@ class AssignmentGuideTests(unittest.TestCase):
             self.assertEqual(client.get('/api/assignments/mission/selection').json()['key'],'festival')
             self.assertEqual(client.get('/api/assignments/mission/schema?kind=invalid').status_code,400)
             self.assertEqual(client.get('/api/assignments/mission/schema?mission=absent').status_code,400)
-            connect.assert_not_called()
+            connect.return_value.__enter__.return_value.cursor.assert_not_called()
 
     def test_actual_creative_schema_requires_login_and_the_issued_account(self):
         with self.client(authenticated=False) as (client,_,connect):
@@ -246,7 +255,7 @@ class AssignmentGuideTests(unittest.TestCase):
                 download=client.get('/api/assignments/mission/guide/download?file=procedure')
                 self.assertEqual(download.text,result['sql'])
             self.assertEqual(client.get('/api/assignments/mission/schema?kind=other').status_code,400)
-            connect.assert_not_called()
+            connect.return_value.__enter__.return_value.cursor.assert_not_called()
 
     def test_csv_guides_preserve_raw_values_without_expanding_sql(self):
         from backend import mission_guide

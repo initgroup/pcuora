@@ -295,7 +295,7 @@ function selectMissionDataset(key){
     text('mission-model-selection',item?'선택: '+item.title+' · 이 미션의 컬럼과 라벨을 반영한 SQL 가이드를 사용합니다.':'현황에서 미션을 선택하세요.');
     text('mission-prediction-selection',item?`선택: ${item.title} · 별도 예측 ${item.prediction_filename} 30행을 내려받아 적재하세요.`:'선택한 미션의 별도 예측 CSV 30행을 내려받아 적재하세요.');
     for(const [id,kind] of [['mission-download','training'],['mission-prediction-download','prediction']]){$(id).hidden=!item;if(item)$(id).href=`/download/datasets/${item.key}?kind=${kind}`;else $(id).removeAttribute('href');}
-    for(const id of ['mission-tables-download','mission-procedure-download'])if($(id))$(id).hidden=!item;
+    for(const [id,file] of [['mission-tables-download','tables'],['mission-procedure-download','procedure']])if($(id)){$(id).hidden=!item;if(item)$(id).href='/api/assignments/mission/guide/download?'+new URLSearchParams({file,mission:item.key});}
     $('mission-dataset-empty').hidden=Boolean(item);$('mission-fields').hidden=!item;$('mission-baseline').hidden=!item;
     table('mission-fields',item?.layout||[],[['name','영문 컬럼명'],['korean_name','한글 명칭'],['role','역할·설명'],['valid','유효값·범위']]);
     text('mission-baseline',item?.baseline?`배포 전 실제 검증 RAW 정확도 ${item.baseline.raw_accuracy}% · TEST ${item.baseline.test_rows}행 · Decision Tree / PREP_AUTO ON / 깊이 ${item.baseline.max_depth} / 최소 잎 ${item.baseline.min_percent_node}%. 본인 설정의 성능이나 정제 후 향상은 보장하지 않습니다.`:item?'이 미션의 배포 전 Oracle 학습·성능 검증은 아직 실행하지 않았습니다. 본인 프로시저로 학습하고 고정 TEST로 평가하세요.':'');

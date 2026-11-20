@@ -37,7 +37,12 @@ def apply(conn, action, owner, mode='RAW'):
         try:
             execute(conn,'reset_basic_objects.sql',{'owner':owner})
         finally:
-            service.write_state(conn,{'models':{}})
+            state=service.read_state(conn)
+            for field in ('models','confirmed','preparations'):
+                state.pop(field,None)
+            state['models']={}
+            state.get('practice_evidence',{}).pop('basic',None)
+            service.write_state(conn,state)
         return '기본과제 모델 2개·테이블 3개·프로시저를 삭제했습니다.'
     if action == 'unconfirm':
         state=service.read_state(conn);state['confirmed']=None;service.write_state(conn,state)

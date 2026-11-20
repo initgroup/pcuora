@@ -93,5 +93,8 @@
   "reference/tests/verify_simple_db.py",
   "reference/tests/verify_simple_http.py",
   "reference/tests/test_simple.py",
+  "reference/tests/progress_fixture.py",
+  "reference/tests/test_progress_store.py",
+  "reference/tests/verify_progress_store_db.py",
   "reference/tests/verify_simple_assignments.py"
 ]

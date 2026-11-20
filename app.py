@@ -299,18 +299,22 @@ def create_app(config=None):
     @app.get('/api/assignments/mission/selection')
     def get_mission_selection(request: Request):
         person=authorized(request)
-        return {'key': assignment_templates.mission_selection(person,{item['key'] for item in dataset_catalog()})}
+        with database(request) as conn:
+            return {'key': assignment_templates.mission_selection(conn,person,{item['key'] for item in dataset_catalog()})}
 
     @app.post('/api/assignments/mission/selection')
     def save_mission_selection(request: Request, data: dict):
         person=authorized(request)
         if not isinstance(data.get('key'),str):raise ValueError('선택할 미션을 지정하세요.')
-        return {'key': assignment_templates.mission_selection(person,{item['key'] for item in dataset_catalog()},data['key'])}
+        with database(request) as conn:
+            return {'key': assignment_templates.mission_selection(conn,person,{item['key'] for item in dataset_catalog()},data['key'])}
 
     def selected_mission(request, key=''):
         person=authorized(request)
         catalog=dataset_catalog()
-        key=key or assignment_templates.mission_selection(person,{item['key'] for item in catalog})
+        if not key:
+            with database(request) as conn:
+                key=assignment_templates.mission_selection(conn,person,{item['key'] for item in catalog})
         item=next((item for item in catalog if item['key']==key),None)
         if not item:raise ValueError('현황에서 미션을 먼저 선택하세요.')
         return item
@@ -337,9 +341,9 @@ def create_app(config=None):
         return table_schema(kind,person['db_user'])
 
     @app.get('/api/assignments/mission/guide/download')
-    def mission_sql_download(request: Request, file: str):
+    def mission_sql_download(request: Request, file: str, mission: str=''):
         from backend.mission_guide import table_sql,procedure_sql
-        item=selected_mission(request)
+        item=selected_mission(request,mission)
         if file=='tables':
             sql='\n\n'.join(table_sql(item,kind,schema=current_user(request)['db_user'])['sql'] for kind in ('training','prepared','prediction'))
             filename='01_tables.sql'
@@ -353,7 +357,7 @@ def create_app(config=None):
         mission = None
         if key == 'mission':
             catalog = dataset_catalog()
-            selected = assignment_templates.mission_selection(person,{item['key'] for item in catalog})
+            selected = assignment_templates.mission_selection(conn,person,{item['key'] for item in catalog})
             mission = next((item for item in catalog if item['key']==selected),None)
         from backend.practice_evidence import collect
         result = collect(conn,key,mission,state)
@@ -399,7 +403,7 @@ def create_app(config=None):
         request.state.assignment_action = action
         request.state.db_stage = assignment_templates.assignment(key)['title'] + ' · ' + action
         with database(request) as conn:
-            return assignment_templates.run(conn, key, action, mode=data.get('variant','RAW'), source_kind=data.get('source_kind','ALL'), mission_key=assignment_templates.mission_selection(current_user(request),{item['key'] for item in dataset_catalog()}) if key=='mission' and action in ('evaluate','predict') else '')
+            return assignment_templates.run(conn, key, action, mode=data.get('variant','RAW'), source_kind=data.get('source_kind','ALL'), mission_key=assignment_templates.mission_selection(conn,current_user(request),{item['key'] for item in dataset_catalog()}) if key=='mission' and action in ('evaluate','predict') else '')
 
     @app.get('/api/assignments/{key}/status')
     def assignment_status(request: Request, key: str, include_evidence: bool=False):
@@ -429,8 +433,8 @@ def create_app(config=None):
         if len(raw)>2*1024*1024:raise ValueError('CSV는 2 MiB 이하로 선택하세요.')
         prediction=action=='prediction-import'
         if key=='mission':
-            item=selected_mission(request)
-            if mission!=item['key']:raise ValueError('선택 미션이 바뀌었습니다. 파일을 다시 선택하세요.')
+            item=next((item for item in dataset_catalog() if item['key']==mission),None)
+            if not item:raise ValueError('선택 미션을 확인하고 파일을 다시 선택하세요.')
             from backend.csv_import import mission_rows
             try:
                 values=list(mission_rows(io.StringIO(raw.decode('utf-8-sig'),newline=''),item,prediction))
@@ -441,6 +445,8 @@ def create_app(config=None):
         request.state.assignment_action=action
         request.state.db_stage=assignment_templates.assignment(key)['title']+' · CSV 적재'
         with database(request) as conn:
+            if key=='mission' and assignment_templates.mission_selection(conn,person,{item['key'] for item in dataset_catalog()})!=mission:
+                raise ValueError('선택 미션이 바뀌었습니다. 파일을 다시 선택하세요.')
             return assignment_templates.import_csv(conn,key,values,person['db_user'],prediction=prediction)
 
     @app.post('/api/assignments/{key}/{action}/csv')
@@ -493,10 +499,14 @@ def create_app(config=None):
         diagnostic = connection_help(error)
         return JSONResponse({'error': diagnostic['title'], 'diagnostic': diagnostic}, status_code=503)
 
-    def verify_connection(cfg, *, details=False):
+    def verify_connection(cfg, *, details=False, person=None):
         with connection(cfg, pooled=False) as conn:
             if details:return connection_profile.inspect_connection(conn,cfg)
             conn.ping()
+            if person is not None:
+                from backend import progress_store
+                progress_store.initialize(conn)
+                progress_store.migrate(conn,person)
 
     @app.post('/api/identity/test')
     def test_connection(request: Request, data: dict):
@@ -524,7 +534,7 @@ def create_app(config=None):
         try:
             # 비밀번호가 맞는지 Oracle에서 먼저 확인합니다. 실패하면 기존 파일을 보존합니다.
             try:
-                verify_connection(cfg)
+                verify_connection(cfg,person=person)
             except Exception as error:
                 return connection_failure(error)
             if hosted_database is None:
@@ -588,14 +598,14 @@ def create_app(config=None):
             return {'message':message,**service.status(conn)}
 
     @app.get('/api/coding-help')
-    def coding_help(request: Request, operation: str = 'data', variant: str = 'RAW', use_yn: str = 'ALL', split: str = 'ALL', assignment: str = 'basic', source_kind: str = 'ALL', trigger_id: str = '', trigger_label: str = '', page: str = ''):
+    def coding_help(request: Request, operation: str = 'data', variant: str = 'RAW', use_yn: str = 'ALL', split: str = 'ALL', assignment: str = 'basic', source_kind: str = 'ALL', trigger_id: str = '', trigger_label: str = '', page: str = '', mission: str = ''):
         authorized(request)
         if assignment=='creative':
             from backend.mission_guide import creative_manual
             result=creative_manual(operation,variant,schema=current_user(request)['db_user'],trigger_id=trigger_id,trigger_label=trigger_label,page=page)
         elif assignment=='mission':
             from backend.mission_guide import generate
-            result=generate(selected_mission(request),operation,variant,source_kind,schema=current_user(request)['db_user'],trigger_id=trigger_id,trigger_label=trigger_label,page=page)
+            result=generate(selected_mission(request,mission),operation,variant,source_kind,schema=current_user(request)['db_user'],trigger_id=trigger_id,trigger_label=trigger_label,page=page)
         else:
             from backend.coding_help import describe
             result=describe(operation, variant=variant, use_yn=use_yn, split=split, assignment=assignment, source_kind=source_kind, user=current_user(request)['db_user'], trigger_id=trigger_id, trigger_label=trigger_label, page=page)

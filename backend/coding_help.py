@@ -99,7 +99,7 @@ def application_help(operation,assignment,config):
               ('코드 수정','backend/service.py의 confirm_model 확인'),
               ('서버 반영','Python 수정 시 재시작 → 다시 로그인'),
               ('선택 확인','기본 모델 지정 → 4단계에서 선택·실행'))
-        result['details'] = [{'title':'선택은 어디에 저장되나요?','text':'검증 후 서버 runtime/model-choice-*.json에 저장됩니다. Oracle 모델 자체의 상태는 바뀌지 않습니다.'}]
+        result['details'] = [{'title':'선택은 어디에 저장되나요?','text':'검증 후 발급 계정의 Oracle OML_WEB_STATE에 저장됩니다. 같은 DB의 로컬·Render에서 공유하며 모델 자체의 상태는 바뀌지 않습니다.'}]
     else:
         path = 'sql/' + OPERATIONS[operation][1] if OPERATIONS[operation][1] else '실행 SQL 단계의 파일'
         steps('조회 SQL은 저장 후 다음 조회부터 반영됩니다.',

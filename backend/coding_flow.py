@@ -144,6 +144,17 @@ def _text(path):
 
 def _file_flow(flow,result):
     """파일 전체는 한 번만 전송하고 각 항목은 그 파일의 연속 구간을 가리킵니다."""
+    op=result.get('operation')
+    reads={'status','connection','prepare','train','initial-train','retrain','delete-model','evaluate','predict','confirm','import','prediction-import','recreate','unconfirm','clear-training','clear-prepared','drop-objects'}
+    writes=reads-{'status','connection'}
+    if flow.get('mode')=='web-execution' and op in reads:
+        _unique(flow,'service',_python('backend/service.py','read_state','공유 검증 기록 조회'))
+        _unique(flow,'service',_python('backend/progress_store.py','load','Oracle 계정의 검증 스냅샷'))
+        _unique(flow,'sql',_whole('sql/queries/progress_read.sql','공유 검증 기록 SELECT'))
+        linked=any('link_external' in item.get('content','') for item in flow['stages'][3]['items'])
+        if op in writes or linked:
+            _unique(flow,'service',_python('backend/progress_store.py','save','검증 기록 버전 검사·자율 트랜잭션 저장'))
+            _unique(flow,'sql',_whole('sql/queries/progress_write.sql','검증 기록 저장 · 실습 COMMIT과 분리'))
     from .runtime_sql import add_runtime_items
     flow=add_runtime_items(flow,result)
     from scripts.source_files import APP_FILES, STUDENT_SCRIPTS, CONFIG
@@ -364,7 +375,7 @@ def basic_flow(result,*,trigger_id='',trigger_label='',page=''):
     op=result['operation']
     preview=op in ('preview','prediction-preview')
     summary='화면 버튼부터 실제 호출 소스까지 순서대로 확인합니다. 도움말을 여는 동안 작업 SQL은 실행하지 않습니다.'
-    if op=='confirm':summary='모델 검증 SELECT → 서버 로컬 JSON에 선택 저장. Oracle 모델을 변경하는 작업이 아닙니다.'
+    if op=='confirm':summary='모델 검증 SELECT → Oracle 공유 검증 기록에 선택 저장. 모델 자체는 변경하지 않습니다.'
     if preview:summary='업로드 CSV → Python 파싱·품질 검사 → 미리보기. DB 연결과 SQL 실행은 없습니다.'
     flow=_new(result,'local-preview' if preview else 'web-execution',summary)
     label=' '.join(str(trigger_label).split())[:80] or result['title']
@@ -456,7 +467,7 @@ def basic_flow(result,*,trigger_id='',trigger_label='',page=''):
     if op in MODEL_ACTIONS and result.get('direct_script'):
         _add(flow,'sql',_generated(result['direct_script'],'선택값으로 만든 SQL Developer 호출','sql/examples/run.sql','직접 실행용 생성 예제입니다. 웹 cursor 실행 원문은 첫 항목이며, 도움말에서 SQL을 실행하지 않습니다.'))
     _followups(flow,op,page)
-    if op=='confirm':flow['stages'][3]['summary']='검증 후 write_state()로 로컬 JSON 저장'
+    if op=='confirm':flow['stages'][3]['summary']='검증 후 write_state()로 Oracle 공유 기록 저장'
     _confirmation(flow)
     return _file_flow(flow,result)
 
@@ -526,7 +537,7 @@ def mission_flow(result,*,trigger_id='',trigger_label='',page=''):
             _add(flow,'service',_python('backend/assignment_templates.py','training_fingerprint','검증 함수 · training_fingerprint()'),
                  _python('backend/service.py','prepared_values','검증 함수 · prepared_values()'))
         if op in ('connection','status') and not refresh_only:
-            _add(flow,'service',_python('backend/service.py','write_state','연계 결과의 서버 로컬 저장','객체·모델을 만든 뒤 연계한 검증값을 서버 로컬 JSON에 저장합니다. Oracle 모델 상태를 변경하지 않습니다.'),
+            _add(flow,'service',_python('backend/service.py','write_state','연계 결과의 DB 공유 저장','객체·모델을 만든 뒤 연계한 검증값을 OML_WEB_STATE에 저장합니다. 모델 자체는 변경하지 않습니다.'),
                  _python('backend/service.py','state_path','연계 기록 파일 위치'))
         _add(flow,'event',_js_function('static/js/main.js','api'))
         _db(flow,model=op in ('evaluate','predict'))

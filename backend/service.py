@@ -1,28 +1,25 @@
 """[WEB-TO-SQL] 조회/적재는 SQL 파일, 모델 작업은 OML_BASIC_RUN 한 개를 호출합니다."""
 import hashlib
 import json
-import os
 import re
 import time
 import oracledb
 from .db import ROOT, rows
 from .sql_files import query, execute, read_sql
 from . import sql_trace
+from . import progress_store
 
 BASIC={'training_table':'OML_BASIC_DATA','prediction_table':'OML_BASIC_PREDICT','prepared_table':'OML_BASIC_PREPARED','procedure_name':'OML_BASIC_RUN'}
 
 def state_path(conn):
-    # 웹 모델 선택은 DB 객체를 늘리지 않고 로컬에 저장합니다. 비밀번호는 저장하지 않습니다.
-    key=hashlib.sha256((conn.username+'@'+str(conn.dsn)).encode()).hexdigest()[:24]
-    return ROOT/'runtime'/('model-choice-'+key+'.json')
+    # 이전 파일의 1회 이관·운영 점검용입니다. 현재 판정은 DB만 읽습니다.
+    return progress_store.legacy_path(conn, ROOT)
 
 def read_state(conn):
-    try:return json.loads(state_path(conn).read_text(encoding='utf-8'))
-    except (OSError,ValueError):return {'models':{}}
+    return progress_store.load(conn)
 
 def write_state(conn,state):
-    path=state_path(conn);path.parent.mkdir(exist_ok=True)
-    temp=path.with_suffix('.tmp');temp.write_text(json.dumps(state,ensure_ascii=False),encoding='utf-8');os.replace(temp,path)
+    progress_store.save(conn,state)
 
 def prepared_values(conn,table,mode):
     """자유 컬럼도 해시에 포함하되 저장 시각과 예측 입력은 모델 최신 판정에서 제외합니다."""
@@ -205,8 +202,8 @@ def confirm_model(conn,mode):
     """[CONFIRM-MODEL] 최신 모델을 검증한 뒤 웹에서 사용할 RAW/CLEAN 선택을 저장합니다.
     입력: 로그인 계정의 conn, mode(RAW 또는 CLEAN). 출력: 없음.
     model_rows의 SELECT로 데이터·프로시저 해시·모델 생성 시각을 대조합니다.
-    확정 값은 write_state가 runtime/model-choice-*.json에 원자적으로 저장합니다.
-    Oracle 모델의 상태를 변경하거나 DB에 확정 값을 쓰지 않습니다. 서버 로컬 파일이며 브라우저 저장값이 아닙니다.
+    확정 값은 write_state가 같은 계정의 OML_WEB_STATE에 저장합니다.
+    Oracle 모델 자체는 변경하지 않고 웹 검증 메타데이터만 갱신합니다.
     """
     if not any(r['variant']==mode and r['is_current'] for r in model_rows(conn)):raise ValueError('현재 데이터·프로시저로 모델을 먼저 생성하세요.')
     saved=read_state(conn);saved['confirmed']=mode;write_state(conn,saved)

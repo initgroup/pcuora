@@ -4,12 +4,10 @@ import io
 import json
 import re
 import hashlib
-import os
-import tempfile
 from pathlib import Path
 from .db import ROOT
 from .sql_files import query, execute
-from . import service, sql_trace
+from . import service, sql_trace, progress_store
 
 ASSIGNMENTS={
     'mission':{'title':'미션과제','route':'/mission','points':30,'training_table':'OML_MISSION_DATA','prediction_table':'OML_MISSION_PREDICT','prepared_table':'OML_MISSION_PREPARED','procedure_name':'OML_MISSION_RUN'},
@@ -29,32 +27,18 @@ def assignment(key):
     if key not in ASSIGNMENTS:raise ValueError('미션 또는 창의과제를 선택하세요.')
     return dict(ASSIGNMENTS[key])
 
-def mission_selection_path(person):
-    # 로그인 계정별 화면 선택만 저장합니다. CSV/DB 객체·모델 상태와 분리합니다.
-    key=hashlib.sha256(json.dumps([person['student_id'],person['db_user']],ensure_ascii=False).encode()).hexdigest()[:32]
-    return ROOT/'runtime'/('mission-selection-'+key+'.json')
-
-
-def mission_selection(person, keys, value=None):
-    path=mission_selection_path(person)
+def mission_selection(conn, person, keys, value=None):
+    if person['db_user'].upper()!=str(conn.username).upper():
+        raise ValueError('미션 선택의 발급 계정을 확인하세요.')
+    state=progress_store.load(conn,progress_store.mission_key(person))
     if value is None:
-        try:
-            saved=json.loads(path.read_text(encoding='utf-8')).get('key','')
-        except FileNotFoundError:
-            return ''
+        saved=state.get('key','')
         if saved and saved not in keys:return ''
         return saved
     if not isinstance(value,str) or (value and value not in keys):
         raise ValueError('등록된 미션을 선택하세요.')
-    path.parent.mkdir(exist_ok=True)
-    temporary=None
-    try:
-        with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',dir=path.parent,prefix='mission-selection-',suffix='.tmp',delete=False) as stream:
-            temporary=Path(stream.name)
-            json.dump({'key':value},stream,ensure_ascii=False)
-        os.replace(temporary,path)
-    finally:
-        if temporary and temporary.exists():temporary.unlink()
+    state['key']=value
+    progress_store.save(conn,state)
     return value
 
 

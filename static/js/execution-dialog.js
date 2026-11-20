@@ -287,6 +287,7 @@ async function openExecution(button){
   const variant=button.dataset.variant||(assignment==='basic'?(preparing?selectedMode('preparation-mode'):['initial-train','retrain','append-train','delete-model','model-dictionary'].includes(operation)?selectedMode('model-lifecycle-mode'):operation==='predict'?selectedMode('prediction-model-select'):operation==='confirm'?selectedMode('model-lifecycle-mode'):'RAW'):(preparing?selectedMode('assignment-preparation-mode'):operation==='predict'?selectedMode('assignment-predict-mode'):selectedMode('assignment-mode')))||'RAW';
   const triggerLabel=(trigger.textContent||trigger.getAttribute('aria-label')||'').trim().replace(/\s+/g,' ');
   const values={operation,assignment,variant,use_yn:$('filter-use')?.value||'ALL',split:$('filter-split')?.value||'ALL',source_kind:$(assignment==='basic'?'prepared-source-kind':'assignment-prepared-source-kind')?.value||'TRAIN',trigger_id:trigger.id||'',trigger_label:triggerLabel,page:basicWorkspace?page:(document.body.dataset.page||'')};
+  if(assignment==='mission'&&typeof missionSelectionCurrent!=='undefined')values.mission=missionSelectionCurrent;
   resetCodingFlow();text('execution-title',(triggerLabel&&triggerLabel!=='?'?triggerLabel:'코드')+' · 코딩도움말');
   text('execution-context',({'basic':'기본과제','mission':'미션과제','creative':'창의과제'})[assignment]+' · '+variant);
   if(manual){$('execution-manual-note').hidden=false;text('execution-manual-note','아래 구문을 복사하여 발급 계정 '+person.db_user+'의 실제 DB에 접속한 SQL Developer에서 전체 F5로 실행하세요. 완료 후 SQL 실행 결과 연계를 누르세요.');}

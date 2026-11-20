@@ -19,6 +19,7 @@ from backend.connection_help import explain
 from source_files import inventory
 from package_student import build,GUIDE_NAME
 from package_submission import build as build_submission
+from reference.tests.progress_fixture import memory_progress
 
 
 class ClassifierTests(unittest.TestCase):
@@ -45,12 +46,13 @@ class ClassifierTests(unittest.TestCase):
                         if failure=='insert':raise RuntimeError('ORA-12899: too long')
                 conn.commit.side_effect=lambda:events.append('commit')
                 conn.rollback.side_effect=lambda:events.append('rollback')
-                with patch('app.connection') as connection,patch('app.query',return_value=[{'object_name':'OML_BASIC_DATA'}]),patch('app.parse_csv',side_effect=parse),patch('app.execute_file',side_effect=drop),patch('app.initialize',side_effect=initialize),patch.object(service,'execute',side_effect=execute),patch.object(service,'state_path',return_value=state_file),patch.object(service,'status',return_value={}):
+                with patch('app.connection') as connection,patch('app.query',return_value=[{'object_name':'OML_BASIC_DATA'}]),patch('app.parse_csv',side_effect=parse),patch('app.execute_file',side_effect=drop),patch('app.initialize',side_effect=initialize),patch.object(service,'execute',side_effect=execute),patch.object(service,'status',return_value={}):
                     connection.return_value.__enter__.return_value=conn
+                    seed=service.read_state(conn);seed.update(saved);service.write_state(conn,seed)
                     with TestClient(create_app({'SECRET_KEY':'recreate-test-key'*3})) as client:
                         login=self.login(client,people[0]);self.assertEqual(login.status_code,200)
                         response=client.post('/api/data/import',files={'file':('sample.csv',b'invalid\n1' if failure=='csv' else raw,'text/csv')},data={'mode':'recreate'},headers={'X-CSRF-Token':login.json()['csrf']})
-                after=json.loads(state_file.read_text(encoding='utf-8'))
+                    after=service.read_state(conn)
                 if failure is None:
                     self.assertEqual(response.status_code,200,response.text)
                     self.assertEqual(events,['parse','drop','initialize','delete','insert','commit'])
@@ -79,7 +81,7 @@ class ClassifierTests(unittest.TestCase):
                     {'student_id':'ID3','name':'두번째 학생','db_user':'STUDENT02'}]
             path.write_text(json.dumps(people),encoding='utf-8')
             env.write_text('DB_USER=PREVIOUS\nDB_PASSWORD=PreviousPassword\nDB_DSN=keep_dsn\nWALLET_PASSWORD=KeepWalletValue\n',encoding='utf-8')
-            with patch.object(identity,'ROSTER',path),patch.object(db,'ROOT',root),patch.dict('os.environ',{'OML_ENV_FILE':str(env)}):
+            with patch.object(identity,'ROSTER',path),patch.object(db,'ROOT',root),patch.dict('os.environ',{'OML_ENV_FILE':str(env)}),memory_progress():
                 yield path,env,people
 
     def login(self,client,person,password='StudentPassword_22417'):
@@ -129,6 +131,7 @@ class ClassifierTests(unittest.TestCase):
 
     def test_mission_selection_survives_login_and_restart_and_is_account_scoped(self):
         with self.login_project() as (_,env,people),patch('app.connection') as connect,patch.object(assignment_templates,'ROOT',env.parent.parent):
+            connect.return_value.__enter__.return_value.username=people[0]['db_user']
             application=create_app({'SECRET_KEY':'selection-test'})
             client=TestClient(application)
             self.assertEqual(client.get('/api/assignments/mission/selection').status_code,401)
@@ -141,19 +144,20 @@ class ClassifierTests(unittest.TestCase):
             for value in ('../../other',None,{},42):
                 self.assertEqual(client.post(path,json={'key':value},headers=headers).status_code,400)
             self.assertEqual(client.get(path).json()['key'],'festival')
-            connect.assert_not_called()
+            self.assertTrue(connect.called)
             client.post('/api/logout',json={},headers=headers)
             self.assertEqual(client.get(path).status_code,401)
             self.login(client,people[0])
             self.assertEqual(client.get(path).json()['key'],'festival')
+            connect.return_value.__enter__.return_value.username=people[1]['db_user']
             self.login(client,people[1])
             self.assertEqual(client.get(path).json()['key'],'')
             client=TestClient(create_app({'SECRET_KEY':'selection-test'}))
+            connect.return_value.__enter__.return_value.username=people[0]['db_user']
             self.login(client,people[0])
             self.assertEqual(client.get(path).json()['key'],'festival')
             files=list((env.parent.parent/'runtime').glob('mission-selection-*.json'))
-            self.assertEqual(len(files),1)
-            self.assertEqual(json.loads(files[0].read_text(encoding='utf-8')),{'key':'festival'})
+            self.assertEqual(files,[])
 
     def test_roster_account_password_and_env_save(self):
         with self.login_project() as (path,env,people),patch('app.connection') as connect,patch('app.service.status',return_value={'test':'connected'}):

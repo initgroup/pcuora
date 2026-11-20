@@ -79,9 +79,10 @@ class LifecycleTests(unittest.TestCase):
                          {'OML_BASIC_DATA','OML_BASIC_PREPARED','OML_BASIC_PREDICT','OML_BASIC_RUN'})
         def execute(conn,path,*args):
             if path=='reset_basic_objects.sql':raise RuntimeError('partial DDL')
-        with patch.object(life,'execute',side_effect=execute),patch.object(service,'write_state') as write:
+        saved={'models':{},'assignments':{'mission':{'RAW':{'fingerprint':'keep'}}},'practice_evidence':{'basic':{},'mission':{'predict':{'total':30}}}}
+        with patch.object(life,'execute',side_effect=execute),patch.object(service,'read_state',return_value=saved),patch.object(service,'write_state') as write:
             with self.assertRaises(RuntimeError):life.apply(self.conn,'drop-objects','STUDENT23')
-            write.assert_called_once_with(self.conn,{'models':{}})
+            write.assert_called_once_with(self.conn,{'models':{},'assignments':{'mission':{'RAW':{'fingerprint':'keep'}}},'practice_evidence':{'mission':{'predict':{'total':30}}}})
 
 class LifecycleApiTests(unittest.TestCase):
     def test_login_csrf_and_owner_precede_mutation(self):
@@ -119,7 +120,10 @@ class LifecycleApiTests(unittest.TestCase):
                 sql='\n'.join(f['content'] for f in result['flow']['files'].values() if f['origin']=='generated')
                 self.assertIn('OML_MISSION_',sql);self.assertNotIn('OML_BASIC_',sql)
                 self.assertEqual(result['flow']['mode'],'manual-guide')
-                self.assertEqual(client.get('/api/coding-help',params={'operation':op,'assignment':'creative'}).status_code,404)
-            connect.assert_not_called()
+                creative=client.get('/api/coding-help',params={'operation':op,'assignment':'creative'})
+                self.assertEqual(creative.status_code,200,creative.text)
+                generated='\n'.join(f['content'] for f in creative.json()['flow']['files'].values() if f['origin']=='generated')
+                self.assertNotIn('CREATE_MODEL2',generated)
+            connect.return_value.__enter__.return_value.cursor.assert_not_called()
 
 if __name__=='__main__':unittest.main()
