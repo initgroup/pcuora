@@ -37,13 +37,13 @@ class MissionBindingTests(unittest.TestCase):
 
     def test_switch_only_blocks_and_return_restores_same_binding(self):
         info=self.inspect(self.three)
-        self.assertTrue(info['can_link']);self.assertFalse(info['ready']);self.assertEqual(self.saved,{})
+        self.assertTrue(info['can_link']);self.assertTrue(info['ready']);self.assertFalse(info['linked']);self.assertEqual(self.saved,{})
         binding.bind(self.saved,info);previous=deepcopy(self.saved)
-        self.assertTrue(self.inspect(self.three)['ready'])
+        self.assertTrue(self.inspect(self.three)['linked'])
         wrong=self.inspect(self.one)
         self.assertEqual(wrong['detected'],self.three['key']);self.assertFalse(wrong['can_link'])
         with self.assertRaises(ValueError):binding.bind(self.saved,wrong)
-        self.assertEqual(self.saved,previous);self.assertTrue(self.inspect(self.three)['ready'])
+        self.assertEqual(self.saved,previous);self.assertTrue(self.inspect(self.three)['linked'])
 
     def test_partial_rebuild_wrong_run_and_object_replacement_require_validation(self):
         binding.bind(self.saved,self.inspect(self.three))
@@ -52,13 +52,13 @@ class MissionBindingTests(unittest.TestCase):
         self.table_items={kind:self.one for kind in self.table_items}
         self.assertFalse(self.inspect(self.one)['can_link'])
         self.source_item=self.one
-        info=self.inspect(self.one);self.assertTrue(info['can_link']);self.assertFalse(info['ready'])
+        info=self.inspect(self.one);self.assertTrue(info['ready']);self.assertFalse(info['linked'])
         self.saved['practice_evidence']={'mission':{'old':True},'basic':{'keep':True}}
         binding.bind(self.saved,info)
         self.assertNotIn('mission',self.saved['practice_evidence']);self.assertIn('basic',self.saved['practice_evidence'])
-        self.assertTrue(self.inspect(self.one)['ready'])
+        self.assertTrue(self.inspect(self.one)['linked'])
         self.state['objects'][0]['object_id']=999
-        self.assertFalse(self.inspect(self.one)['ready'])
+        self.assertTrue(self.inspect(self.one)['ready']);self.assertFalse(self.inspect(self.one)['linked'])
 
     def test_datatype_length_and_nullable_are_checked(self):
         rows=columns(self.one,'prediction');rows[1]['data_type']='NUMBER'
@@ -77,7 +77,25 @@ class MissionBindingTests(unittest.TestCase):
             with self.subTest(mission=item['key']):
                 self.source_item=item;self.table_items={kind:item for kind in self.table_items}
                 info=self.inspect(item)
-                self.assertEqual(info['detected'],item['key']);self.assertTrue(info['can_link']);self.assertFalse(info['ready'])
+                self.assertEqual(info['detected'],item['key']);self.assertTrue(info['ready']);self.assertFalse(info['linked'])
+
+    def test_object_readiness_does_not_save_or_accept_old_preparation_and_models(self):
+        info=self.inspect(self.three);state={**self.state,'mission':info}
+        prep={'RAW':dict(ready=True,rows=12,fit_rows=10,test_rows=2)}
+        def models(conn,key,verify=True):return [dict(exists=True,is_current=bool(verify))]
+        with patch.object(tasks,'preparation_status',return_value=prep),patch.object(tasks,'model_state',side_effect=models),patch.object(service,'write_state') as save:
+            result=tasks.verification_state(self.conn,'mission',state)
+            self.assertFalse(result['preparation']['RAW']['ready']);self.assertFalse(result['models'][0]['is_current'])
+            self.assertEqual(result['preparation']['RAW']['rows'],12)
+            save.assert_not_called();self.assertEqual(self.saved,{})
+            binding.bind(self.saved,info);state['mission']=self.inspect(self.three)
+            self.assertTrue(tasks.verification_state(self.conn,'mission',state)['models'][0]['is_current'])
+            self.state['objects'][0]['object_id']=999;state['mission']=self.inspect(self.three)
+            self.assertFalse(tasks.verification_state(self.conn,'mission',state)['models'][0]['is_current'])
+        with patch.object(tasks,'readiness',return_value=state),patch.object(service,'run_model') as run,patch.object(service,'write_state') as save:
+            for action in ('evaluate','predict'):
+                with self.assertRaisesRegex(ValueError,'전처리·모델'):tasks.run(self.conn,'mission',action,mission_key=self.three['key'])
+            run.assert_not_called();save.assert_not_called()
 
     def test_execution_rejects_mismatch_before_procedure_receipt_or_save(self):
         bad=self.inspect(self.one);state={**self.state,'mission':bad,'ready':False}

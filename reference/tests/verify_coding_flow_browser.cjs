@@ -273,9 +273,9 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    const reports=[];
    for(const key of ['mission','creative']){
      await call('Page.navigate',{url:base+'/'+key});
-     await until('typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!activeTasks&&practiceEvidenceResult');
+     await until('typeof assignmentKey!=="undefined"&&assignmentKey==='+JSON.stringify(key)+'&&assignmentPhase==="ready"&&!activeTasks&&practiceEvidenceResult');
      assert.equal(await ev('practiceEvidenceResult.steps[1].completed'),2);
-     assert.deepEqual(await ev('[...document.querySelectorAll(".assignment-link-panel>button")].map(e=>({id:e.id,label:e.textContent}))'),['assignment-check','assignment-prepared-link','assignment-model-link','assignment-prediction-link'].map(id=>({id,label:'SQL 실행 결과 연계'})));
+     assert.deepEqual(await ev('[...document.querySelectorAll("#assignment-check,#assignment-prepared-link,#assignment-model-link,#assignment-prediction-link")].map(e=>({id:e.id,label:e.textContent}))'),(key==='mission'?['assignment-prepared-link','assignment-model-link','assignment-prediction-link']:['assignment-check','assignment-prepared-link','assignment-model-link','assignment-prediction-link']).map(id=>({id,label:'SQL 실행 결과 연계'})));
      await click('[data-assignment-tab=data]');await until('!document.getElementById("assignment-panel-data").hidden&&!assignmentBusy');
      for(const mode of ['RAW','CLEAN']){
        await ev('setWorkMode("assignment-preparation-mode","'+mode+'");renderAssignmentControls()');
@@ -305,6 +305,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      await until('!activeTasks&&practiceEvidenceResult?.steps[1].completed===4');
      assert.equal(await ev('practiceEvidenceResult.steps[1].success'),true);
      for(const [tab,id] of [['home','assignment-check'],['models','assignment-model-link'],['predictions','assignment-prediction-link']]){
+       if(key==='mission'&&tab==='home')continue;
        await click('[data-assignment-tab='+tab+']');await until('!activeTasks&&!assignmentBusy&&assignmentPhase==="ready"');
        const count=requests.filter(r=>r.url.endsWith('/link')&&r.method==='POST').length;
        await click('#'+id);await until('document.getElementById("confirm-dialog").open');
@@ -317,7 +318,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
      reports.push({assignment:key,before:2,after:4,data_already_existed:true,no_prepare_or_train:true});
    }
    const qa=await(await fetch(base+'/qa/state')).json();
-   assert.deepEqual(qa.mutations,[...Array(4).fill('/api/assignments/mission/link'),...Array(4).fill('/api/assignments/creative/link')]);
+   assert.deepEqual(qa.mutations,[...Array(3).fill('/api/assignments/mission/link'),...Array(4).fill('/api/assignments/creative/link')]);
    assert.deepEqual(qa.blocked,[]);assert.deepEqual(errors,[]);
    fs.writeFileSync(path.join(root,'runtime/preparation-link-ui-verification.json'),JSON.stringify({ok:true,synthetic_data_only:true,real_database:false,reports,screenshots:out},null,2));
    console.log(JSON.stringify({ok:true,readable_but_unlinked_reproduced:true,cancel_and_confirm:true,counts_correct_after_link:true,assignments:2,layouts:6,screenshots:out}));return;
@@ -469,7 +470,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    await fetch(base+'/qa/evidence');
    await call('Page.navigate',{url:base+'/mission'});
    await until('typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!activeTasks&&practiceEvidenceResult');
-   assert.ok(await ev('document.querySelector("[data-mission-schema="+missionSelectionCurrent+"]").closest(".mission-schema-action").querySelectorAll(".practice-task-marker[data-proof-step=home]").length===4&&!document.getElementById("assignment-check").closest(".assignment-link-panel").querySelector(".practice-task-marker")'));
+   assert.ok(await ev('document.querySelector("[data-mission-schema="+missionSelectionCurrent+"]").closest(".mission-schema-action").querySelectorAll(".practice-task-marker[data-proof-step=home]").length===4&&!document.getElementById("assignment-check")'));
    assert.equal(await ev('[...document.querySelectorAll(".mission-schema-action")].filter(e=>e.querySelector(".practice-task-marker")).length'),1);
    await ev('Object.defineProperty(navigator,"clipboard",{configurable:true,value:{writeText:async text=>{window.qaCopied=text}}});window.qaCopied=""');
    const select=async key=>{
@@ -531,7 +532,7 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    const choose=async key=>{await click('[data-mission-choice="'+key+'"]');await until('document.getElementById("confirm-dialog").open');await click('#accept-confirm');await until('!missionSelectionSaving&&!activeTasks&&assignmentState?.mission');};
    await choose(keys[0]);
    assert.equal(await ev('missionSelectionCurrent'),keys[0]);assert.equal(await ev('assignmentState.mission.detected'),keys[2]);
-   assert.ok(await ev('!assignmentState.ready&&document.getElementById("assignment-check").disabled&&document.getElementById("assignment-evaluate").disabled&&document.getElementById("assignment-predict").disabled&&practiceEvidenceResult.passed===0'));
+   assert.ok(await ev('!assignmentState.ready&&document.getElementById("assignment-prepared-link").disabled&&document.getElementById("assignment-evaluate").disabled&&document.getElementById("assignment-predict").disabled&&practiceEvidenceResult.passed===0'));
    for(const [width,font] of [[1440,16],[768,22],[390,16],[320,22]]){
      await size(width);await ev('fontSize('+font+');document.getElementById("mission-binding-status").scrollIntoView({behavior:"instant",block:"center"})');
      assert.ok(await ev('document.documentElement.scrollWidth<=innerWidth+1'));await shot('mission-binding-'+width);views.push({width,font});
@@ -539,18 +540,20 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    await click('#mission-binding-return');await until('document.getElementById("confirm-dialog").open');await click('#accept-confirm');await until('!missionSelectionSaving&&!activeTasks&&assignmentState?.mission?.ready');
    assert.equal(await ev('missionSelectionCurrent'),keys[2]);
    await choose(keys[0]);await fetch(base+'/qa/mission-apply');await click('#refresh');await until('!activeTasks&&assignmentState?.mission?.can_link');
-   assert.ok(await ev('!assignmentState.ready&&!document.getElementById("assignment-check").disabled'));
-   await click('#assignment-check');await until('document.getElementById("confirm-dialog").open');await click('#accept-confirm');await until('!assignmentBusy&&!activeTasks&&assignmentState?.mission?.ready');
+   assert.ok(await ev('assignmentState.ready&&!assignmentState.mission.linked&&!document.getElementById("assignment-check")&&practiceEvidenceResult.steps[0].success&&document.getElementById("assignment-evaluate").disabled&&document.getElementById("assignment-predict").disabled'));
+   assert.equal(requests.filter(r=>r.method==='POST'&&r.url.endsWith('/link')).length,0,'Object status lookup never writes linkage');
+   await click('[data-assignment-tab=data]');await until('!activeTasks&&!document.getElementById("assignment-panel-data").hidden');
+   await click('#assignment-prepared-link');await until('document.getElementById("confirm-dialog").open');await click('#accept-confirm');await until('!assignmentBusy&&!activeTasks&&assignmentState?.mission?.linked');
    assert.equal(await ev('assignmentState.mission.applied'),keys[0]);
    await fetch(base+'/qa/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({binding_object_count:0})});
    await click('#refresh');await until('!activeTasks&&assignmentState?.objects?.length===0');
-   assert.ok(await ev('document.getElementById("mission-binding-status").hidden&&document.getElementById("assignment-check").disabled&&document.getElementById("assignment-evaluate").disabled&&document.getElementById("assignment-predict").disabled&&assignmentUnavailable().includes("생성 전")'));
+   assert.ok(await ev('document.getElementById("mission-binding-status").hidden&&document.getElementById("assignment-prepared-link").disabled&&document.getElementById("assignment-evaluate").disabled&&document.getElementById("assignment-predict").disabled&&assignmentUnavailable().includes("생성 전")'));
    assert.equal(await ev('assignmentState.mission.applied'),keys[0],'Reset display must not erase the stored last linkage');
    await fetch(base+'/qa/feedback',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({binding_object_count:1})});
    await click('#refresh');await until('!activeTasks&&assignmentState?.objects?.length===1');
-   assert.ok(await ev('!document.getElementById("mission-binding-status").hidden&&document.getElementById("mission-binding-status").dataset.state==="mismatch"&&document.getElementById("assignment-check").disabled'));
+   assert.ok(await ev('!document.getElementById("mission-binding-status").hidden&&document.getElementById("mission-binding-status").dataset.state==="mismatch"&&document.getElementById("assignment-prepared-link").disabled'));
    const qa=await(await fetch(base+'/qa/state')).json();assert.deepEqual(qa.blocked,[]);assert.deepEqual(errors,[]);
-   const report={ok:true,selection_only_blocks_old_db:true,return_restores:true,explicit_link_required:true,empty_objects_hide_warning:true,partial_objects_keep_warning:true,last_link_preserved:true,layouts:views.length,no_real_database:true,screenshots:out};
+   const report={ok:true,selection_only_blocks_old_db:true,return_restores:true,object_ready_without_link:true,status_never_posts_link:true,preparation_model_link_required:true,empty_objects_hide_warning:true,partial_objects_keep_warning:true,last_link_preserved:true,layouts:views.length,no_real_database:true,screenshots:out};
    fs.writeFileSync(path.join(root,'runtime/mission-binding-browser-verification.json'),JSON.stringify(report,null,2));console.log(JSON.stringify(report));return;
  }
  if(taskMarkersOnly){
@@ -580,10 +583,10 @@ let ws,call;const errors=[],requests=[],views=[],cases=[],sourcePaths=new Set(),
    for(const key of ['basic','mission','creative']){
      await fetch(base+'/qa/evidence/change?kind=proof_work_pending&value=1');await fetch(base+'/qa/evidence/change?kind=input_version&value=1');
      await call('Page.navigate',{url:base+'/'+key});
-     await until(key==='basic'?'typeof statusPhase!=="undefined"&&statusPhase==="ready"&&!refreshing&&practiceEvidenceResult':'typeof assignmentPhase!=="undefined"&&assignmentPhase==="ready"&&!activeTasks&&practiceEvidenceResult');
+     await until('typeof practiceEvidenceResult!=="undefined"&&'+(key==='basic'?'typeof statusPhase!=="undefined"&&statusPhase==="ready"&&!refreshing&&practiceEvidenceResult':'typeof assignmentKey!=="undefined"&&assignmentKey==='+JSON.stringify(key)+'&&assignmentPhase==="ready"&&!activeTasks&&practiceEvidenceResult'));
      let steps=await checkSnapshot();
      if(key!=='basic'){
-       await ev('document.getElementById("assignment-check").scrollIntoView({block:"center",behavior:"instant"})');await shot('link-marker-contrast-'+key);
+       await ev(key==='mission'?'document.querySelector("[data-mission-schema="+missionSelectionCurrent+"]").scrollIntoView({block:"center",behavior:"instant"})':'document.getElementById("assignment-check").scrollIntoView({block:"center",behavior:"instant"})');await shot('link-marker-contrast-'+key);
      }
      assert.deepEqual(steps.find(step=>step.id==='data').markers.map(marker=>marker.state),['success','success','pending','pending']);
      assert.equal(steps.find(step=>step.id==='models').completed,0);

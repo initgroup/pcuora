@@ -49,8 +49,8 @@ def inspect(conn, selected, state):
     stamp=service.json_fingerprint([tables,objects,source])
     can_link=bool(item and state['ready'] and detected and detected['key']==selected)
     linked=bool(can_link and saved.get('key')==selected and saved.get('stamp')==stamp)
-    code='matched' if linked else 'unlinked' if can_link else 'mismatch' if detected and item else 'unknown'
-    reason='' if linked else '선택 미션에 맞는 DB 규약을 확인했습니다. SQL 실행 결과 연계가 필요합니다.' if can_link else '선택 미션과 DB가 다르거나 적용 중입니다. DATA → PREPARED → PREDICT → RUN을 확인하세요.' if item else '미션을 선택하세요.'
+    code='matched' if can_link else 'mismatch' if detected and item else 'unknown'
+    reason='' if can_link else '선택 미션과 DB가 다르거나 적용 중입니다. DATA → PREPARED → PREDICT → RUN을 확인하세요.' if item else '미션을 선택하세요.'
     problems=[]
     if item:
         for kind,title in [('training','DATA'),('prepared','PREPARED'),('prediction','PREDICT')]:
@@ -60,7 +60,7 @@ def inspect(conn, selected, state):
     return dict(selected=selected,selected_title=item['title'] if item else '선택 전',
                 detected=detected['key'] if detected else '',detected_title=detected['title'] if detected else '미확인 · 객체별 확인 필요',
                 applied=saved.get('key',''),applied_title=applied['title'] if applied else '연계 기록 없음',
-                ready=linked,can_link=can_link,code=code,reason=reason,stamp=stamp,
+                ready=can_link,linked=linked,can_link=can_link,code=code,reason=reason,stamp=stamp,
                 problems=problems,
                 model_after=max((str(o['last_ddl_time']) for o in objects if o.get('last_ddl_time') and o['object_name']!=cfg['prediction_table']),default=''),
                 tables={kind:bool(item and not table_issues(item,kind,rows)) for kind,rows in tables.items()})

@@ -92,8 +92,8 @@ proof_states={}
 def binding_fixture():
     selected=next(i for i in CATALOG if i['key']==selection['key'])
     detected=next(i for i in CATALOG if i['key']==qa['binding_db'])
-    can_link=selected['key']==detected['key'] and qa.get('binding_object_count',4)==4;ready=can_link and qa.get('binding_applied')==selected['key']
-    return dict(selected=selected['key'],selected_title=selected['title'],detected=detected['key'],detected_title=detected['title'],applied=qa.get('binding_applied',''),applied_title=qa.get('binding_applied','미확인'),ready=ready,can_link=can_link,reason='' if ready else '선택 미션과 DB가 다르거나 연계 확인이 필요합니다.',tables={kind:can_link for kind in ['training','prepared','prediction']})
+    can_link=selected['key']==detected['key'] and qa.get('binding_object_count',4)==4;linked=can_link and qa.get('binding_applied')==selected['key']
+    return dict(selected=selected['key'],selected_title=selected['title'],detected=detected['key'],detected_title=detected['title'],applied=qa.get('binding_applied',''),applied_title=qa.get('binding_applied','미확인'),ready=can_link,linked=linked,can_link=can_link,reason='' if can_link else '선택 미션과 DB가 다르거나 객체 적용 중입니다.',tables={kind:can_link for kind in ['training','prepared','prediction']})
 def proof_saved(key):
     if key not in proof_states:
         stamps={mode:dict(fingerprint=key+'-'+mode,created=NOW) for mode in ('RAW','CLEAN')}
@@ -124,7 +124,12 @@ def proof_result(key):
         state['models']=[dict(model,exists=0,is_current=0,is_confirmed=0) for model in state['models']]
     if qa.get('stale_proof'):
         state['models']=[dict(m,is_current=0) for m in state['models']]
-    if key=='mission' and qa.get('binding_db'):state['ready']=binding_fixture()['ready']
+    if key=='mission' and qa.get('binding_db'):
+        state['mission']=binding_fixture();state['ready']=state['mission']['ready']
+        state['objects']=state['objects'][:qa.get('binding_object_count',4)]
+        if not state['mission']['linked']:
+            state['models']=[dict(m,is_current=0) for m in state['models']]
+            state['preparation']={m:dict(p,ready=False) for m,p in state['preparation'].items()}
     topic=next(item for item in CATALOG if item['key']==selection['key']) if key=='mission' else None
     result=practice_evidence.summarize(key,state,proof_saved(key),inputs=proof_inputs(),mission=topic)
     return dict(result,title={'basic':'기본과제','mission':'미션과제','creative':'창의과제'}[key],
@@ -276,7 +281,7 @@ async def fixture(request,next_call):
                 if key=='mission' and qa.get('binding_db'):
                     response['objects']=response['objects'][:qa.get('binding_object_count',4)]
                     response['mission']=binding_fixture();response['ready']=response['mission']['ready']
-                    if not response['ready']:
+                    if not response['mission']['linked']:
                         response['models']=[dict(m,is_current=0) for m in response['models']]
                         response['preparation']={m:dict(p,ready=False) for m,p in response['preparation'].items()}
                 if qa.get('evidence') and q.get('include_evidence'):response['practice']=proof_result(key)

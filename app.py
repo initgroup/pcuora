@@ -422,7 +422,7 @@ def create_app(config=None):
             state = assignment_templates.readiness(conn, key,mission=mission_context(request,conn) if key=='mission' else None)
             state.update(assignment_templates.input_state(conn,state))
             pending = next((action for action,item in state['actions'].items() if not item['ready']), None)
-            result = {**state, 'preparation':assignment_templates.preparation_status(conn,key) if state['ready'] else {}, 'models':assignment_templates.model_state(conn,key,verify=state['ready']), 'diagnostic': assignment_templates.diagnostic(key, pending, state) if pending else None}
+            result = {**state, **assignment_templates.verification_state(conn,key,state), 'diagnostic': assignment_templates.diagnostic(key, pending, state) if pending else None}
             if include_evidence:result['practice']=practice_summary(request,conn,key,result)
             return result
 

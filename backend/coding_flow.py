@@ -475,6 +475,7 @@ def basic_flow(result,*,trigger_id='',trigger_label='',page=''):
 def mission_flow(result,*,trigger_id='',trigger_label='',page=''):
     op=result['operation'];web=op in MISSION_WEB
     creative=result['assignment']=='creative'
+    if not creative and op in ('connection','status') and not trigger_id:trigger_id='refresh'
     summary=('직접 만든 미션 객체를 웹에서 조회·평가·예측하는 실제 호출 흐름입니다. 로컬 미션 SQL과 DB 적용 버전은 다를 수 있습니다.' if web else
              '웹은 선택 미션의 SQL을 생성·표시합니다. DB 연결·실행은 없으며, 생성 SQL은 SQL Developer에서 직접 실행합니다.')
     flow=_new(result,'web-execution' if web else 'manual-guide',summary)
@@ -523,7 +524,7 @@ def mission_flow(result,*,trigger_id='',trigger_label='',page=''):
             _add(flow,'event',_js_function('static/js/assignment-template.js','loadAssignmentReadiness'))
             if not refresh_only:_add(flow,'api',_python('app.py','link_assignment','객체·모델 연계 POST'))
             _add(flow,'api',_python('app.py','assignment_status','연결 상태 GET'))
-            for name in (('readiness','preparation_status','model_state') if refresh_only else ('link_external','readiness','preparation_status','model_state')):
+            for name in (('readiness','verification_state','preparation_status','model_state') if refresh_only else ('link_external','readiness','preparation_status','model_state')):
                 _add(flow,'service',_python('backend/assignment_templates.py',name))
             paths=['sql/queries/objects.sql','sql/queries/columns.sql','sql/queries/procedure_arguments.sql','sql/queries/procedure_errors.sql','sql/queries/assignment_models.sql','sql/queries/prepared_count.sql']
         else:

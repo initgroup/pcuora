@@ -272,7 +272,7 @@ def generate(item, operation='prepare', variant='RAW', source_kind='ALL', *, sch
     application = {
         'title':'수정 후 적용 방법', 'summary':'선택 미션 SQL을 직접 실행하고 웹에서 결과를 확인합니다.',
         'owner':schema, 'step_titles':['파일 수정','DB 반영','연결 확인'],
-        'steps':[PROCEDURE_PATH + ' 편집·저장', '발급 계정에서 파일 전체 F5 실행', '실행 후 웹에서 객체·모델 연계 확인'],
+        'steps':[PROCEDURE_PATH + ' 편집·저장', '발급 계정에서 파일 전체 F5 실행', '전처리·모델 단계에서 SQL 실행 결과 연계'],
         'details':[{'title':'수정이 반영되지 않았다면','text':'파일 저장만으로 DB 정의는 바뀌지 않습니다. 전체 프로시저를 F5로 적용하고 오류 0건·VALID를 확인하세요. 학습 로직 변경 후에는 PREPARE·RETRAIN·EVALUATE를 직접 실행하세요.'}],
         'caution':'', 'command':'', 'verification':verification,
         'verification_title':'DB 연결·컴파일 확인 SQL', 'definition_path':PROCEDURE_PATH,
@@ -280,17 +280,17 @@ def generate(item, operation='prepare', variant='RAW', source_kind='ALL', *, sch
     if operation in RESET_ACTIONS:
         application.update(summary=code_title+' SQL을 직접 실행하고 웹에서 상태를 확인합니다.',
             step_titles=['대상 확인','직접 실행','상태 확인'],
-            steps=[schema+' · '+code_title,'발급 계정의 SQL Developer에서 전체 F5 실행','웹에서 객체·모델 연계 확인'],
+            steps=[schema+' · '+code_title,'발급 계정의 SQL Developer에서 전체 F5 실행','웹 새로고침으로 현재 상태 확인'],
             caution='대상 데이터·객체가 삭제됩니다. 실행 전 SQL의 대상 이름을 확인하세요.',details=[])
     elif operation == 'setup':
         application.update(summary='테이블 → 프로시저 → CSV 순서로 준비합니다.',
             step_titles=['테이블 생성','프로시저 등록','CSV 적재·연결'],
-            steps=['스키마 조회의 DATA → PREPARED → PREDICT', '선택 미션 RUN 전체 SQL을 F5 실행', '로컬 CSV 적재 → 웹에서 연계 확인'],
+            steps=['스키마 조회의 DATA → PREPARED → PREDICT', '선택 미션 RUN 전체 SQL을 F5 실행', '웹 새로고침으로 객체 준비 확인 → CSV 적재'],
             caution='생성 SQL은 해당 기존 테이블을 삭제·재생성합니다. 기존 행은 되돌릴 수 없습니다.')
     elif operation in ('data','prediction-data','columns','prepared-data','connection','status'):
         application.update(summary='직접 만든 객체와 조회 결과를 확인합니다.',
             step_titles=['SQL 확인','직접 조회','화면 확인'],
-            steps=['실행 SQL 단계에서 해당 조회문 선택','발급 계정의 SQL Developer에서 실행','웹에서 조회·연계 확인'],
+            steps=['실행 SQL 단계에서 해당 조회문 선택','발급 계정의 SQL Developer에서 실행','웹에서 조회 결과 확인'],
             details=[])
     elif operation in ('preview','prediction-preview'):
         application.update(summary='선택 미션의 CSV 원문을 확인합니다.',

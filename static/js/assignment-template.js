@@ -78,8 +78,8 @@ function renderMissionBinding(){
   const binding=assignmentState?.mission,panel=$('mission-binding-status');panel.hidden=!person||!binding||missionObjectsEmpty();
   if(!binding)return;
   panel.dataset.state=binding.ready?'matched':binding.can_link?'unlinked':'mismatch';
-  text('mission-binding-summary','선택: '+binding.selected_title+' / DB 규약 확인: '+binding.detected_title+' / 마지막 연계: '+binding.applied_title);
-  text('mission-binding-next',binding.ready?'선택 미션과 DB 적용·연계가 일치합니다.':binding.reason+' '+(binding.can_link?'연계 버튼으로 확인·저장하세요.':'기존 DB 미션으로 돌아가거나 선택 미션의 세 테이블·RUN을 직접 적용 → CSV 적재 → 결과 연계를 진행하세요.')+(binding.problems?.length?' '+binding.problems.join(' · '):''));
+  text('mission-binding-summary','선택: '+binding.selected_title+' / DB 규약 확인: '+binding.detected_title+' / 마지막 전처리·모델 연계: '+binding.applied_title);
+  text('mission-binding-next',binding.ready?'선택 미션과 DB 객체가 일치합니다. 객체 준비는 조회로 자동 확인하며 별도 연계가 필요 없습니다. 전처리·모델 결과 연계는 각 단계에서 진행하세요.':binding.reason+' 기존 DB 미션으로 돌아가거나 선택 미션의 세 테이블·RUN을 직접 적용한 뒤 웹을 새로고침하세요.'+(binding.problems?.length?' '+binding.problems.join(' · '):''));
   $('mission-binding-return').hidden=!binding.detected||binding.detected===missionSelectionCurrent;
   $('mission-binding-return').disabled=assignmentBusy||missionSelectionSaving;
   const reason=!person?'로그인하세요.':assignmentBusy||missionSelectionSaving||assignmentPhase==='loading'?'상태 확인 중입니다.':missionObjectsEmpty()?assignmentUnavailable():!binding.can_link?binding.reason:'';

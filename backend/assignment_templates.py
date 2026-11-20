@@ -219,6 +219,8 @@ def run(conn,key,action,payload=None,mode='RAW',source_kind='ALL',mission_key=''
     if action=='prepared-data':return {'rows':service.get_prepared_data(conn,mode,source_kind,table=cfg['prepared_table'])}
     actions={'evaluate':'EVALUATE','predict':'PREDICT'}
     if action in ('evaluate','predict'):
+        if key=='mission' and not state['mission']['linked']:
+            raise ValueError('객체 준비는 확인됐습니다. 전처리·모델 단계에서 SQL 실행 결과를 연계한 뒤 평가·예측하세요.')
         if not any(m['variant']==mode and m['is_current'] for m in model_state(conn,key)):
             raise ValueError('직접 SQL로 전처리·모델 생성을 완료한 뒤 현황의 객체·모델 연계 확인을 누르세요. 연계 후 원본이나 프로시저가 바뀌면 직접 재학습하고 다시 확인하세요.')
         if key=='mission':
@@ -247,6 +249,15 @@ def input_state(conn,state):
         exists=any(o['object_name']==table and o['object_type']=='TABLE' and o['status']=='VALID' for o in state['objects'])
         counts[name]=execute(conn,'queries/custom_count.sql',replacements={'table':table},fetch=True)[0]['rows_count'] if exists else 0
     return {'state':{'total_rows':counts['training']},'prediction_storage':{'rows':counts['prediction']}}
+
+
+def verification_state(conn,key,state):
+    """객체 존재는 조회로 확인하고 전처리·모델 성공은 현재 연계 지문으로 제한합니다."""
+    linked=state['ready'] and (key!='mission' or state.get('mission',{}).get('linked',False))
+    preparation=preparation_status(conn,key) if state['ready'] else {}
+    if not linked:
+        preparation={mode:{**item,'ready':False} for mode,item in preparation.items()}
+    return {'models':model_state(conn,key,verify=linked),'preparation':preparation}
 
 
 def link_external(conn,key,mission=None):

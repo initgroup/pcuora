@@ -188,8 +188,7 @@ def collect(conn, key, mission=None, state=None):
         from . import assignment_templates as assignments
         if state is None:
             state = assignments.readiness(conn, key,mission=(mission or {}).get('key','') if key=='mission' else None)
-            state.update(models=assignments.model_state(conn, key, verify=state['ready']),
-                         preparation=assignments.preparation_status(conn, key) if state['ready'] else {})
+            state.update(assignments.verification_state(conn,key,state))
         cfg = state['config']
     saved = service.read_state(conn)
     ready = state.get('initialized') if key == 'basic' else state.get('ready')

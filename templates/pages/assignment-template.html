@@ -37,7 +37,7 @@
       <p id="mission-selection-note" class="execution-status" role="status">선택 전 · 위 {{ mission_datasets|length }}개 중 하나를 선택하고 CSV를 내려받으세요.</p>
       <div class="actions mission-guide-actions"><button type="button" class="secondary" id="clear-mission-selection">미션 선택 해제</button><button type="button" class="secondary" data-code="setup">선택 미션 SQL 가이드 · RUN 등록</button><a class="button secondary" href="/api/assignments/mission/guide/download?file=tables" id="mission-tables-download" hidden>01_tables.sql 다운로드</a><a class="button secondary" href="/api/assignments/mission/guide/download?file=procedure" id="mission-procedure-download" hidden>02_procedure.sql 다운로드</a></div>
 
-      <p class="compact-note muted">주제 선택과 다운로드는 DB 객체 생성·데이터 적재를 수행하지 않습니다. 아래 객체를 직접 생성 → 화면에서 CSV 적재 → SQL로 전처리·모델 학습 → 객체·모델 연계 확인 순서로 진행하세요.</p>
+      <p class="compact-note muted">주제 선택과 다운로드는 DB 객체 생성·데이터 적재를 수행하지 않습니다. 스키마 SQL 직접 실행 → 웹 새로고침으로 객체 확인 → CSV 적재 → SQL 전처리·모델 학습 → 전처리·모델 결과 연계 순서로 진행하세요.</p>
       <a href="#" data-assignment-tab="data">학습데이터 · 선택한 CSV 적재 →</a>
       <script type="application/json" id="mission-dataset-catalog">{{ mission_datasets|tojson }}</script>
     </section>
@@ -47,7 +47,7 @@
       <form id="assignment-connection">
         {% from 'object-names.html' import object_names %}
         {{ object_names('assignment-object',assignments[active],false) }}
-        {% call sql_result_link('assignment-check') %}<button type="button" id="assignment-check" aria-describedby="assignment-check-status">SQL 실행 결과 연계</button>{% endcall %}<div class="reset-actions">{% set guides=true %}<span class="action-with-help"><button type="button" id="assignment-drop-objects" class="secondary danger" data-manual-action="drop-objects" disabled>실습 오브젝트 삭제 · 직접 SQL</button>{% if guides %}<button type="button" class="secondary code-help" data-code="drop-objects" aria-label="실습 오브젝트 삭제 · 직접 SQL 코딩도움말">?</button>{% endif %}</span><small>본인 SQL로 실행 후 연계 확인</small></div>
+        {% if active=='mission' %}<p class="compact-note">객체 4개를 직접 생성한 뒤 웹을 새로고침하면 실제 DB 규약을 조회해 준비 상태를 자동 확인합니다. 객체 생성만으로는 별도 연계 버튼을 누르지 않아도 됩니다.</p>{% else %}{% call sql_result_link('assignment-check') %}<button type="button" id="assignment-check" aria-describedby="assignment-check-status">SQL 실행 결과 연계</button>{% endcall %}{% endif %}<div class="reset-actions">{% set guides=true %}<span class="action-with-help"><button type="button" id="assignment-drop-objects" class="secondary danger" data-manual-action="drop-objects" disabled>실습 오브젝트 삭제 · 직접 SQL</button>{% if guides %}<button type="button" class="secondary code-help" data-code="drop-objects" aria-label="실습 오브젝트 삭제 · 직접 SQL 코딩도움말">?</button>{% endif %}</span><small>본인 SQL로 실행 후 {{ '새로고침으로 확인' if active=='mission' else '연계 확인' }}</small></div>
       </form>
       <div class="assignment-readiness-heading"><h3>테이블·프로시저 준비 상태</h3><button type="button" id="assignment-diagnostic" class="text-button" hidden>연결 상태·오류 상세</button></div>
       <p id="assignment-readiness-summary" class="assignment-state-copy">로그인 후 실제 DB 객체를 조회합니다.</p>
@@ -184,7 +184,7 @@
     <div class="help-window-controls"><button type="button" class="secondary" data-window-action="minimize" aria-label="스키마 창 최소화">−</button><button type="button" class="secondary" data-window-action="maximize" aria-label="스키마 창 최대화" aria-pressed="false">□</button><button type="button" id="close-mission-schema" class="secondary dialog-close" aria-label="스키마 조회 닫기">×</button></div>
   </div>
   <div class="mission-schema-content">
-    <aside class="mission-schema-start" aria-labelledby="mission-schema-start-title"><h3 id="mission-schema-start-title">객체 4개 · 직접 SQL 실행</h3><p>각 탭의 <strong>생성 SQL 전체 복사 → SQL Developer의 같은 계정에서 F5</strong> 실행. 모두 마치면 웹에서 <strong>SQL 실행 결과 연계</strong>를 누르세요.</p></aside>
+    <aside class="mission-schema-start" aria-labelledby="mission-schema-start-title"><h3 id="mission-schema-start-title">객체 4개 · 직접 SQL 실행</h3><p>각 탭의 <strong>생성 SQL 전체 복사 → SQL Developer의 같은 계정에서 F5</strong> 실행. 모두 마치면 <strong>웹 새로고침으로 준비 상태를 자동 확인</strong>합니다. 별도 객체 연계는 필요 없습니다.</p></aside>
     <p class="compact-note">1~3번 SQL은 대상 테이블을 삭제·재생성하여 기존 행이 삭제됩니다. 실행 대상을 확인하세요. 4번 SQL은 RUN을 등록합니다.</p>
     <div class="help-switch mission-schema-switch" role="group" aria-label="미션 테이블·프로시저 생성 순서"><button type="button" data-mission-schema-kind="training" aria-pressed="true">1. 원본 DATA</button><button type="button" data-mission-schema-kind="prepared" aria-pressed="false">2. 전처리 PREPARED</button><button type="button" data-mission-schema-kind="prediction" aria-pressed="false">3. 예측 PREDICT</button><button type="button" data-mission-schema-kind="procedure" aria-pressed="false">4. 실행 프로시저 RUN</button></div>
     <div class="object-line"><span id="mission-schema-object-label">테이블명</span><code id="mission-schema-table"></code></div>
@@ -193,7 +193,7 @@
     <div id="mission-schema-columns" class="table-wrap mission-schema-columns" aria-label="테이블 컬럼명과 Oracle 타입"></div>
     <p id="mission-schema-constraints" class="compact-note"></p>
     <aside id="mission-schema-table-guide" class="mission-schema-check" aria-labelledby="mission-schema-execution-title"><h3 id="mission-schema-execution-title">SQL Developer 실행 순서</h3><p>같은 DB 계정의 새 워크시트에 위 <b>선택 테이블 SQL 전체</b>를 붙여넣고, 글자 선택을 해제한 뒤 <kbd>F5</kbd>(스크립트 실행)를 누르세요. 출력에서 PL/SQL 블록과 <code>CREATE TABLE</code>의 성공 여부를 순서대로 확인합니다.</p><p><kbd>Ctrl+Enter</kbd>는 커서 위치의 한 문장만 실행합니다. 마지막 <code>COMMENT ON COLUMN</code>만 실행했고 테이블이 없으면 <code>ORA-00942</code>가 납니다. CREATE가 실패했다면 이후 COMMENT 오류보다 앞선 첫 오류를 먼저 확인하세요.</p><p>1. 원본 DATA → 2. 전처리 PREPARED → 3. 예측 PREDICT → 4. 실행 프로시저 RUN 순서로 탭별 SQL을 실행합니다. 각 SQL의 첫 PL/SQL 블록이 해당 테이블만 확인·삭제한 뒤 CREATE합니다. 기존 행은 삭제되며 ROLLBACK할 수 없습니다. 미션 변경 후에는 프로시저도 새 컬럼에 맞춰 다시 적용하고 CSV 적재·전처리·재학습을 진행하세요.</p></aside>
-    <aside id="mission-schema-procedure-guide" class="mission-schema-check" hidden><h3>RUN 프로시저 등록</h3><p>테이블 3개를 먼저 생성하고 위 전체 SQL을 <code>02_procedure.sql</code>로 저장하세요. 같은 발급 계정에서 <kbd>F5</kbd>로 실행한 뒤 웹의 「SQL 실행 결과 연계」를 누르세요. 기존 RUN 정의는 새 정의로 교체됩니다.</p></aside>
+    <aside id="mission-schema-procedure-guide" class="mission-schema-check" hidden><h3>RUN 프로시저 등록</h3><p>테이블 3개를 먼저 생성하고 위 전체 SQL을 <code>02_procedure.sql</code>로 저장하세요. 같은 발급 계정에서 <kbd>F5</kbd>로 실행한 뒤 웹을 새로고침하면 객체 준비가 자동 확인됩니다. 기존 RUN 정의는 새 정의로 교체됩니다.</p></aside>
     <aside id="mission-schema-check-guide" class="mission-schema-check"><h3>CHECK (SPLIT IN ('TRAIN', 'TEST'))는?</h3><p><code>SPLIT</code>에 <code>TRAIN</code>(학습) 또는 <code>TEST</code>(평가)만 허용하는 입력 검사입니다. 다른 값은 INSERT·UPDATE 시 오류가 나며, 데이터를 자동으로 나누거나 학습을 실행하지 않습니다.</p><p><code>CHECK</code>만으로는 NULL을 막지 못합니다. 반드시 값을 입력하게 하려면 <code>NOT NULL</code>도 지정합니다. 생성 참고안은 원본 SPLIT에 두 규칙을 함께 사용합니다.</p><p><code>USE_YN</code>의 Y/N, <code>PREP_MODE</code>의 RAW/CLEAN도 같은 방식으로 허용값을 제한합니다.</p></aside>
     <section id="mission-schema-learning" class="mission-context" aria-label="미션 목적과 데이터 이해"></section>
   </div>
